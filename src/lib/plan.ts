@@ -156,6 +156,13 @@ export function analyse(p: Profile) {
 
 export type ProductGroup = "Global Stocks (ETF)" | "Bonds" | "Savings";
 
+// Which plan buckets each product tab covers.
+export const groupBuckets: Record<ProductGroup, Bucket[]> = {
+  "Global Stocks (ETF)": ["stocks", "alt"],
+  Bonds: ["bonds"],
+  Savings: ["emergency", "cash"],
+};
+
 export const products: Record<
   ProductGroup,
   { name: string; ticker: string; risk: 1 | 2 | 3 | 4 | 5; fee: string; min: string; blurb: string }[]

@@ -39,13 +39,16 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <p className="hidden px-5 py-6 text-xs leading-relaxed text-slate-400 md:block">
+          Educational prototype. Not personalised financial advice.
+        </p>
       </aside>
 
       <main className="flex-1 px-5 py-8 md:px-12 md:py-10">
         {step === 0 && <InfoStep profile={profile} setProfile={setProfile} onNext={next} />}
         {step === 1 && <AnalysisStep profile={profile} onNext={next} />}
         {step === 2 && <PlanStep profile={profile} onNext={next} />}
-        {step === 3 && <ProductsStep onNext={next} />}
+        {step === 3 && <ProductsStep profile={profile} onNext={next} />}
         {step === 4 && <WhatIfStep profile={profile} />}
       </main>
     </div>

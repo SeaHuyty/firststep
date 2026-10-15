@@ -9,6 +9,7 @@ import {
   bucketMeta,
   debtLabels,
   emergencyLabels,
+  groupBuckets,
   goalLabels,
   horizonLabels,
   products,
@@ -244,9 +245,14 @@ export function PlanStep({ profile, onNext }: StepProps) {
 }
 
 /* 4 — Product details */
-export function ProductsStep({ onNext }: Pick<StepProps, "onNext">) {
+export function ProductsStep({ profile, onNext }: StepProps) {
   const groups = Object.keys(products) as ProductGroup[];
   const [tab, setTab] = useState<ProductGroup>(groups[0]);
+  const slices = allocate(profile).filter((s) => groupBuckets[tab].includes(s.bucket));
+  const pct = slices.reduce((n, s) => n + s.pct, 0);
+  const amount = slices.reduce((n, s) => n + s.amount, 0);
+  const list = products[tab];
+  const split = list.length ? Math.round(amount / list.length) : 0;
   return (
     <div className="max-w-2xl">
       <Title title="Recommended products" sub="Example products for your plan. Illustrative only, not real-time data." />
@@ -261,29 +267,43 @@ export function ProductsStep({ onNext }: Pick<StepProps, "onNext">) {
           </button>
         ))}
       </div>
-      <ul className="space-y-3">
-        {products[tab].map((p) => (
-          <li key={p.ticker} className="rounded-xl border border-slate-200 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-medium text-slate-900">{p.name}</h3>
-                <p className="text-xs text-slate-500">{p.ticker}</p>
-              </div>
-              <div className="text-right text-xs text-slate-500">
-                <div>Fee: {p.fee}</div>
-                <div>Min: {p.min}</div>
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-slate-600">{p.blurb}</p>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-              Risk
-              {[1, 2, 3, 4, 5].map((n) => (
-                <span key={n} className={`h-2 w-2 rounded-full ${n <= p.risk ? "bg-blue-600" : "bg-slate-200"}`} />
-              ))}
-            </div>
-          </li>
-        ))}
-      </ul>
+      <p className="mb-3 text-sm text-slate-600">
+        Your plan puts <strong className="text-slate-900">{usd(amount)}</strong> ({pct}%) here.
+        {list.length > 1 && <> Split evenly, about {usd(split)} each.</>}
+      </p>
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full min-w-[480px] text-left text-sm">
+          <thead className="bg-slate-50 text-xs text-slate-500">
+            <tr>
+              <th className="px-4 py-2 font-medium">Product</th>
+              <th className="px-4 py-2 font-medium">Risk</th>
+              <th className="px-4 py-2 font-medium">Fee</th>
+              <th className="px-4 py-2 font-medium">Min.</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {list.map((p) => (
+              <tr key={p.ticker} className="align-top">
+                <td className="px-4 py-3">
+                  <div className="font-medium text-slate-900">
+                    {p.name} <span className="text-xs font-normal text-slate-500">{p.ticker}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">{p.blurb}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-1 pt-1" aria-label={`Risk ${p.risk} of 5`}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span key={n} className={`h-2 w-2 rounded-full ${n <= p.risk ? "bg-blue-600" : "bg-slate-200"}`} />
+                    ))}
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-700">{p.fee}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-700">{p.min}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <Next onClick={onNext}>Try a what-if →</Next>
     </div>
   );

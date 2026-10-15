@@ -9,7 +9,7 @@ from .catalog import BUCKET_META
 from .schemas import BUCKETS, Pct, Profile
 
 
-SINGLE_SHARE = 0.2  # default: this share of the stock allocation goes to individual stocks; the client can change it
+SINGLE_SHARE = {1: 0.1, 2: 0.25, 3: 0.6}  # default share of the stock allocation held as individual stocks (funds are the safer part)
 
 
 def js_round(x: float) -> int:
@@ -22,13 +22,13 @@ def allocate_pct(p: Profile) -> Pct:
     emergency = {"none": 30, "insufficient": 20, "enough": 5}[p.emergency] + (5 if p.debt == "significant" else 0)
     rest = 100 - emergency
 
-    base = {1: 0.25, 2: 0.5, 3: 0.7}[p.risk]
+    base = {1: 0.25, 2: 0.5, 3: 0.8}[p.risk]
     adj = -0.25 if p.horizon == 1 else -0.1 if p.horizon == 3 else 0.1 if p.horizon == 12 else 0
     stock_share = min(0.85, max(0.05, base + adj))
 
     alt = 5 if p.risk >= 2 and p.horizon >= 7 else 0
     equity = js_round(rest * stock_share)
-    single = js_round(equity * SINGLE_SHARE)
+    single = js_round(equity * SINGLE_SHARE[p.risk])
     bonds = js_round(max(0, rest - alt - equity) * 0.65)
     cash = 100 - emergency - alt - equity - bonds
     return {"emergency": emergency, "stocks": equity - single, "single": single, "bonds": bonds, "cash": cash, "alt": alt}

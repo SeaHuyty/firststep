@@ -8,7 +8,7 @@ from app.domain.catalog import PRODUCTS
 from app.main import app
 
 PROFILE = {"amount": 10000, "goal": "wealth", "horizon": 7, "emergency": "insufficient", "risk": 2, "debt": "none"}
-DEFAULT_PCT = {"emergency": 20, "stocks": 32, "single": 8, "bonds": 23, "cash": 12, "alt": 5}
+DEFAULT_PCT = {"emergency": 20, "stocks": 30, "single": 10, "bonds": 23, "cash": 12, "alt": 5}
 ALL_CONFIRMED = ["amount", "goal", "horizon", "emergency", "risk", "debt"]
 
 

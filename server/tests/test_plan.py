@@ -19,7 +19,7 @@ def find(**kw) -> Profile:
 def test_default_matches_known_values():
     # Same numbers the TypeScript prototype produced for these inputs.
     p = Profile(amount=10000, goal="wealth", horizon=7, emergency="insufficient", debt="none", risk=2)
-    assert allocate_pct(p) == {"emergency": 20, "stocks": 32, "single": 8, "bonds": 23, "cash": 12, "alt": 5}
+    assert allocate_pct(p) == {"emergency": 20, "stocks": 30, "single": 10, "bonds": 23, "cash": 12, "alt": 5}
 
 
 def test_default_sums_to_100_and_is_inside_limits_for_every_combination():
@@ -33,7 +33,8 @@ def test_default_sums_to_100_and_is_inside_limits_for_every_combination():
 
 def test_more_risk_means_more_stocks():
     def stocks(risk):
-        return allocate_pct(find(horizon=7, emergency="enough", debt="none", risk=risk))["stocks"]
+        a = allocate_pct(find(horizon=7, emergency="enough", debt="none", risk=risk))
+        return a["stocks"] + a["single"]
 
     assert stocks(1) < stocks(2) < stocks(3)
 

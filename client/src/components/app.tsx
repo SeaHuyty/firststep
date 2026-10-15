@@ -6,6 +6,7 @@ import { useCatalog } from "@/lib/catalog";
 import { defaultProfile, groupOf, type Market, type Pct, type PlanResult, type ProductGroup, type Profile, type Risk } from "@/lib/types";
 import { Advisor, type AdvisorHandle } from "./advisor";
 import { useStocks } from "@/lib/use-stocks";
+import { Footer } from "./footer";
 import { PlanPage, type Pick } from "./plan";
 import { AnalysisStep, InfoStep, Loading } from "./steps";
 
@@ -120,34 +121,36 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="border-b border-slate-200 bg-slate-50 md:w-64 md:shrink-0 md:border-b-0 md:border-r">
-        <div className="px-5 py-4 md:py-6">
-          <p className="font-semibold text-slate-900">WealthPilot AI</p>
-          <p className="text-xs text-slate-500">Your money, smarter future</p>
-        </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:pb-0">
-          {steps.map((label, i) => (
-            <button
-              key={label}
-              onClick={() => setStep(i)}
-              aria-current={i === step ? "step" : undefined}
-              className={`flex shrink-0 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
-                i === step ? "bg-blue-600 font-medium text-white" : "text-slate-700 hover:bg-slate-200"
-              }`}
-            >
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                  i === step ? "bg-white/20" : "bg-slate-200"
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-20 bg-blue-600 shadow-sm">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3">
+          <div>
+            <p className="font-semibold leading-tight text-white">WealthPilot AI</p>
+            <p className="text-xs text-blue-100">Your money, smarter future</p>
+          </div>
+          <nav className="flex gap-1 overflow-x-auto">
+            {steps.map((label, i) => (
+              <button
+                key={label}
+                onClick={() => setStep(i)}
+                aria-current={i === step ? "step" : undefined}
+                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${
+                  i === step ? "bg-white font-medium text-blue-700" : "text-blue-50 hover:bg-white/15"
                 }`}
               >
-                {i + 1}
-              </span>
-              <span className="whitespace-nowrap">{label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
+                    i === step ? "bg-blue-100" : "bg-white/20"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="whitespace-nowrap">{label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </header>
 
       <main className="flex-1 px-5 py-8 md:px-12 md:py-10">
         {step === 0 && <InfoStep profile={profile} setProfile={setProfile} confirm={confirm} onNext={next} />}
@@ -176,6 +179,8 @@ export default function App() {
             <Loading />
           ))}
       </main>
+
+      <Footer />
 
       {!advisorOpen && (
         <button

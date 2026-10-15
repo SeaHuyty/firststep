@@ -80,7 +80,7 @@ export function InfoStep({
     confirm([k]);
   };
   return (
-    <div className="max-w-lg">
+    <div className="mx-auto max-w-lg">
       <Title title="Let’s get to know you" sub="Tell us about your finances and goals, or just chat with the advisor." />
       <div className="space-y-5">
         <Field label="Available money">
@@ -164,7 +164,7 @@ export function AnalysisStep({ profile, analysis, onNext }: { profile: Profile; 
   const { labels } = useCatalog();
   const { score, rows, insights } = analysis;
   return (
-    <div className="max-w-lg">
+    <div className="mx-auto max-w-lg">
       <Title title="AI financial analysis" sub="Your financial profile and key insights." />
       <section className="rounded-xl border border-slate-200 p-5">
         <div className="flex items-baseline justify-between">

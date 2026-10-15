@@ -29,7 +29,6 @@ import { Field, Select, Title, inputCls } from "./steps";
 
 export type Pick = { reason: string; by: "advisor" | "risk" | "you" };
 
-const signed = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 
 function Section({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
@@ -73,12 +72,12 @@ export function PlanPage({
   const { labels } = useCatalog();
   const holdings = useHoldings(profile, pct, Object.keys(picks));
   return (
-    <div className={`max-w-5xl transition-opacity ${stale ? "opacity-60" : ""}`}>
+    <div className={`mx-auto max-w-5xl transition-opacity ${stale ? "opacity-60" : ""}`}>
       <Title
         title="Your plan"
         sub={`Based on your goal (${labels.goal[profile.goal].toLowerCase()}) and situation. Change the amount or risk level and everything below follows.`}
       />
-      <div className="grid gap-5 sm:max-w-md sm:grid-cols-2">
+      <div className="grid gap-5 mx-auto sm:max-w-md sm:grid-cols-2">
         <Field label="Amount to invest">
           <input
             type="number"
@@ -329,7 +328,7 @@ function Products({
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-180 text-left text-sm">
             <thead className="bg-slate-50 text-xs text-slate-500">
               <tr>
                 <th className="px-4 py-2 font-medium">Product</th>
@@ -420,23 +419,12 @@ function Products({
 /* What-if */
 const horizons = [1, 3, 5, 10, 20];
 
-type Basis = "history" | "assumed";
 // The result carries its own inputs so the summary never mixes new inputs with an old series.
 type WhatIfResult = { monthly: number; years: number; data: WhatIf };
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 p-3">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold text-slate-900">{value}</p>
-    </div>
-  );
-}
 
 function Simulation({ profile, pct, picks }: { profile: Profile; pct: Pct; picks: string[] }) {
   const [monthly, setMonthly] = useState(100);
   const [years, setYears] = useState(10);
-  const [basis, setBasis] = useState<Basis>("history");
   const [result, setResult] = useState<WhatIfResult | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -446,7 +434,7 @@ function Simulation({ profile, pct, picks }: { profile: Profile; pct: Pct; picks
     const timer = setTimeout(() => {
       api
         .whatIf(
-          { profile, pct, picks: picksKey ? picksKey.split(",") : [], monthly, years, risk: profile.risk, basis },
+          { profile, pct, picks: picksKey ? picksKey.split(",") : [], monthly, years, risk: profile.risk, basis: "assumed" },
           ctrl.signal,
         )
         .then((data) => {
@@ -461,16 +449,11 @@ function Simulation({ profile, pct, picks }: { profile: Profile; pct: Pct; picks
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [profile, pct, picksKey, monthly, years, basis]);
+  }, [profile, pct, picksKey, monthly, years]);
 
   const d = result?.data;
-  const isHistory = d?.basis === "history";
   const ends = d?.series.map((s) => s[s.length - 1]);
-  const names = isHistory ? ["Weak", "Typical", "Strong"] : ["Pessimistic", "Base", "Optimistic"];
-
-  // Per-fund share of the tested mix, merged across buckets (e.g. cash + emergency fund both use SGOV).
-  const mix = new Map<string, number>();
-  d?.composition.forEach((c) => c.tickers.forEach((t) => mix.set(t, (mix.get(t) ?? 0) + c.pct / c.tickers.length)));
+  const names = ["Pessimistic", "Base", "Optimistic"];
 
   return (
     <>
@@ -497,18 +480,6 @@ function Simulation({ profile, pct, picks }: { profile: Profile; pct: Pct; picks
         </Field>
       </div>
 
-      <div className="mt-4 inline-flex rounded-lg bg-slate-100 p-1 text-sm">
-        {(["history", "assumed"] as const).map((b) => (
-          <button
-            key={b}
-            onClick={() => setBasis(b)}
-            className={`rounded-md px-3 py-1.5 ${basis === b ? "bg-white font-medium shadow-sm" : "text-slate-600"}`}
-          >
-            {b === "history" ? "Live history" : "Standard assumptions"}
-          </button>
-        ))}
-      </div>
-
       {failed && <p className="mt-6 text-sm text-rose-600">Couldn’t load the projection. Is the server running?</p>}
       {d && ends && result && (
         <>
@@ -523,44 +494,13 @@ function Simulation({ profile, pct, picks }: { profile: Profile; pct: Pct; picks
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />{names[2]} {usd(ends[2])}</span>
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-500" />{names[1]} {usd(ends[1])}</span>
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-red-500" />{names[0]} {usd(ends[0])}</span>
-            <span><i className="mr-1 inline-block h-0.5 w-3 bg-slate-400 align-middle" />You put in {usd(d.contributed)}</span>
+            <span><i className="mr-1 inline-block h-0.5 w-3 bg-slate-400 align-middle" />You put in {usd(d.contributed)} in total ({usd(d.start)} now + {usd(d.contributed - d.start)} monthly)</span>
           </div>
-
-          {isHistory && d.stats && (
-            <div className="mt-5">
-              <h3 className="font-medium text-slate-900">How this mix behaved</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                {[...mix.entries()]
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([t, w]) => `${Math.round(w)}% ${t}`)
-                  .join(" · ")}
-                {" "}— real monthly returns, {d.stats.window.start} to {d.stats.window.end} ({d.stats.window.months} months).
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Stat label="Return per year" value={signed(d.stats.annual_return_pct)} />
-                <Stat label="Volatility" value={`${d.stats.volatility_pct.toFixed(1)}%`} />
-                <Stat label="Worst drop" value={signed(d.stats.max_drawdown_pct)} />
-                <Stat label="Worst 12 months" value={d.stats.worst_12m_pct === null ? "–" : signed(d.stats.worst_12m_pct)} />
-              </div>
-            </div>
-          )}
 
           <p className="mt-5 rounded-lg bg-slate-50 p-3 text-sm leading-relaxed text-slate-600">
             <strong className="text-slate-900">Key takeaway:</strong>{" "}
-            {isHistory ? (
-              <>
-                we replayed this mix’s real monthly returns in 3,000 simulated futures. With {usd(result.monthly)} a
-                month, you’d typically reach about {usd(ends[1])} in {result.years} {result.years === 1 ? "year" : "years"}
-                , from {usd(ends[0])} in a weak run to {usd(ends[2])} in a strong one (the 10th to 90th percentile).
-                {d.loss_chance_pct !== null && d.loss_chance_pct > 0 && <> In about {d.loss_chance_pct}% of runs you’d end up with less than you put in.</>}{" "}
-                The recent past may be kinder or harsher than the future.
-              </>
-            ) : (
-              <>
-                with {usd(result.monthly)} a month, your portfolio could grow to around {usd(ends[1])} in {result.years}{" "}
-                {result.years === 1 ? "year" : "years"} (base case), using fixed return assumptions for this risk level.
-              </>
-            )}
+            with {usd(result.monthly)} a month, your portfolio could grow to around {usd(ends[1])} in {result.years}{" "}
+            {result.years === 1 ? "year" : "years"} (base case), using fixed return assumptions for this risk level.
           </p>
         </>
       )}

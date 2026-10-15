@@ -48,7 +48,7 @@ export function LineChart({ series, baseline }: { series: [number[], number[], n
   const ticks = [0, 0.5, 1].map((t) => Math.round((max * t) / 100) * 100);
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-2xl" role="img" aria-label="Projected portfolio value">
+    <svg viewBox={`0 0 ${w} ${h}`} className="mx-auto w-full max-w-2xl" role="img" aria-label="Projected portfolio value">
       {ticks.map((t) => (
         <g key={t}>
           <line x1={pad.l} x2={w - pad.r} y1={y(t)} y2={y(t)} stroke="#e2e8f0" />

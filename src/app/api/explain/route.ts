@@ -77,6 +77,12 @@ ${sourcesFor(slices.map((s) => s.bucket))
   .map((s) => `[${s.id}] ${s.publisher}, "${s.title}": ${s.summary}`)
   .join("\n")}`;
 
-  const result = streamText({ model, system: SYSTEM, prompt });
+  const result = streamText({
+    model,
+    system: SYSTEM,
+    prompt,
+    // Explaining a fixed allocation needs no deep reasoning; low thinking effort is much faster.
+    providerOptions: { google: { thinkingConfig: { thinkingLevel: "low" } } },
+  });
   return result.toTextStreamResponse();
 }

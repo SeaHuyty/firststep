@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { Chat } from "./chat";
 import { Donut, LineChart } from "./charts";
 import { Explanation } from "./explanation";
 import {
@@ -93,10 +94,27 @@ export function InfoStep({
   setProfile,
   onNext,
 }: StepProps & { setProfile: (p: Profile) => void }) {
+  const [mode, setMode] = useState<"form" | "chat">("form");
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setProfile({ ...profile, [k]: v });
   return (
     <div className="max-w-lg">
       <Title title="Let’s get to know you" sub="Tell us about your finances and goals so we can build your plan." />
+      <div className="mb-6 inline-flex rounded-lg bg-slate-100 p-1 text-sm">
+        {(["form", "chat"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={`rounded-md px-3 py-1.5 ${mode === m ? "bg-white font-medium shadow-sm" : "text-slate-600"}`}
+          >
+            {m === "form" ? "Fill a form" : "Chat with advisor"}
+          </button>
+        ))}
+      </div>
+      <div className={mode === "chat" ? "" : "hidden"}>
+        <Chat profile={profile} setProfile={setProfile} onNext={onNext} />
+      </div>
+      {mode === "form" && (
+      <>
       <div className="space-y-5">
         <Field label="Available money">
           <input
@@ -151,6 +169,8 @@ export function InfoStep({
         </Field>
       </div>
       <Next onClick={onNext}>Analyse my situation →</Next>
+      </>
+      )}
     </div>
   );
 }

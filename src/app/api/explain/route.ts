@@ -1,6 +1,4 @@
-import { streamText, type LanguageModel } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
+import { streamText } from "ai";
 import { z } from "zod";
 import {
   allocate,
@@ -14,6 +12,7 @@ import {
   usd,
   type Profile,
 } from "@/lib/plan";
+import { fastProviderOptions, pickModel } from "@/lib/model";
 import { sourceIdsFor, sourcesFor } from "@/lib/sources";
 
 const profileSchema = z.object({
@@ -24,13 +23,6 @@ const profileSchema = z.object({
   risk: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   debt: z.enum(["none", "some", "significant"]),
 });
-
-// Claude if ANTHROPIC_API_KEY is set, else Gemini free tier, else null (canned fallback).
-function pickModel(): LanguageModel | null {
-  if (process.env.ANTHROPIC_API_KEY) return anthropic(process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5");
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return google(process.env.GEMINI_MODEL ?? "gemini-3.8-flash");
-  return null;
-}
 
 const SYSTEM = `You are the explanation layer of an AI wealth advisor prototype.
 The allocation was already decided by deterministic code. Never change, question or recalculate it; only explain it.
@@ -81,8 +73,7 @@ ${sourcesFor(slices.map((s) => s.bucket))
     model,
     system: SYSTEM,
     prompt,
-    // Explaining a fixed allocation needs no deep reasoning; low thinking effort is much faster.
-    providerOptions: { google: { thinkingConfig: { thinkingLevel: "low" } } },
+    providerOptions: fastProviderOptions,
   });
   return result.toTextStreamResponse();
 }

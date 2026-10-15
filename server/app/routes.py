@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -43,6 +43,15 @@ def catalog():
         "products": {g: [p.model_dump() for p in items] for g, items in PRODUCTS.items()},
         "sources": {k: s.model_dump() for k, s in SOURCES.items()},
     }
+
+
+@router.get("/market")
+async def market(request: Request, settings: SettingsDep):
+    """Live product metrics keyed by catalog ticker. Empty `items` when the data source is unavailable."""
+    service = request.app.state.market
+    if not settings.market_enabled:
+        return {**service.snapshot(), "items": {}}
+    return await service.get()
 
 
 class PlanRequest(BaseModel):
@@ -120,11 +129,17 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
-async def chat(req: ChatRequest, settings: SettingsDep):
+async def chat(req: ChatRequest, request: Request, settings: SettingsDep):
     if req.messages[-1].role != "user":
         raise HTTPException(422, "Last message must be from the user")
+    service = request.app.state.market
+    live = service.snapshot()["items"] if settings.market_enabled else {}
+    if settings.market_enabled:
+        service.kick()  # never block a chat turn on market data; refresh in the background if stale
     try:
-        result = await run_turn(settings, req.messages, req.profile, req.confirmed, req.pct.model_dump() if req.pct else None, req.picks)
+        result = await run_turn(
+            settings, req.messages, req.profile, req.confirmed, req.pct.model_dump() if req.pct else None, req.picks, live
+        )
     except Exception as e:
         raise ai_error(e) from e
     if result is None:

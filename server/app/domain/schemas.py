@@ -41,3 +41,7 @@ class Product(BaseModel):
     fee: str
     min: str
     blurb: str
+    region: str = ""  # where it invests, e.g. "US", "Worldwide"
+    # Market-data symbol when it differs from the ticker; `live=False` for accounts/funds with no listing.
+    symbol: str | None = None
+    live: bool = True

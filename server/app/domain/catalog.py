@@ -30,21 +30,21 @@ LABELS: dict[str, dict[str, str]] = {
 
 PRODUCTS: dict[str, list[Product]] = {
     "Global Stocks (ETF)": [
-        Product(name="Vanguard S&P 500 ETF", ticker="VOO", risk=3, fee="0.03%", min="~$100", blurb="Tracks 500 large U.S. companies. Long-term growth potential with diversified exposure."),
-        Product(name="iShares Core MSCI World ETF", ticker="IWDA", risk=3, fee="0.20%", min="~$100", blurb="Diversified exposure across developed markets."),
-        Product(name="Invesco NASDAQ 100 ETF", ticker="QQQM", risk=4, fee="0.15%", min="~$100", blurb="Leading technology companies. Higher potential return, higher volatility."),
-        Product(name="Vanguard Total Stock Market ETF", ticker="VTI", risk=3, fee="0.03%", min="~$100", blurb="Thousands of U.S. companies of every size, the broadest U.S. exposure."),
-        Product(name="Vanguard Total World Stock ETF", ticker="VT", risk=3, fee="0.06%", min="~$100", blurb="One fund holding stocks from developed and emerging markets worldwide."),
-        Product(name="Vanguard Real Estate ETF", ticker="VNQ", risk=4, fee="0.13%", min="~$100", blurb="U.S. real estate investment trusts (REITs). Adds a non-stock, non-bond diversifier."),
+        Product(name="Vanguard S&P 500 ETF", ticker="VOO", risk=3, fee="0.03%", min="~$100", region="US", blurb="Tracks 500 large U.S. companies. Long-term growth potential with diversified exposure."),
+        Product(name="iShares Core MSCI World ETF", ticker="IWDA", risk=3, fee="0.20%", min="~$100", region="Developed markets", blurb="Diversified exposure across developed markets.", symbol="IWDA.L"),
+        Product(name="Invesco NASDAQ 100 ETF", ticker="QQQM", risk=4, fee="0.15%", min="~$100", region="US", blurb="Leading technology companies. Higher potential return, higher volatility."),
+        Product(name="Vanguard Total Stock Market ETF", ticker="VTI", risk=3, fee="0.03%", min="~$100", region="US", blurb="Thousands of U.S. companies of every size, the broadest U.S. exposure."),
+        Product(name="Vanguard Total World Stock ETF", ticker="VT", risk=3, fee="0.06%", min="~$100", region="Worldwide", blurb="One fund holding stocks from developed and emerging markets worldwide."),
+        Product(name="Vanguard Real Estate ETF", ticker="VNQ", risk=4, fee="0.13%", min="~$100", region="US", blurb="U.S. real estate investment trusts (REITs). Adds a non-stock, non-bond diversifier."),
     ],
     "Bonds": [
-        Product(name="Vanguard Total Bond Market ETF", ticker="BND", risk=2, fee="0.03%", min="~$100", blurb="Broad U.S. investment-grade bonds for stability."),
-        Product(name="iShares Core U.S. Aggregate Bond ETF", ticker="AGG", risk=2, fee="0.03%", min="~$100", blurb="Diversified bond exposure with steady income."),
+        Product(name="Vanguard Total Bond Market ETF", ticker="BND", risk=2, fee="0.03%", min="~$100", region="US", blurb="Broad U.S. investment-grade bonds for stability."),
+        Product(name="iShares Core U.S. Aggregate Bond ETF", ticker="AGG", risk=2, fee="0.03%", min="~$100", region="US", blurb="Diversified bond exposure with steady income."),
     ],
     "Savings": [
-        Product(name="High-yield Savings Account", ticker="HYSA", risk=1, fee="None", min="$0", blurb="Instant access, insured deposits. Good home for an emergency fund."),
-        Product(name="Money Market Fund", ticker="MMF", risk=1, fee="~0.10%", min="~$500", blurb="Short-term, low-risk securities with competitive yield."),
-        Product(name="iShares 0-3 Month Treasury Bond ETF", ticker="SGOV", risk=1, fee="0.09%", min="~$100", blurb="Very short-term U.S. Treasury bills. Cash-like, tradable like a stock."),
+        Product(name="High-yield Savings Account", ticker="HYSA", risk=1, fee="None", min="$0", region="US", blurb="Instant access, insured deposits. Good home for an emergency fund.", live=False),
+        Product(name="Money Market Fund", ticker="MMF", risk=1, fee="~0.10%", min="~$500", region="US", blurb="Short-term, low-risk securities with competitive yield.", live=False),
+        Product(name="iShares 0-3 Month Treasury Bond ETF", ticker="SGOV", risk=1, fee="0.09%", min="~$100", region="US", blurb="Very short-term U.S. Treasury bills. Cash-like, tradable like a stock."),
     ],
 }
 

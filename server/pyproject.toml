@@ -8,6 +8,7 @@ dependencies = [
   "uvicorn",
   "pydantic-settings",
   "pydantic-ai-slim[google,anthropic]",
+  "yfinance",
 ]
 
 [project.optional-dependencies]

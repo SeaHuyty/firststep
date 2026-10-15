@@ -13,8 +13,8 @@ ALL_CONFIRMED = ["amount", "goal", "horizon", "emergency", "risk", "debt"]
 
 @pytest.fixture
 def client():
-    # No AI key, regardless of what's in server/.env.
-    app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None, google_generative_ai_api_key=None, anthropic_api_key=None)
+    # No AI key and no live market (never touch the network in tests), regardless of server/.env.
+    app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None, google_generative_ai_api_key=None, anthropic_api_key=None, market_enabled=False)
     yield TestClient(app)
     app.dependency_overrides.clear()
 

@@ -31,7 +31,29 @@ export const defaultProfile: Profile = {
 export type Pct = Record<Bucket, number>;
 export type Slice = { bucket: Bucket; pct: number; amount: number };
 
-export type Product = { name: string; ticker: string; risk: number; fee: string; min: string; blurb: string };
+export type Product = {
+  name: string;
+  ticker: string;
+  risk: number;
+  fee: string;
+  min: string;
+  blurb: string;
+  region: string; // where it invests, e.g. "US", "Worldwide"
+  live: boolean; // false for accounts/funds with no market listing
+};
+
+// Live metrics per ticker from GET /api/market (all percents; fields missing when unavailable).
+export type MarketItem = {
+  price?: number;
+  expense_ratio_pct?: number;
+  yield_pct?: number;
+  ret_1y_pct?: number;
+  ret_3y_pct?: number;
+  ret_5y_pct?: number;
+  volatility_pct?: number;
+  max_drawdown_pct?: number;
+};
+export type Market = { source: string; asof: string | null; items: Record<string, MarketItem> };
 export type Source = { id: string; title: string; publisher: string; url: string };
 export type Status = "good" | "ok" | "bad";
 export type Analysis = {

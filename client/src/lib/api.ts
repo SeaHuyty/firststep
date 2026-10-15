@@ -1,4 +1,4 @@
-import type { Action, Catalog, Pct, PlanResult, Profile } from "./types";
+import type { Action, Catalog, Market, Pct, PlanResult, Profile } from "./types";
 
 // Same-origin: next.config.ts proxies /api/* to the FastAPI server.
 async function request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
@@ -15,6 +15,7 @@ async function request<T>(path: string, body?: unknown, signal?: AbortSignal): P
 
 export const api = {
   catalog: () => request<Catalog>("/catalog"),
+  market: () => request<Market>("/market"),
   plan: (profile: Profile, signal?: AbortSignal) => request<PlanResult>("/plan", { profile }, signal),
   validateAllocation: (profile: Profile, pct: Pct) =>
     request<{ valid: boolean }>("/allocation/validate", { profile, pct }).then((r) => r.valid),

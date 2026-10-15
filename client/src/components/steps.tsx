@@ -11,6 +11,7 @@ import {
   type Analysis,
   type Goal,
   type Horizon,
+  type Market,
   type Pct,
   type ProductGroup,
   type Profile,
@@ -287,16 +288,22 @@ export function PlanStep({
 }
 
 /* 4 — Product details */
+const pctText = (v: number | undefined, signed = false) =>
+  v === undefined ? "–" : `${signed && v > 0 ? "+" : ""}${v.toFixed(1)}%`;
+const retCls = (v: number | undefined) => (v === undefined ? "text-slate-400" : v >= 0 ? "text-emerald-700" : "text-rose-600");
+
 export function ProductsStep({
   profile,
   pct,
   picks,
+  market,
   onResetPicks,
   onNext,
 }: {
   profile: Profile;
   pct: Pct;
   picks: Record<string, string>;
+  market: Market | null;
   onResetPicks: () => void;
   onNext: () => void;
 }) {
@@ -311,8 +318,8 @@ export function ProductsStep({
   const list = [...picked, ...all.filter((p) => !picks[p.ticker])];
   const each = picked.length ? Math.round(amount / picked.length) : 0;
   return (
-    <div className="max-w-2xl">
-      <Title title="Recommended products" sub="Example products for your plan. Illustrative only, not real-time data." />
+    <div className="max-w-3xl">
+      <Title title="Recommended products" sub="Example products for your plan, with live market data where available." />
       <div className="mb-4 flex items-center justify-between gap-4">
         <div className="inline-flex rounded-lg bg-slate-100 p-1 text-sm">
           {groups.map((g) => (
@@ -341,50 +348,72 @@ export function ProductsStep({
         )}
       </p>
       <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="w-full min-w-[480px] text-left text-sm">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-slate-50 text-xs text-slate-500">
             <tr>
               <th className="px-4 py-2 font-medium">Product</th>
-              <th className="px-4 py-2 font-medium">Risk</th>
-              <th className="px-4 py-2 font-medium">Fee</th>
-              <th className="px-4 py-2 font-medium">Min.</th>
-              {picked.length > 0 && <th className="px-4 py-2 font-medium">Your $</th>}
+              <th className="px-3 py-2 font-medium">Risk</th>
+              <th className="px-3 py-2 font-medium">Fee</th>
+              <th className="px-3 py-2 font-medium">1Y</th>
+              <th className="px-3 py-2 font-medium">5Y/yr</th>
+              <th className="px-3 py-2 font-medium">Volatility</th>
+              <th className="px-3 py-2 font-medium">Min.</th>
+              {picked.length > 0 && <th className="px-3 py-2 font-medium">Your $</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {list.map((p) => (
-              <tr key={p.ticker} className={`align-top ${picks[p.ticker] ? "bg-blue-50/50" : ""}`}>
-                <td className="px-4 py-3">
-                  <div className="font-medium text-slate-900">
-                    {p.name} <span className="text-xs font-normal text-slate-500">{p.ticker}</span>
-                    {picks[p.ticker] && (
-                      <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white">
-                        Advisor pick
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">{p.blurb}</p>
-                  {picks[p.ticker] && <p className="mt-1 text-xs italic text-blue-800">{picks[p.ticker]}</p>}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1 pt-1" aria-label={`Risk ${p.risk} of 5`}>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <span key={n} className={`h-2 w-2 rounded-full ${n <= p.risk ? "bg-blue-600" : "bg-slate-200"}`} />
-                    ))}
-                  </div>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">{p.fee}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">{p.min}</td>
-                {picked.length > 0 && (
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
-                    {picks[p.ticker] ? usd(each) : "–"}
+            {list.map((p) => {
+              const m = market?.items[p.ticker];
+              return (
+                <tr key={p.ticker} className={`align-top ${picks[p.ticker] ? "bg-blue-50/50" : ""}`}>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">
+                      {p.name}
+                      {picks[p.ticker] && (
+                        <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                          Advisor pick
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {p.ticker} · {p.region}
+                      {m?.price !== undefined && <> · ${m.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}</>}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">{p.blurb}</p>
+                    {picks[p.ticker] && <p className="mt-1 text-xs italic text-blue-800">{picks[p.ticker]}</p>}
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td className="px-3 py-3">
+                    <div className="flex gap-1 pt-1" aria-label={`Risk ${p.risk} of 5`}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <span key={n} className={`h-2 w-2 rounded-full ${n <= p.risk ? "bg-blue-600" : "bg-slate-200"}`} />
+                      ))}
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">
+                    {m?.expense_ratio_pct !== undefined ? `${m.expense_ratio_pct}%` : p.fee}
+                  </td>
+                  <td className={`whitespace-nowrap px-3 py-3 ${retCls(m?.ret_1y_pct)}`}>{pctText(m?.ret_1y_pct, true)}</td>
+                  <td className={`whitespace-nowrap px-3 py-3 ${retCls(m?.ret_5y_pct)}`}>{pctText(m?.ret_5y_pct, true)}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">{pctText(m?.volatility_pct)}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">{p.min}</td>
+                  {picked.length > 0 && (
+                    <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-900">
+                      {picks[p.ticker] ? usd(each) : "–"}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+      <p className="mt-3 text-xs leading-relaxed text-slate-500">
+        {market === null
+          ? "Loading live data…"
+          : market.asof
+            ? `Live data from Yahoo Finance (unofficial, may be delayed), as of ${new Date(market.asof).toLocaleString()}. 1Y is total return, 5Y/yr is annualized, volatility is the annualized spread of daily returns over up to 3 years. Savings accounts and money market funds have no market listing, so no live figures. Past performance does not predict future results.`
+            : "Live data is unavailable right now, so fees shown are illustrative and returns are hidden."}
+      </p>
       <Next onClick={onNext}>Try a what-if →</Next>
     </div>
   );

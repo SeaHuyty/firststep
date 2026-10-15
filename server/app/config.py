@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-5-5"
     anthropic_chat_model: str = "claude-haiku-5-5"
 
+    # Live product data (Yahoo Finance via yfinance, free, unofficial).
+    market_enabled: bool = True
+    market_ttl_seconds: int = 1800
+
 
 @lru_cache
 def get_settings() -> Settings:

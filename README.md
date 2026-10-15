@@ -55,11 +55,23 @@ Set **one** in `server/.env`:
 Without a key the app still runs: the explanation falls back to canned text and the advisor chat is
 disabled (use the form). Model names can be overridden in `.env` (see `.env.example`).
 
+## Live product data
+
+`server/app/market/` pulls ETF data from Yahoo Finance through the free, unofficial `yfinance` library
+(no key). Returns, volatility and drawdown are computed from dividend-adjusted daily prices; price,
+expense ratio and yield come from Yahoo's fund summary. The snapshot is cached (30 min), warmed at server
+start, and refreshed in the background; if Yahoo is down or blocks us, the UI falls back to the static
+catalog figures. Savings accounts and money market funds have no listing, so they have no live figures.
+The advisor sees the same numbers in its prompt and is told to quote them as given. Data may be delayed
+and is not investment advice; being unofficial, the source can break without notice. Settings:
+`MARKET_ENABLED`, `MARKET_TTL_SECONDS`.
+
 ## API
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/catalog` | labels, buckets, products, sources |
+| GET | `/api/catalog` | labels, buckets, products (with region), sources |
+| GET | `/api/market` | live product metrics (price, fee, returns, volatility), keyed by ticker |
 | POST | `/api/plan` | default allocation, limits, analysis for a profile |
 | POST | `/api/allocation/validate` | check a proposed allocation against the guardrails |
 | POST | `/api/projection` | what-if projection (3 scenarios) |

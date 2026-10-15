@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useCatalog } from "@/lib/catalog";
-import { defaultProfile, groupOf, type Pct, type PlanResult, type ProductGroup, type Profile } from "@/lib/types";
+import { defaultProfile, groupOf, type Market, type Pct, type PlanResult, type ProductGroup, type Profile } from "@/lib/types";
 import { Advisor } from "./advisor";
 import { AnalysisStep, InfoStep, Loading, PlanStep, ProductsStep, WhatIfStep } from "./steps";
 
@@ -19,9 +19,15 @@ export default function App() {
   const [picks, setPicks] = useState<Record<string, string>>({}); // ticker -> advisor's reason
   const [advisorOpen, setAdvisorOpen] = useState(false);
   // Server-computed plan (default allocation, analysis), tagged with the profile it was computed for.
+  // Live product data; null while loading or if the source is unavailable (the UI then shows static figures).
+  const [market, setMarket] = useState<Market | null>(null);
   const [planState, setPlanState] = useState<{ key: string; data: PlanResult } | null>(null);
 
   const profileKey = JSON.stringify(profile);
+
+  useEffect(() => {
+    api.market().then(setMarket, () => setMarket({ source: "", asof: null, items: {} }));
+  }, []);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -117,7 +123,14 @@ export default function App() {
           ))}
         {step === 3 &&
           (pct ? (
-            <ProductsStep profile={profile} pct={pct} picks={picks} onResetPicks={() => setPicks({})} onNext={next} />
+            <ProductsStep
+              profile={profile}
+              pct={pct}
+              picks={picks}
+              market={market}
+              onResetPicks={() => setPicks({})}
+              onNext={next}
+            />
           ) : (
             <Loading />
           ))}

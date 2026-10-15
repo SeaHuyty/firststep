@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { api } from "@/lib/api";
 import { useCatalog } from "@/lib/catalog";
 import {
@@ -43,7 +43,10 @@ const profileNote = (u: Partial<Profile>, catalog: Catalog) =>
     })
     .join(", ");
 
+export type AdvisorHandle = { ask: (text: string) => void };
+
 export function Advisor({
+  ref,
   open,
   onClose,
   profile,
@@ -55,6 +58,7 @@ export function Advisor({
   onApplyProducts,
   onGoto,
 }: {
+  ref: Ref<AdvisorHandle>;
   open: boolean;
   onClose: () => void;
   profile: Profile;
@@ -110,6 +114,9 @@ export function Advisor({
       setBusy(false);
     }
   }
+
+  // Lets the page put a question to the advisor (e.g. "Why this allocation?").
+  useImperativeHandle(ref, () => ({ ask: send }));
 
   function resolve(msgIndex: number, propIndex: number, status: Status) {
     setMessages((ms) =>

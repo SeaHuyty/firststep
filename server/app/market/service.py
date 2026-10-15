@@ -62,8 +62,18 @@ def compute_metrics(closes: pd.Series) -> dict[str, float | None]:
     }
 
 
-def fetch_market() -> dict[str, dict[str, Any]]:
-    """Blocking: fetch every live catalog product. Per-ticker failures are skipped, not raised."""
+MONTHS_KEPT = 61  # month-end closes => up to 60 monthly returns (5 years)
+
+
+def monthly_closes(daily: pd.Series) -> pd.Series:
+    """Month-end dividend-adjusted closes (the last one may be the current partial month)."""
+    return daily.dropna().resample("ME").last().dropna().iloc[-MONTHS_KEPT:]
+
+
+def fetch_market() -> tuple[dict[str, dict[str, Any]], dict[str, pd.Series]]:
+    """Blocking: fetch every live catalog product. Per-ticker failures are skipped, not raised.
+
+    Returns (metrics by catalog ticker, monthly closes by catalog ticker)."""
     import yfinance as yf
 
     wanted = {(p.symbol or p.ticker): p.ticker for items in PRODUCTS.values() for p in items if p.live}
@@ -91,7 +101,10 @@ def fetch_market() -> dict[str, dict[str, Any]]:
         infos = dict(pool.map(info_for, symbols))
 
     out: dict[str, dict[str, Any]] = {}
+    monthly: dict[str, pd.Series] = {}
     for sym, ticker in wanted.items():
+        if sym in closes and len(closes[sym].dropna()) >= 30:
+            monthly[ticker] = monthly_closes(closes[sym])
         info = infos.get(sym, {})
         item: dict[str, Any] = {}
         if sym in closes:
@@ -111,15 +124,16 @@ def fetch_market() -> dict[str, dict[str, Any]]:
         item = {k: v for k, v in item.items() if v is not None}
         if item:
             out[ticker] = item
-    return out
+    return out, monthly
 
 
 class MarketService:
     """Caches the snapshot; refreshes in the background (stale-while-revalidate)."""
 
-    def __init__(self, fetcher: Callable[[], dict[str, dict[str, Any]]] = fetch_market, ttl: int = 1800, clock: Callable[[], float] = time.time):
+    def __init__(self, fetcher: Callable[[], tuple[dict[str, dict[str, Any]], dict[str, pd.Series]]] = fetch_market, ttl: int = 1800, clock: Callable[[], float] = time.time):
         self.fetcher, self.ttl, self.clock = fetcher, ttl, clock
         self.items: dict[str, dict[str, Any]] = {}
+        self.monthly: dict[str, pd.Series] = {}
         self.asof: float | None = None
         self._last_attempt = 0.0
         self._lock = asyncio.Lock()
@@ -130,6 +144,10 @@ class MarketService:
         # Copy: callers keep a stable view even if a background refresh updates the cache meanwhile.
         return {"source": SOURCE, "asof": asof, "items": dict(self.items)}
 
+    def monthly_for(self, tickers: list[str]) -> dict[str, pd.Series] | None:
+        """Cached monthly closes for every ticker, or None if any is missing. No I/O."""
+        return {t: self.monthly[t] for t in tickers} if all(t in self.monthly for t in tickers) else None
+
     def _fresh(self) -> bool:
         return self.asof is not None and self.clock() - self.asof < self.ttl
 
@@ -139,12 +157,13 @@ class MarketService:
                 return
             self._last_attempt = self.clock()
             try:
-                new = await asyncio.to_thread(self.fetcher)
+                new, new_monthly = await asyncio.to_thread(self.fetcher)
             except Exception as e:
                 print(f"market refresh failed: {type(e).__name__}: {str(e)[:200]}")
                 return
             if new:  # merge so one flaky ticker doesn't wipe the others
                 self.items.update(new)
+                self.monthly.update(new_monthly)
                 self.asof = self.clock()
 
     def kick(self) -> None:

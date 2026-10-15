@@ -37,12 +37,12 @@ export function Donut({ slices, total }: { slices: Slice[]; total: number }) {
 
 const lineColors = ["#ef4444", "#3b82f6", "#10b981"]; // pessimistic, base, optimistic
 
-export function LineChart({ series }: { series: [number[], number[], number[]] }) {
+export function LineChart({ series, baseline }: { series: [number[], number[], number[]]; baseline?: number[] }) {
   const w = 480;
   const h = 220;
   const pad = { l: 48, r: 12, t: 12, b: 24 };
   const years = series[0].length - 1;
-  const max = Math.max(...series.flat(), 1);
+  const max = Math.max(...series.flat(), ...(baseline ?? []), 1);
   const x = (i: number) => pad.l + (i / Math.max(years, 1)) * (w - pad.l - pad.r);
   const y = (v: number) => pad.t + (1 - Math.max(v, 0) / max) * (h - pad.t - pad.b);
   const ticks = [0, 0.5, 1].map((t) => Math.round((max * t) / 100) * 100);
@@ -62,6 +62,15 @@ export function LineChart({ series }: { series: [number[], number[], number[]] }
           {i === 0 ? "Now" : `${i} yrs`}
         </text>
       ))}
+      {baseline && (
+        <polyline
+          fill="none"
+          stroke="#94a3b8"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+          points={baseline.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
+        />
+      )}
       {series.map((pts, k) => (
         <polyline
           key={k}

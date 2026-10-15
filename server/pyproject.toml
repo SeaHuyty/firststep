@@ -9,6 +9,8 @@ dependencies = [
   "pydantic-settings",
   "pydantic-ai-slim[google,anthropic]",
   "yfinance",
+  "numpy",
+  "pandas",
 ]
 
 [project.optional-dependencies]

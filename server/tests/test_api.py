@@ -4,6 +4,7 @@ from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolRetu
 from pydantic_ai.models.function import FunctionModel
 
 from app.config import Settings, get_settings
+from app.domain.catalog import PRODUCTS
 from app.main import app
 
 PROFILE = {"amount": 10000, "goal": "wealth", "horizon": 7, "emergency": "insufficient", "risk": 2, "debt": "none"}
@@ -35,6 +36,18 @@ def test_plan(client):
     assert d["base"] == DEFAULT_PCT
     assert d["limits"]["max"]["stocks"] == 55
     assert d["analysis"]["score"] == 85
+    assert {"VT", "VOO", "BND", "HYSA", "VNQ"} == set(d["picks"])  # moderate, with an alternatives slice
+
+
+def test_suggested_picks_follow_the_risk_level(client):
+    def stock_risk(risk):
+        picks = client.post("/api/plan", json={"profile": {**PROFILE, "risk": risk}}).json()["picks"]
+        stocks = [p for p in PRODUCTS["Global Stocks (ETF)"] if p.ticker in picks and p.ticker != "VNQ"]
+        return sum(p.risk for p in stocks) / len(stocks)
+
+    assert stock_risk(1) < stock_risk(3)
+    assert "QQQM" in client.post("/api/plan", json={"profile": {**PROFILE, "risk": 3}}).json()["picks"]
+    assert "QQQM" not in client.post("/api/plan", json={"profile": {**PROFILE, "risk": 1}}).json()["picks"]
 
 
 def test_invalid_profile_is_rejected_without_echoing_input(client):
@@ -48,10 +61,12 @@ def test_validate_allocation(client):
     assert ok == {"valid": True} and bad == {"valid": False}
 
 
-def test_projection(client):
-    d = client.post("/api/projection", json={"amount": 10000, "monthly": 100, "years": 10, "risk": 2}).json()
+def test_whatif_without_live_data_uses_standard_assumptions(client):
+    body = {"profile": PROFILE, "monthly": 100, "years": 10, "risk": 2, "basis": "history"}
+    d = client.post("/api/whatif", json=body).json()  # fixture disables the market => assumptions
+    assert d["basis"] == "assumed" and d["stats"] is None
     assert [s[-1] for s in d["series"]] == [22000, 31998, 40491]
-    assert client.post("/api/projection", json={"amount": 1, "monthly": 1, "years": 999, "risk": 2}).status_code == 422
+    assert client.post("/api/whatif", json={**body, "years": 999}).status_code == 422
 
 
 def test_explain_falls_back_without_key(client):
@@ -114,7 +129,7 @@ def test_advisor_accepts_catalog_products_and_profile_updates(client, monkeypatc
     kinds = {a["type"]: a for a in d["actions"]}
     assert kinds["profile"]["updates"] == {"amount": 15000, "risk": 3}
     assert kinds["products"]["tickers"] == ["VT", "VTI"]
-    assert kinds["goto"]["step"] == 3
+    assert kinds["goto"]["step"] == 2  # products live on the combined plan page
 
 
 def failing(status: int):

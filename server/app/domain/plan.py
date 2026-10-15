@@ -129,6 +129,35 @@ def analyse(p: Profile) -> dict:
     return {"score": score, "rows": rows, "insights": insights}
 
 
+# Funds suggested per risk level: steadier, broader funds when conservative; higher-growth, more
+# volatile ones when aggressive. (group, tickers, reason) per risk.
+SUGGESTED: dict[int, list[tuple[str, list[str], str]]] = {
+    1: [
+        ("Global Stocks (ETF)", ["VT"], "Conservative: one broad worldwide fund spreads risk across thousands of companies."),
+        ("Bonds", ["BND", "AGG"], "Conservative: broad investment-grade bond funds for stability and steady income."),
+        ("Savings", ["HYSA", "SGOV"], "Conservative: insured, instantly available cash and Treasury bills."),
+    ],
+    2: [
+        ("Global Stocks (ETF)", ["VT", "VOO"], "Moderate: broad worldwide stocks plus U.S. large companies for steady growth."),
+        ("Bonds", ["BND"], "Moderate: broad investment-grade bonds as a stabiliser."),
+        ("Savings", ["HYSA"], "Moderate: insured, instant access for your safety cushion."),
+    ],
+    3: [
+        ("Global Stocks (ETF)", ["VOO", "QQQM"], "Aggressive: U.S. large companies and the tech-heavy Nasdaq 100 for higher growth, with bigger swings."),
+        ("Bonds", ["BND"], "Aggressive: a smaller bond cushion against stock-market drops."),
+        ("Savings", ["HYSA"], "Aggressive: insured, instant access for your safety cushion."),
+    ],
+}
+
+
+def suggest_picks(risk: int, alt: int) -> dict[str, str]:
+    """ticker -> reason for the funds that fit a risk level (plus REITs when the plan has an alternatives slice)."""
+    picks = {t: reason for _, tickers, reason in SUGGESTED[risk] for t in tickers}
+    if alt > 0:
+        picks["VNQ"] = "A small real-estate slice for diversification beyond stocks and bonds."
+    return picks
+
+
 # Annual return assumptions (pessimistic, base, optimistic) per risk level.
 RATES: dict[int, tuple[float, float, float]] = {
     1: (0.01, 0.03, 0.05),

@@ -61,7 +61,12 @@ export type Analysis = {
   rows: { label: string; value: string; status: Status }[];
   insights: string[];
 };
-export type PlanResult = { base: Pct; limits: { min: Pct; max: Pct }; analysis: Analysis };
+export type PlanResult = {
+  base: Pct;
+  limits: { min: Pct; max: Pct };
+  analysis: Analysis;
+  picks: Record<string, string>; // funds suited to the risk level -> why
+};
 
 // Reference data served by GET /api/catalog.
 export type Catalog = {
@@ -102,3 +107,23 @@ export function slicesFromPct(amount: number, pct: Pct): Slice[] {
 
 export const groupOf = (catalog: Catalog, ticker: string): ProductGroup | undefined =>
   (Object.keys(catalog.products) as ProductGroup[]).find((g) => catalog.products[g].some((p) => p.ticker === ticker));
+
+// POST /api/whatif result. `history` = bootstrapped from the mix's own live price history;
+// `assumed` = fixed per-risk return assumptions (also the fallback when history is unavailable).
+export type WhatIf = {
+  basis: "history" | "assumed";
+  fallback_reason: string | null;
+  allocation: Pct;
+  composition: { bucket: Bucket; pct: number; tickers: string[] }[];
+  contributed: number;
+  series: [number[], number[], number[]]; // weak/typical/strong (or pessimistic/base/optimistic)
+  loss_chance_pct: number | null;
+  stats: {
+    annual_return_pct: number;
+    volatility_pct: number;
+    max_drawdown_pct: number;
+    best_12m_pct: number | null;
+    worst_12m_pct: number | null;
+    window: { start: string; end: string; months: number };
+  } | null;
+};

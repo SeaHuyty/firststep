@@ -65,7 +65,7 @@ def make_service(responses, ttl=100):
         r = responses[min(len(calls), len(responses)) - 1]
         if isinstance(r, Exception):
             raise r
-        return r
+        return r, {}
 
     return MarketService(fetcher=fetcher, ttl=ttl, clock=clock), clock, calls
 
@@ -137,7 +137,7 @@ def test_partial_results_merge_instead_of_wiping_other_tickers():
 def client():
     original = app.state.market
     app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None, google_generative_ai_api_key=None, anthropic_api_key=None, market_enabled=True)
-    app.state.market = MarketService(fetcher=lambda: {"VOO": {"price": 707.43, "expense_ratio_pct": 0.03, "ret_1y_pct": 17.55}}, ttl=100)
+    app.state.market = MarketService(fetcher=lambda: ({"VOO": {"price": 707.43, "expense_ratio_pct": 0.03, "ret_1y_pct": 17.55}}, {}), ttl=100)
     yield TestClient(app)
     app.dependency_overrides.clear()
     app.state.market = original

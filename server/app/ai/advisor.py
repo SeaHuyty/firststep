@@ -18,7 +18,8 @@ from app.domain.catalog import BUCKET_META, LABELS, PRODUCTS
 from app.domain.plan import allocate_pct, apply_targets, limits, valid_pct
 from app.domain.schemas import BUCKETS, PROFILE_FIELDS, Pct, Profile, ProductGroup
 
-STEPS = ["info", "analysis", "plan", "products", "whatif"]
+# The UI has three pages; plan, products and what-if share the last one.
+STEP_PAGE = {"info": 0, "analysis": 1, "plan": 2, "products": 2, "whatif": 2}
 HORIZON = {"under2": 1, "2to5": 3, "5to10": 7, "10plus": 12}
 RISK = {"conservative": 1, "moderate": 2, "aggressive": 3}
 
@@ -115,7 +116,7 @@ def propose_products(
     tickers: Annotated[list[str], Field(min_length=1, max_length=3)],
     reason: str,
 ) -> str:
-    """Pick which catalog products to consider for a product group, shown on the Product Details page
+    """Pick which catalog products to consider for a product group, shown in the Products section of the plan page
     with your reason. Only tickers from the catalog are allowed. The client must press Apply."""
     valid = [p.ticker for p in PRODUCTS[group]]
     bad = [t for t in tickers if t not in valid]
@@ -128,7 +129,7 @@ def propose_products(
 def show_step(ctx: RunContext[ChatState], step: Literal["info", "analysis", "plan", "products", "whatif"]) -> str:
     """Switch the website to a page so the client can see something. Use after they accept a change or
     ask to see a page."""
-    ctx.deps.goto = STEPS.index(step)
+    ctx.deps.goto = STEP_PAGE[step]
     return f"Showing {step}."
 
 
@@ -182,6 +183,7 @@ How to behave:
 - Reply in 1-4 short, plain sentences. Warm, direct, no markdown.
 - First learn any unconfirmed facts; call update_profile when the client states or corrects a fact. Once all six are confirmed, offer to show their analysis (show_step) and plan.
 - When the client wants a different mix or different products, call propose_allocation and/or propose_products. Then say what you PROPOSED (never say you "adjusted", "updated" or "changed" the plan) and why, and that they can press Apply to see it on the page. Do not call show_step in the same turn as a proposal; the page switches by itself when they press Apply.
+- If asked why the allocation looks the way it does, explain it from the client's facts (goal, horizon, emergency savings, debt, risk) and what each bucket is for, using the CURRENT ALLOCATION numbers; do not call tools unless they ask for a change.
 - Be honest, not agreeable. Correct mistaken premises gently before acting. "ETFs" are a wrapper, not a risk level: stock ETFs are generally riskier than bond ETFs or savings, and more stocks means MORE risk, never "safer". If the client wants safety, move toward bonds/cash/emergency fund or suggest broad low-cost diversified ETFs instead of concentrated ones, and say why. If their request would raise risk, say so plainly.
 - If the client has clearly asked for a change, call the tool right away instead of asking permission first; the Apply button is their confirmation.
 - Respect the limits. If the client asks for more than a limit allows, propose the closest allowed value and tell them the limit (for example "stocks are capped at 55% for a moderate-risk profile") and that they could change their risk tolerance if they truly want more.

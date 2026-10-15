@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -8,9 +8,10 @@ from app.ai.advisor import ChatMessage, run_turn
 from app.ai.explain import stream_explanation
 from app.config import Settings, get_settings
 from app.domain.catalog import BUCKET_META, GROUP_BUCKETS, LABELS, PRODUCTS
-from app.domain.plan import allocate_pct, analyse, limits, project, valid_pct
+from app.domain.plan import allocate_pct, analyse, limits, suggest_picks, valid_pct
 from app.domain.schemas import PctModel, Profile, Risk
 from app.domain.sources import SOURCES
+from app.domain.whatif import what_if
 
 router = APIRouter(prefix="/api")
 
@@ -60,10 +61,12 @@ class PlanRequest(BaseModel):
 
 @router.post("/plan")
 def plan(req: PlanRequest):
+    base = allocate_pct(req.profile)
     return {
-        "base": allocate_pct(req.profile),
+        "base": base,
         "limits": limits(req.profile),
         "analysis": analyse(req.profile),
+        "picks": suggest_picks(req.profile.risk, base["alt"]),
     }
 
 
@@ -77,16 +80,38 @@ def validate_allocation(req: ValidateRequest):
     return {"valid": valid_pct(req.profile, req.pct.model_dump())}
 
 
-class ProjectionRequest(BaseModel):
-    amount: float = Field(ge=0, le=100_000_000)
+class WhatIfRequest(BaseModel):
+    profile: Profile
+    pct: PctModel | None = None  # the plan currently shown, if any
+    picks: list[str] = Field(default_factory=list, max_length=20)
     monthly: float = Field(ge=0, le=1_000_000)
     years: int = Field(ge=1, le=50)
     risk: Risk
+    basis: Literal["history", "assumed"] = "history"
 
 
-@router.post("/projection")
-def projection(req: ProjectionRequest):
-    return {"series": project(req.amount, req.monthly, req.years, req.risk)}
+@router.post("/whatif")
+async def whatif(req: WhatIfRequest, request: Request, settings: SettingsDep):
+    """Project the plan forward. `history` bootstraps the mix's own live price history; `assumed` (and the
+    fallback when data is missing) uses fixed per-risk return assumptions."""
+    # Changing risk re-derives the allocation; the client's current plan only applies at its own risk level.
+    profile = req.profile.model_copy(update={"risk": req.risk})
+    given = req.pct.model_dump() if req.pct else None
+    pct = given if req.risk == req.profile.risk and given and valid_pct(profile, given) else allocate_pct(profile)
+
+    service = request.app.state.market
+    if req.basis == "history" and settings.market_enabled:
+        await service.get()  # first call waits for the initial load; afterwards this is a cache read
+    return what_if(
+        amount=req.profile.amount,
+        monthly=req.monthly,
+        years=req.years,
+        risk=req.risk,
+        pct=pct,
+        picks=req.picks,
+        basis=req.basis if settings.market_enabled else "assumed",
+        closes_for=service.monthly_for,
+    )
 
 
 class ExplainRequest(BaseModel):

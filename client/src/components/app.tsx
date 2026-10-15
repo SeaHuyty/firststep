@@ -1,29 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useCatalog } from "@/lib/catalog";
-import { defaultProfile, groupOf, type Market, type Pct, type PlanResult, type ProductGroup, type Profile } from "@/lib/types";
-import { Advisor } from "./advisor";
-import { AnalysisStep, InfoStep, Loading, PlanStep, ProductsStep, WhatIfStep } from "./steps";
+import { defaultProfile, groupOf, type Market, type Pct, type PlanResult, type ProductGroup, type Profile, type Risk } from "@/lib/types";
+import { Advisor, type AdvisorHandle } from "./advisor";
+import { PlanPage, type Pick } from "./plan";
+import { AnalysisStep, InfoStep, Loading } from "./steps";
 
-const steps = ["Enter Your Information", "AI Analysis", "Personalized Plan", "Product Details", "What-If Simulation"];
+const steps = ["Enter Your Information", "AI Analysis", "Your Plan"];
+
+// Amount edits don't change the plan, so a result stays valid across them.
+const keyOf = (p: Profile) => JSON.stringify({ ...p, amount: 0 });
 
 export default function App() {
   const catalog = useCatalog();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [confirmed, setConfirmed] = useState<(keyof Profile)[]>([]);
-  // Advisor-proposed allocation, valid only for the profile it was made for.
   const [override, setOverride] = useState<{ pct: Pct; key: string; reason: string } | null>(null);
-  const [picks, setPicks] = useState<Record<string, string>>({}); // ticker -> advisor's reason
+  const [advisorPicks, setAdvisorPicks] = useState<{ risk: Risk; items: Record<string, string> } | null>(null);
   const [advisorOpen, setAdvisorOpen] = useState(false);
-  // Server-computed plan (default allocation, analysis), tagged with the profile it was computed for.
-  // Live product data; null while loading or if the source is unavailable (the UI then shows static figures).
+  const advisor = useRef<AdvisorHandle>(null);
   const [market, setMarket] = useState<Market | null>(null);
   const [planState, setPlanState] = useState<{ key: string; data: PlanResult } | null>(null);
 
-  const profileKey = JSON.stringify(profile);
+  const profileKey = keyOf(profile);
 
   useEffect(() => {
     api.market().then(setMarket, () => setMarket({ source: "", asof: null, items: {} }));
@@ -33,7 +35,7 @@ export default function App() {
     const ctrl = new AbortController();
     const timer = setTimeout(() => {
       api.plan(profile, ctrl.signal).then(
-        (data) => setPlanState({ key: JSON.stringify(profile), data }),
+        (data) => setPlanState({ key: keyOf(profile), data }),
         () => {},
       );
     }, 200);
@@ -43,9 +45,23 @@ export default function App() {
     };
   }, [profile]);
 
-  const plan = planState && planState.key === profileKey ? planState.data : null;
+  // Keep showing the last plan while a new one loads, so editing the amount or risk never blanks the page.
+  const plan = planState?.data ?? null;
+  const stale = planState?.key !== profileKey;
   const active = override && override.key === profileKey ? override : null;
   const pct = active?.pct ?? plan?.base ?? null;
+
+  // Funds follow the risk level (steadier at low risk, higher-growth at high risk) unless the advisor picked some for a group.
+  const own = advisorPicks && advisorPicks.risk === profile.risk ? advisorPicks.items : {};
+  const picks: Record<string, Pick> = {};
+  for (const g of Object.keys(catalog.products) as ProductGroup[]) {
+    const mine = Object.keys(own).filter((t) => groupOf(catalog, t) === g);
+    if (mine.length) mine.forEach((t) => (picks[t] = { reason: own[t], by: "advisor" }));
+    else
+      Object.entries(plan?.picks ?? {})
+        .filter(([t]) => groupOf(catalog, t) === g)
+        .forEach(([t, reason]) => (picks[t] = { reason, by: "risk" }));
+  }
 
   const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const confirm = (keys: (keyof Profile)[]) => setConfirmed((c) => [...new Set([...c, ...keys])]);
@@ -64,11 +80,12 @@ export default function App() {
   };
 
   const applyProducts = (group: ProductGroup, tickers: string[], reason: string) => {
-    setPicks((prev) => {
-      const kept = Object.fromEntries(Object.entries(prev).filter(([t]) => groupOf(catalog, t) !== group));
-      return { ...kept, ...Object.fromEntries(tickers.map((t) => [t, reason])) };
+    setAdvisorPicks((prev) => {
+      const items = prev && prev.risk === profile.risk ? prev.items : {};
+      const kept = Object.fromEntries(Object.entries(items).filter(([t]) => groupOf(catalog, t) !== group));
+      return { risk: profile.risk, items: { ...kept, ...Object.fromEntries(tickers.map((t) => [t, reason])) } };
     });
-    setStep(3);
+    setStep(2);
     return true;
   };
 
@@ -110,31 +127,25 @@ export default function App() {
         {step === 1 && (plan ? <AnalysisStep profile={profile} analysis={plan.analysis} onNext={next} /> : <Loading />)}
         {step === 2 &&
           (plan && pct ? (
-            <PlanStep
+            <PlanPage
               profile={profile}
+              onProfile={applyProfile}
               pct={pct}
               base={plan.base}
+              stale={stale}
               adjusted={active?.reason ?? null}
               onReset={() => setOverride(null)}
-              onNext={next}
-            />
-          ) : (
-            <Loading />
-          ))}
-        {step === 3 &&
-          (pct ? (
-            <ProductsStep
-              profile={profile}
-              pct={pct}
               picks={picks}
               market={market}
-              onResetPicks={() => setPicks({})}
-              onNext={next}
+              onClearPicks={Object.keys(own).length ? () => setAdvisorPicks(null) : null}
+              onWhy={() => {
+                setAdvisorOpen(true);
+                advisor.current?.ask("Why did you choose this allocation for me?");
+              }}
             />
           ) : (
             <Loading />
           ))}
-        {step === 4 && <WhatIfStep profile={profile} />}
       </main>
 
       {!advisorOpen && (
@@ -146,6 +157,7 @@ export default function App() {
         </button>
       )}
       <Advisor
+        ref={advisor}
         open={advisorOpen}
         onClose={() => setAdvisorOpen(false)}
         profile={profile}

@@ -33,6 +33,7 @@ class ChatMessage(BaseModel):
 class Targets(BaseModel):
     emergency: float | None = None
     stocks: float | None = None
+    single: float | None = None
     bonds: float | None = None
     cash: float | None = None
     alt: float | None = None
@@ -184,7 +185,7 @@ def build_system(
 CLIENT FACTS: ${p.amount:,.0f} available; goal: {LABELS['goal'][p.goal]}; horizon: {LABELS['horizon'][str(p.horizon)]}; emergency savings: {LABELS['emergency'][p.emergency]}; risk: {LABELS['risk'][str(p.risk)]}; debt: {LABELS['debt'][p.debt]}.
 STILL UNCONFIRMED BY THE CLIENT (ask about these, at most two per message): {', '.join(missing) if missing else 'none'}
 CURRENT ALLOCATION: {pct_text(state.pct)}
-LIMITS FOR THIS PROFILE (code enforces): stocks max {lim['max']['stocks']}%, alternatives max {lim['max']['alt']}%, emergency fund min {lim['min']['emergency']}%.
+LIMITS FOR THIS PROFILE (code enforces): fund stocks + individual stocks together max {lim['equity']['max']}%, alternatives max {lim['max']['alt']}%, emergency fund min {lim['min']['emergency']}%.
 CURRENT PRODUCT PICKS: {', '.join(picks) if picks else 'none'}
 BUCKETS: {'; '.join(f'{b} = {BUCKET_META[b]["label"]}' for b in BUCKETS)}
 
@@ -202,7 +203,7 @@ How to behave:
 - Be honest, not agreeable. Correct mistaken premises gently before acting. "ETFs" are a wrapper, not a risk level: stock ETFs are generally riskier than bond ETFs or savings, and more stocks means MORE risk, never "safer". If the client wants safety, move toward bonds/cash/emergency fund or suggest broad low-cost diversified ETFs instead of concentrated ones, and say why. If their request would raise risk, say so plainly.
 - If the client has clearly asked for a change, call the tool right away instead of asking permission first; the Apply button is their confirmation.
 - Respect the limits. If the client asks for more than a limit allows, propose the closest allowed value and tell them the limit (for example "stocks are capped at 55% for a moderate-risk profile") and that they could change their risk tolerance if they truly want more.
-- Individual stocks come only from the SCREENED STOCK SHORTLIST (propose_products with group "Individual Stocks"). Treat them as single-company bets: far more volatile than a diversified ETF, and they can lose most of their value. Code caps them at a small satellite of the stocks slice next to the ETF picks. Say so plainly when proposing them, and never call any stock a sure thing. If the client asks for a stock not on the shortlist, say the screen did not pick it for their risk level and suggest the closest shortlist option.
+- Individual stocks come only from the SCREENED STOCK SHORTLIST (propose_products with group "Individual Stocks"). Treat them as single-company bets: far more volatile than a diversified ETF, and they can lose most of their value. They have their own slice of the allocation (bucket single). By default it is small. If the client wants a high-risk, high-return plan, you may propose a large single slice (up to the stock limit); say plainly that it is far riskier, then let them decide. Say so plainly when proposing them, and never call any stock a sure thing. If the client asks for a stock not on the shortlist, say the screen did not pick it for their risk level and suggest the closest shortlist option.
 - Each product lists where it invests. Only recommend a fund as "worldwide/global" if its region says Worldwide, or Developed markets for developed-world exposure; never call a US-only fund global.
 - LIVE figures come from Yahoo Finance and may be delayed. When comparing products, quote them exactly as given, say returns are historical (past performance does not predict future results), and rank by fit to the client's goal, horizon and risk, never by highest past return. Never compute or invent figures that are not shown.
 - Never promise returns. If asked about anything outside the catalog (specific stocks, crypto), say you can't research it here and suggest the closest catalog option.

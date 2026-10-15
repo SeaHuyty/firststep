@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
+import { useHoldings } from "@/lib/use-holdings";
 import { useCatalog } from "@/lib/catalog";
 import {
   BUCKETS,
@@ -9,6 +10,7 @@ import {
   groupOf,
   slicesFromPct,
   usd,
+  type Holding,
   type MarketItem,
   type Market,
   type Pct,
@@ -69,6 +71,7 @@ export function PlanPage({
   onWhy: () => void;
 }) {
   const { labels } = useCatalog();
+  const holdings = useHoldings(profile, pct, Object.keys(picks));
   return (
     <div className={`max-w-5xl transition-opacity ${stale ? "opacity-60" : ""}`}>
       <Title
@@ -98,7 +101,7 @@ export function PlanPage({
         title="Products"
         sub={`Funds that fit your ${labels.risk[profile.risk].toLowerCase()} risk level, with live market data where available.`}
       >
-        <Products profile={profile} pct={pct} picks={picks} market={market} onClearPicks={onClearPicks} stocks={stocks} onTogglePick={onTogglePick} />
+        <Products profile={profile} picks={picks} holdings={holdings} market={market} onClearPicks={onClearPicks} stocks={stocks} onTogglePick={onTogglePick} />
       </Section>
       <Section title="What if?" sub="See how this exact mix could grow, and change the contribution or time horizon.">
         <Simulation profile={profile} pct={pct} picks={Object.keys(picks)} />
@@ -208,44 +211,31 @@ type Row = Product & { metrics?: MarketItem; stock: boolean };
 
 function Products({
   profile,
-  pct,
   picks,
+  holdings,
   market,
   onClearPicks,
   stocks,
   onTogglePick,
 }: {
   profile: Profile;
-  pct: Pct;
   picks: Record<string, Pick>;
+  holdings: Holding[] | null;
   market: Market | null;
   onClearPicks: (() => void) | null;
   stocks: Stocks | null;
   onTogglePick: (ticker: string) => void;
 }) {
   const catalog = useCatalog();
-  const { products, group_buckets, stock_universe, satellite } = catalog;
+  const { products, stock_universe, buckets } = catalog;
   const groups = Object.keys(products) as ProductGroup[];
   const [tab, setTab] = useState<ProductGroup>(groups[0]);
   const individual = tab === "Individual Stocks";
 
-  const slices = slicesFromPct(profile.amount, pct);
-  const bucketAmount = (b: string) => slices.find((s) => s.bucket === b)?.amount ?? 0;
-
-  // Display arithmetic only (the what-if applies the same rules on the server): individual stocks share at
-  // most `satellite` of the stocks bucket, ETF picks share the rest, and every other bucket is split equally.
-  const inGroup = (g: ProductGroup) => Object.keys(picks).filter((t) => groupOf(catalog, t) === g);
-  const singles = inGroup("Individual Stocks");
-  const etfs = inGroup("Global Stocks (ETF)").filter((t) => t !== "VNQ");
-  const dollars = (t: string): number => {
-    const g = groupOf(catalog, t);
-    if (!g) return 0;
-    if (t === "VNQ") return bucketAmount("alt");
-    if (g === "Individual Stocks") return (bucketAmount("stocks") * satellite) / singles.length;
-    if (g === "Global Stocks (ETF)")
-      return (bucketAmount("stocks") * (singles.length ? 1 - satellite : 1)) / Math.max(etfs.length, 1);
-    return group_buckets[g].reduce((n, b) => n + bucketAmount(b), 0) / inGroup(g).length;
-  };
+  // Dollars come from the server (the same split the what-if tests), never worked out here.
+  const dollars = (t: string) => holdings?.filter((h) => h.ticker === t).reduce((n, h) => n + h.amount, 0) ?? 0;
+  const inTab = (t: string) => groupOf(catalog, t) === tab;
+  const tabHoldings = (holdings ?? []).filter((h) => inTab(h.ticker));
 
   const stockRow = (name: string, ticker: string, sector: string, risk: number, metrics?: MarketItem, reason?: string): Row => ({
     name,
@@ -268,7 +258,11 @@ function Products({
   const picked = all.filter((p) => picks[p.ticker]);
   const list = [...picked, ...all.filter((p) => !picks[p.ticker])];
 
-  const amount = picked.reduce((n, p) => n + dollars(p.ticker), 0);
+  const amount = tabHoldings.reduce((n, h) => n + h.amount, 0);
+  // Funds of one group can serve several buckets (e.g. the real-estate fund sits with the stock ETFs).
+  const byBucket = BUCKETS.map((b) => ({ b, usd: tabHoldings.filter((h) => h.bucket === b).reduce((n, h) => n + h.amount, 0) })).filter(
+    (x) => x.usd > 0,
+  );
   const share = Math.round((amount / Math.max(profile.amount, 1)) * 100);
   const loadingStocks = individual && !shortlist.length && !extra.length;
   return (
@@ -301,12 +295,17 @@ function Products({
             most two per sector.{" "}
             {picked.length > 0 ? (
               <>
-                They get <strong className="text-slate-900">{usd(Math.round(amount))}</strong> ({share}% of the plan), at most{" "}
-                {Math.round(satellite * 100)}% of your stock slice, split equally. The rest stays in funds. Remove any you
-                don’t want.
+                {amount > 0 ? (
+                  <>
+                    Together they get <strong className="text-slate-900">{usd(amount)}</strong> ({share}% of the plan), split equally.
+                    Remove any you don’t want.
+                  </>
+                ) : (
+                  <>Your allocation has no Individual Stocks slice, so these get no money yet. Ask the advisor to raise it.</>
+                )}
               </>
             ) : (
-              <>Add stocks to put up to {Math.round(satellite * 100)}% of your stock slice into them.</>
+              <>Your Individual Stocks slice stays in a worldwide fund until you add stocks.</>
             )}
           </p>
           <p className="mt-1 text-xs text-amber-700">
@@ -316,8 +315,11 @@ function Products({
         </div>
       ) : (
         <p className="mb-3 text-sm text-slate-600">
-          Your plan puts <strong className="text-slate-900">{usd(Math.round(amount))}</strong> ({share}%) in your picks here.
-          {picked.length > 0 && " Each bucket is split equally across its picks."}
+          Your plan puts <strong className="text-slate-900">{usd(amount)}</strong> ({share}% of {usd(profile.amount)}) in this group
+          {byBucket.length > 1 && (
+            <> — {byBucket.map((x) => `${usd(x.usd)} ${buckets[x.b].label.toLowerCase()}`).join(" + ")}</>
+          )}
+          . Each bucket is split equally across its funds.
         </p>
       )}
 
@@ -384,7 +386,7 @@ function Products({
                     <td className="whitespace-nowrap px-3 py-3 text-slate-700">{p.min}</td>
                     {picked.length > 0 && (
                       <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-900">
-                        {pick ? usd(Math.round(dollars(p.ticker))) : "–"}
+                        {pick ? usd(dollars(p.ticker)) : "–"}
                       </td>
                     )}
                     <td className="px-3 py-3">
@@ -511,7 +513,11 @@ function Simulation({ profile, pct, picks }: { profile: Profile; pct: Pct; picks
       {d && ends && result && (
         <>
           {d.fallback_reason && <p className="mt-4 text-sm text-amber-700">{d.fallback_reason}</p>}
-          <h3 className="mb-2 mt-5 font-medium text-slate-900">Projected portfolio value</h3>
+          <h3 className="mb-1 mt-5 font-medium text-slate-900">Projected portfolio value</h3>
+          <p className="mb-2 text-xs text-slate-500">
+            Starting with {usd(d.start)} now{result.monthly > 0 && <>, adding {usd(result.monthly)} a month</>}, over {result.years}{" "}
+            {result.years === 1 ? "year" : "years"}.
+          </p>
           <LineChart series={d.series} baseline={d.series[0].map((_, i) => profile.amount + result.monthly * 12 * i)} />
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
             <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />{names[2]} {usd(ends[2])}</span>

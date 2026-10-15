@@ -8,7 +8,7 @@ from app.domain.catalog import PRODUCTS
 from app.main import app
 
 PROFILE = {"amount": 10000, "goal": "wealth", "horizon": 7, "emergency": "insufficient", "risk": 2, "debt": "none"}
-DEFAULT_PCT = {"emergency": 20, "stocks": 40, "bonds": 23, "cash": 12, "alt": 5}
+DEFAULT_PCT = {"emergency": 20, "stocks": 32, "single": 8, "bonds": 23, "cash": 12, "alt": 5}
 ALL_CONFIRMED = ["amount", "goal", "horizon", "emergency", "risk", "debt"]
 
 
@@ -26,7 +26,7 @@ def chat_body(text: str, **over):
 
 def test_catalog(client):
     d = client.get("/api/catalog").json()
-    assert set(d) == {"labels", "buckets", "group_buckets", "products", "sources", "stock_universe", "satellite"}
+    assert set(d) == {"labels", "buckets", "group_buckets", "products", "sources", "stock_universe"}
     assert d["stock_universe"]["NVDA"]["sector"] == "Information Technology" and len(d["stock_universe"]) > 400
     assert d["labels"]["horizon"]["3"] == "2–5 years"
     assert d["sources"]["S1"]["url"].startswith("https://www.investor.gov")
@@ -76,7 +76,7 @@ def test_explain_falls_back_without_key(client):
 
 
 def test_explain_ignores_an_allocation_that_breaks_the_guardrails(client):
-    bad = {"emergency": 0, "stocks": 100, "bonds": 0, "cash": 0, "alt": 0}
+    bad = {"emergency": 0, "stocks": 100, "single": 0, "bonds": 0, "cash": 0, "alt": 0}
     text = client.post("/api/explain", json={"profile": PROFILE, "pct": bad}).text
     assert "$2,000" in text and "$10,000 (100%)" not in text  # served the default plan instead
 

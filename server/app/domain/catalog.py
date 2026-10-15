@@ -9,6 +9,7 @@ from .stocks import in_universe
 BUCKET_META: dict[str, dict[str, str]] = {
     "emergency": {"label": "Emergency Fund", "why": "A safety cushion for unexpected expenses (3–6 months)."},
     "stocks": {"label": "Global Stocks (ETF)", "why": "Long-term growth through diversified global equities."},
+    "single": {"label": "Individual Stocks", "why": "Higher-risk bets on single companies, for the client who wants more growth and accepts bigger swings."},
     "bonds": {"label": "Bonds / Fixed Income", "why": "Adds stability and reduces overall volatility."},
     "cash": {"label": "Cash / High-yield Savings", "why": "Liquidity for near-term needs and opportunities."},
     "alt": {"label": "Alternatives (e.g. REITs)", "why": "Optional extra diversification beyond stocks and bonds."},
@@ -17,7 +18,7 @@ BUCKET_META: dict[str, dict[str, str]] = {
 # Which plan buckets each product tab covers.
 GROUP_BUCKETS: dict[str, list[str]] = {
     "Global Stocks (ETF)": ["stocks", "alt"],
-    "Individual Stocks": ["stocks"],
+    "Individual Stocks": ["single"],
     "Bonds": ["bonds"],
     "Savings": ["emergency", "cash"],
 }

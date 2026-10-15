@@ -19,7 +19,7 @@ from app.main import app
 from app.market.service import MarketService
 
 PROFILE = {"amount": 10000, "goal": "wealth", "horizon": 7, "emergency": "insufficient", "risk": 2, "debt": "none"}
-PCT = {"emergency": 20, "stocks": 40, "bonds": 23, "cash": 12, "alt": 5}
+PCT = {"emergency": 20, "stocks": 32, "single": 8, "bonds": 23, "cash": 12, "alt": 5}
 
 
 def closes(monthly_return: float, months: int = 61, noise: float = 0.0, seed: int = 1) -> pd.Series:
@@ -45,8 +45,9 @@ def test_picks_override_defaults_within_their_group_only():
     assert proxies_for("bonds", ["VOO", "AGG"]) == ["AGG"]
 
 
-def test_individual_stocks_count_towards_the_stocks_bucket():
-    assert proxies_for("stocks", ["NVDA", "VOO"]) == ["NVDA", "VOO"]
+def test_individual_stocks_fill_their_own_bucket():
+    assert proxies_for("single", ["NVDA", "VOO"]) == ["NVDA"]
+    assert proxies_for("stocks", ["NVDA", "VOO"]) == ["VOO"]
     assert proxies_for("bonds", ["NVDA"]) == ["BND"]
 
 
@@ -59,12 +60,13 @@ def test_weights_sum_to_one_and_merge_shared_funds():
     w, comp = weights_for(PCT, ["VOO", "VTI"])
     assert sum(w.values()) == pytest.approx(1)
     assert w["SGOV"] == pytest.approx(0.32)  # emergency 20 + cash 12
-    assert w["VOO"] == pytest.approx(0.20) and w["VTI"] == pytest.approx(0.20)
-    assert [c["bucket"] for c in comp] == ["emergency", "stocks", "bonds", "cash", "alt"]
+    assert w["VOO"] == pytest.approx(0.16) and w["VTI"] == pytest.approx(0.16)
+    assert w["VT"] == pytest.approx(0.08)  # no individual stocks picked: that slice stays in the worldwide fund
+    assert [c["bucket"] for c in comp] == ["emergency", "stocks", "single", "bonds", "cash", "alt"]
 
 
 def test_zero_buckets_are_left_out():
-    w, comp = weights_for({"emergency": 20, "stocks": 80, "bonds": 0, "cash": 0, "alt": 0}, [])
+    w, comp = weights_for({"emergency": 20, "stocks": 80, "single": 0, "bonds": 0, "cash": 0, "alt": 0}, [])
     assert set(w) == {"SGOV", "VT"} and len(comp) == 2
 
 
@@ -174,7 +176,7 @@ BODY = {"profile": PROFILE, "pct": PCT, "picks": [], "monthly": 100, "years": 10
 def test_endpoint_uses_history_and_the_current_plan(client):
     d = client.post("/api/whatif", json=BODY).json()
     assert d["basis"] == "history" and d["allocation"] == PCT
-    assert [c["bucket"] for c in d["composition"]] == ["emergency", "stocks", "bonds", "cash", "alt"]
+    assert [c["bucket"] for c in d["composition"]] == ["emergency", "stocks", "single", "bonds", "cash", "alt"]
     assert len(d["series"]) == 3 and len(d["series"][0]) == 11
 
 
@@ -191,7 +193,7 @@ def test_changing_risk_rederives_the_allocation(client):
 
 
 def test_an_invalid_current_plan_is_ignored(client):
-    bad = {"emergency": 0, "stocks": 100, "bonds": 0, "cash": 0, "alt": 0}
+    bad = {"emergency": 0, "stocks": 100, "single": 0, "bonds": 0, "cash": 0, "alt": 0}
     d = client.post("/api/whatif", json={**BODY, "pct": bad}).json()
     assert d["allocation"] == allocate_pct(Profile(**PROFILE))
 
@@ -199,3 +201,16 @@ def test_an_invalid_current_plan_is_ignored(client):
 def test_the_assumed_basis_can_be_requested_explicitly(client):
     d = client.post("/api/whatif", json={**BODY, "basis": "assumed"}).json()
     assert d["basis"] == "assumed" and d["series"] == project(10000, 100, 10, 2)
+
+
+def test_holdings_match_allocation_and_sum_to_amount():
+    from app.domain.plan import allocate_pct
+    from app.domain.schemas import Profile
+    from app.domain.whatif import holdings
+
+    profile = Profile(amount=10000, goal="wealth", horizon=7, emergency="insufficient", risk=3, debt="none")
+    pct = allocate_pct(profile)
+    rows = holdings(10000, pct, ["VOO", "AAPL"])
+    assert sum(r["amount"] for r in rows) == 10000
+    for bucket in {r["bucket"] for r in rows}:
+        assert sum(r["amount"] for r in rows if r["bucket"] == bucket) == round(10000 * pct[bucket] / 100)

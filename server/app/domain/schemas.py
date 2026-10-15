@@ -2,7 +2,7 @@ from typing import Literal, get_args
 
 from pydantic import BaseModel, Field
 
-Bucket = Literal["emergency", "stocks", "bonds", "cash", "alt"]
+Bucket = Literal["emergency", "stocks", "single", "bonds", "cash", "alt"]
 Goal = Literal["wealth", "house", "business", "income"]
 Horizon = Literal[1, 3, 7, 12]  # representative years for each range
 Emergency = Literal["none", "insufficient", "enough"]
@@ -29,6 +29,7 @@ class Profile(BaseModel):
 class PctModel(BaseModel):
     emergency: int
     stocks: int
+    single: int
     bonds: int
     cash: int
     alt: int

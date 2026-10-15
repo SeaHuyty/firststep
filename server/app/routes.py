@@ -11,8 +11,8 @@ from app.domain.catalog import BUCKET_META, GROUP_BUCKETS, LABELS, PRODUCTS
 from app.domain.plan import allocate_pct, analyse, limits, suggest_picks, valid_pct
 from app.domain.schemas import PctModel, Profile, Risk
 from app.domain.sources import SOURCES
-from app.domain.stocks import SATELLITE, select_stocks, universe
-from app.domain.whatif import what_if
+from app.domain.stocks import select_stocks, universe
+from app.domain.whatif import holdings, what_if
 
 router = APIRouter(prefix="/api")
 
@@ -45,7 +45,6 @@ def catalog():
         "products": {g: [p.model_dump() for p in items] for g, items in PRODUCTS.items()},
         "sources": {k: s.model_dump() for k, s in SOURCES.items()},
         "stock_universe": universe(),
-        "satellite": SATELLITE,
     }
 
 
@@ -128,6 +127,20 @@ async def whatif(req: WhatIfRequest, request: Request, settings: SettingsDep):
         basis=req.basis if settings.market_enabled else "assumed",
         closes_for=lambda tickers: monthly_for(request, tickers),
     )
+
+
+class HoldingsRequest(BaseModel):
+    profile: Profile
+    pct: PctModel | None = None
+    picks: list[str] = Field(default_factory=list, max_length=20)
+
+
+@router.post("/holdings")
+def holdings_route(req: HoldingsRequest):
+    """Dollars per fund for the plan shown. The what-if tests exactly this split."""
+    given = req.pct.model_dump() if req.pct else None
+    pct = given if given and valid_pct(req.profile, given) else allocate_pct(req.profile)
+    return {"holdings": holdings(req.profile.amount, pct, req.picks)}
 
 
 def monthly_for(request: Request, tickers: list[str]):

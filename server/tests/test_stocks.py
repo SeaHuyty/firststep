@@ -4,12 +4,12 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings, get_settings
 from app.domain.catalog import group_of
-from app.domain.stocks import PER_SECTOR, SATELLITE, in_universe, select_stocks, universe
+from app.domain.stocks import PER_SECTOR, in_universe, select_stocks, universe
 from app.domain.whatif import weights_for
 from app.main import app
 from app.market.service import MarketService
 
-PCT = {"emergency": 20, "stocks": 40, "bonds": 23, "cash": 12, "alt": 5}
+PCT = {"emergency": 20, "stocks": 32, "single": 8, "bonds": 23, "cash": 12, "alt": 5}
 
 
 def fake_stats(seed: int = 0) -> dict[str, dict]:
@@ -60,18 +60,33 @@ def test_too_little_data_gives_no_shortlist():
     assert select_stocks({"NVDA": fake_stats()["NVDA"]}, 2) == []
 
 
-def test_individual_stocks_are_capped_as_a_satellite():
+def test_individual_stocks_have_their_own_slice():
     w, comp = weights_for(PCT, ["NVDA", "TSLA"])
-    stocks = next(c for c in comp if c["bucket"] == "stocks")
-    assert stocks["tickers"] == ["VT", "NVDA", "TSLA"]  # default fund fills the rest
-    assert w["NVDA"] == w["TSLA"] == pytest.approx(0.40 * SATELLITE / 2)
-    assert w["VT"] == pytest.approx(0.40 * (1 - SATELLITE))
+    single = next(c for c in comp if c["bucket"] == "single")
+    assert single["tickers"] == ["NVDA", "TSLA"]
+    assert w["NVDA"] == w["TSLA"] == pytest.approx(0.08 / 2)
+    assert w["VT"] == pytest.approx(0.32)  # the stocks slice stays in the default fund
     assert sum(w.values()) == pytest.approx(1)
 
 
-def test_etf_picks_keep_the_rest_of_the_stocks_bucket():
-    w, _ = weights_for(PCT, ["VOO", "VTI", "NVDA"])
-    assert w["VOO"] == w["VTI"] == pytest.approx(0.40 * (1 - SATELLITE) / 2) and "VT" not in w
+def test_no_stock_picks_keeps_the_slice_in_a_fund():
+    w, comp = weights_for(PCT, ["VOO"])
+    assert next(c for c in comp if c["bucket"] == "single")["tickers"] == ["VT"]
+    assert w["VOO"] == pytest.approx(0.32) and w["VT"] == pytest.approx(0.08)
+
+
+def test_ninety_percent_in_individual_stocks_is_possible_when_aggressive():
+    from app.domain.plan import apply_targets, limits, valid_pct
+    from app.domain.schemas import Profile
+
+    p = Profile(amount=10000, goal="wealth", horizon=12, emergency="enough", risk=3, debt="none")
+    pct, _ = apply_targets(p, {"emergency": 5, "stocks": 55, "single": 14, "bonds": 14, "cash": 7, "alt": 5}, {"single": 90})
+    assert pct["single"] == 90 and sum(pct.values()) == 100 and valid_pct(p, pct)
+    assert pct["emergency"] >= limits(p)["min"]["emergency"]
+    # a moderate client cannot go that far
+    q = p.model_copy(update={"risk": 2})
+    capped, notes = apply_targets(q, pct, {"single": 90})
+    assert capped["single"] <= limits(q)["equity"]["max"] and notes
 
 
 @pytest.fixture

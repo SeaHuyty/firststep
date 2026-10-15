@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 from .catalog import PRODUCTS, group_of
-from .stocks import SATELLITE, in_universe
+from .stocks import in_universe
 from .plan import project
 from .schemas import BUCKETS, Pct
 
@@ -26,9 +26,10 @@ PATHS = 3000
 SEED = 42  # fixed so dragging a slider doesn't make the chart jitter
 
 # Used when the client hasn't picked funds for a bucket.
-DEFAULT_PROXY = {"stocks": "VT", "bonds": "BND", "cash": "SGOV", "emergency": "SGOV", "alt": "VNQ"}
+DEFAULT_PROXY = {"stocks": "VT", "single": "VT", "bonds": "BND", "cash": "SGOV", "emergency": "SGOV", "alt": "VNQ"}
 BUCKET_GROUPS = {
-    "stocks": {"Global Stocks (ETF)", "Individual Stocks"},
+    "stocks": {"Global Stocks (ETF)"},
+    "single": {"Individual Stocks"},
     "bonds": {"Bonds"},
     "cash": {"Savings"},
     "emergency": {"Savings"},
@@ -56,17 +57,24 @@ def weights_for(pct: Pct, picks: list[str]) -> tuple[dict[str, float], list[dict
             continue
         tickers = proxies_for(bucket, picks)
         share = {t: 1 / len(tickers) for t in tickers}
-        singles = [t for t in tickers if in_universe(t)]
-        if bucket == "stocks" and singles:
-            # Individual stocks are a satellite: together they never exceed SATELLITE of the stocks bucket,
-            # the rest stays in fund(s) (the client's ETF picks, else the default worldwide fund).
-            funds = [t for t in tickers if t not in singles] or [DEFAULT_PROXY["stocks"]]
-            share = {**{t: (1 - SATELLITE) / len(funds) for t in funds}, **{t: SATELLITE / len(singles) for t in singles}}
-            tickers = funds + singles
-        composition.append({"bucket": bucket, "pct": pct[bucket], "tickers": tickers})
+        composition.append({"bucket": bucket, "pct": pct[bucket], "tickers": tickers, "shares": share})
         for t in tickers:
             weights[t] = weights.get(t, 0.0) + pct[bucket] / 100 * share[t]
     return weights, composition
+
+
+def holdings(amount: float, pct: Pct, picks: list[str]) -> list[dict[str, Any]]:
+    """Dollars per fund: the same split the what-if tests, so Allocation, Products and What-if agree.
+    Each bucket's dollars match the Allocation figure (amount x pct, to the dollar) and are shared among its funds."""
+    out: list[dict[str, Any]] = []
+    for c in weights_for(pct, picks)[1]:
+        bucket_usd = round(amount * c["pct"] / 100)
+        left = bucket_usd
+        for i, t in enumerate(c["tickers"]):
+            usd = left if i == len(c["tickers"]) - 1 else round(bucket_usd * c["shares"][t])
+            left -= usd
+            out.append({"ticker": t, "bucket": c["bucket"], "amount": usd})
+    return out
 
 
 def portfolio_returns(closes: dict[str, pd.Series], weights: dict[str, float]) -> pd.Series | None:
@@ -123,7 +131,7 @@ def what_if(
     """`closes_for(tickers)` returns monthly closes by ticker, or None when unavailable."""
     weights, composition = weights_for(pct, picks)
     contributed = int(round(amount + monthly * years * 12))
-    base = {"allocation": pct, "composition": composition, "contributed": contributed}
+    base = {"allocation": pct, "composition": composition, "contributed": contributed, "start": round(amount)}
 
     fallback_reason: str | None = None
     if basis == "history":

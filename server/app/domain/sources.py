@@ -70,6 +70,7 @@ SOURCES: dict[str, Source] = {
 BY_BUCKET: dict[str, list[str]] = {
     "emergency": ["S5", "S6"],
     "stocks": ["S1", "S3", "S2"],
+    "single": ["S2", "S3"],
     "bonds": ["S4", "S2"],
     "cash": ["S7", "S1"],
     "alt": ["S2"],

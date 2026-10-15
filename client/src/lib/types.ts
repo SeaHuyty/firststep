@@ -1,7 +1,7 @@
 // Shared types and tiny presentation helpers. All finance logic lives in the FastAPI server.
 
-export type Bucket = "emergency" | "stocks" | "bonds" | "cash" | "alt";
-export const BUCKETS: Bucket[] = ["emergency", "stocks", "bonds", "cash", "alt"];
+export type Bucket = "emergency" | "stocks" | "single" | "bonds" | "cash" | "alt";
+export const BUCKETS: Bucket[] = ["emergency", "stocks", "single", "bonds", "cash", "alt"];
 
 export type Goal = "wealth" | "house" | "business" | "income";
 export type Horizon = 1 | 3 | 7 | 12;
@@ -77,7 +77,6 @@ export type Catalog = {
   products: Record<ProductGroup, Product[]>;
   sources: Record<string, Source>;
   stock_universe: Record<string, { name: string; sector: string }>; // the S&P 500, which the stock screen draws from
-  satellite: number; // max share of the stocks bucket that individual stocks may take
 };
 
 // What the advisor agent asks the website to do. Profile/goto apply immediately;
@@ -91,6 +90,7 @@ export type Action =
 export const BUCKET_COLORS: Record<Bucket, string> = {
   emergency: "#10b981",
   stocks: "#3b82f6",
+  single: "#06b6d4",
   bonds: "#8b5cf6",
   cash: "#f59e0b",
   alt: "#f43f5e",
@@ -125,12 +125,15 @@ export type Stocks = { ready: boolean; asof: string | null; picks: StockPick[] }
 
 // POST /api/whatif result. `history` = bootstrapped from the mix's own live price history;
 // `assumed` = fixed per-risk return assumptions (also the fallback when history is unavailable).
+export type Holding = { ticker: string; bucket: Bucket; amount: number };
+
 export type WhatIf = {
   basis: "history" | "assumed";
   fallback_reason: string | null;
   allocation: Pct;
   composition: { bucket: Bucket; pct: number; tickers: string[] }[];
   contributed: number;
+  start: number;
   series: [number[], number[], number[]]; // weak/typical/strong (or pessimistic/base/optimistic)
   loss_chance_pct: number | null;
   stats: {

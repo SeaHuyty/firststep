@@ -18,7 +18,6 @@ import numpy as np
 DATA = Path(__file__).resolve().parent.parent / "data" / "sp500.csv"
 PICKS = 10  # shortlist size
 PER_SECTOR = 2  # so the shortlist always spans at least five sectors
-SATELLITE = 0.2  # individual stocks never get more than this share of the stocks bucket
 
 
 @lru_cache

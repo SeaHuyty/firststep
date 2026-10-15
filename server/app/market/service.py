@@ -127,6 +127,33 @@ def fetch_market() -> tuple[dict[str, dict[str, Any]], dict[str, pd.Series]]:
     return out, monthly
 
 
+def fetch_stocks() -> tuple[dict[str, dict[str, Any]], dict[str, pd.Series]]:
+    """Blocking: price history for the whole S&P 500 universe (one batched download, history only)."""
+    import yfinance as yf
+
+    from app.domain.stocks import universe
+
+    symbols = list(universe())
+    try:
+        df = yf.download(symbols, period=HISTORY_PERIOD, interval="1d", auto_adjust=True, progress=False, threads=True)
+    except Exception as e:
+        print(f"stock universe error: {type(e).__name__}: {str(e)[:200]}")
+        return {}, {}
+    out: dict[str, dict[str, Any]] = {}
+    monthly: dict[str, pd.Series] = {}
+    for sym in symbols:
+        try:
+            closes = df["Close"][sym].dropna()
+        except Exception:
+            continue
+        if len(closes) < 250:
+            continue
+        monthly[sym] = monthly_closes(closes)
+        item = {**compute_metrics(closes), "price": _r(float(closes.iloc[-1]))}
+        out[sym] = {k: v for k, v in item.items() if v is not None}
+    return out, monthly
+
+
 class MarketService:
     """Caches the snapshot; refreshes in the background (stale-while-revalidate)."""
 

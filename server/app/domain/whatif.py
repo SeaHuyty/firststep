@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from .catalog import PRODUCTS, group_of
+from .stocks import SATELLITE, in_universe
 from .plan import project
 from .schemas import BUCKETS, Pct
 
@@ -26,18 +27,23 @@ SEED = 42  # fixed so dragging a slider doesn't make the chart jitter
 
 # Used when the client hasn't picked funds for a bucket.
 DEFAULT_PROXY = {"stocks": "VT", "bonds": "BND", "cash": "SGOV", "emergency": "SGOV", "alt": "VNQ"}
-BUCKET_GROUP = {"stocks": "Global Stocks (ETF)", "bonds": "Bonds", "cash": "Savings", "emergency": "Savings"}
+BUCKET_GROUPS = {
+    "stocks": {"Global Stocks (ETF)", "Individual Stocks"},
+    "bonds": {"Bonds"},
+    "cash": {"Savings"},
+    "emergency": {"Savings"},
+}
 
 
 def _is_live(ticker: str) -> bool:
-    return any(p.ticker == ticker and p.live for items in PRODUCTS.values() for p in items)
+    return in_universe(ticker) or any(p.ticker == ticker and p.live for items in PRODUCTS.values() for p in items)
 
 
 def proxies_for(bucket: str, picks: list[str]) -> list[str]:
     """Funds that stand in for a bucket: the client's picks for its group, else the default."""
     if bucket == "alt":
         return ["VNQ"]
-    chosen = [t for t in picks if group_of(t) == BUCKET_GROUP[bucket] and _is_live(t) and t != "VNQ"]
+    chosen = [t for t in picks if group_of(t) in BUCKET_GROUPS[bucket] and _is_live(t) and t != "VNQ"]
     return chosen or [DEFAULT_PROXY[bucket]]
 
 
@@ -49,9 +55,17 @@ def weights_for(pct: Pct, picks: list[str]) -> tuple[dict[str, float], list[dict
         if pct[bucket] <= 0:
             continue
         tickers = proxies_for(bucket, picks)
+        share = {t: 1 / len(tickers) for t in tickers}
+        singles = [t for t in tickers if in_universe(t)]
+        if bucket == "stocks" and singles:
+            # Individual stocks are a satellite: together they never exceed SATELLITE of the stocks bucket,
+            # the rest stays in fund(s) (the client's ETF picks, else the default worldwide fund).
+            funds = [t for t in tickers if t not in singles] or [DEFAULT_PROXY["stocks"]]
+            share = {**{t: (1 - SATELLITE) / len(funds) for t in funds}, **{t: SATELLITE / len(singles) for t in singles}}
+            tickers = funds + singles
         composition.append({"bucket": bucket, "pct": pct[bucket], "tickers": tickers})
         for t in tickers:
-            weights[t] = weights.get(t, 0.0) + pct[bucket] / 100 / len(tickers)
+            weights[t] = weights.get(t, 0.0) + pct[bucket] / 100 * share[t]
     return weights, composition
 
 

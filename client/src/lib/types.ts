@@ -8,7 +8,7 @@ export type Horizon = 1 | 3 | 7 | 12;
 export type Emergency = "none" | "insufficient" | "enough";
 export type Debt = "none" | "some" | "significant";
 export type Risk = 1 | 2 | 3;
-export type ProductGroup = "Global Stocks (ETF)" | "Bonds" | "Savings";
+export type ProductGroup = "Global Stocks (ETF)" | "Individual Stocks" | "Bonds" | "Savings";
 
 export type Profile = {
   amount: number;
@@ -40,6 +40,7 @@ export type Product = {
   blurb: string;
   region: string; // where it invests, e.g. "US", "Worldwide"
   live: boolean; // false for accounts/funds with no market listing
+  domain: string | null; // issuer website, used for its logo
 };
 
 // Live metrics per ticker from GET /api/market (all percents; fields missing when unavailable).
@@ -75,6 +76,8 @@ export type Catalog = {
   group_buckets: Record<ProductGroup, Bucket[]>;
   products: Record<ProductGroup, Product[]>;
   sources: Record<string, Source>;
+  stock_universe: Record<string, { name: string; sector: string }>; // the S&P 500, which the stock screen draws from
+  satellite: number; // max share of the stocks bucket that individual stocks may take
 };
 
 // What the advisor agent asks the website to do. Profile/goto apply immediately;
@@ -106,7 +109,19 @@ export function slicesFromPct(amount: number, pct: Pct): Slice[] {
 }
 
 export const groupOf = (catalog: Catalog, ticker: string): ProductGroup | undefined =>
-  (Object.keys(catalog.products) as ProductGroup[]).find((g) => catalog.products[g].some((p) => p.ticker === ticker));
+  (Object.keys(catalog.products) as ProductGroup[]).find((g) => catalog.products[g].some((p) => p.ticker === ticker)) ??
+  (ticker in catalog.stock_universe ? "Individual Stocks" : undefined);
+
+// One stock from GET /api/stocks: screened from the S&P 500 for a risk level using live price history.
+export type StockPick = {
+  ticker: string;
+  name: string;
+  sector: string;
+  risk: number;
+  reason: string;
+  metrics: MarketItem;
+};
+export type Stocks = { ready: boolean; asof: string | null; picks: StockPick[] };
 
 // POST /api/whatif result. `history` = bootstrapped from the mix's own live price history;
 // `assumed` = fixed per-risk return assumptions (also the fallback when history is unavailable).

@@ -45,6 +45,11 @@ def test_picks_override_defaults_within_their_group_only():
     assert proxies_for("bonds", ["VOO", "AGG"]) == ["AGG"]
 
 
+def test_individual_stocks_count_towards_the_stocks_bucket():
+    assert proxies_for("stocks", ["NVDA", "VOO"]) == ["NVDA", "VOO"]
+    assert proxies_for("bonds", ["NVDA"]) == ["BND"]
+
+
 def test_unlisted_and_reit_picks_are_not_used_as_proxies():
     assert proxies_for("cash", ["HYSA", "MMF"]) == ["SGOV"]  # accounts have no price history
     assert proxies_for("stocks", ["VNQ"]) == ["VT"]  # VNQ stands in for the alternatives bucket

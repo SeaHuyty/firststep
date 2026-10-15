@@ -135,7 +135,7 @@ export function Advisor({
 
   return (
     <aside
-      className={`fixed inset-y-0 right-0 z-20 flex w-full max-w-sm flex-col border-l border-slate-200 bg-white shadow-xl ${open ? "" : "hidden"}`}
+      className={`fixed bottom-4 right-4 z-20 flex h-[min(34rem,calc(100vh-2rem))] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${open ? "" : "hidden"}`}
       aria-label="AI advisor"
     >
       <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
@@ -212,7 +212,7 @@ export function Advisor({
 }
 
 function ProposalCard({ p, onApply, onDismiss }: { p: Proposal; onApply: () => void; onDismiss: () => void }) {
-  const { buckets, products } = useCatalog();
+  const { buckets, products, stock_universe } = useCatalog();
   const a = p.action;
   return (
     <div className="rounded-xl border border-slate-200 p-3 text-sm">
@@ -237,7 +237,8 @@ function ProposalCard({ p, onApply, onDismiss }: { p: Proposal; onApply: () => v
             const prod = products[a.group].find((x) => x.ticker === t);
             return (
               <li key={t} className="text-slate-700">
-                <strong className="text-slate-900">{t}</strong> {prod?.name} <span className="text-slate-500">· fee {prod?.fee}</span>
+                <strong className="text-slate-900">{t}</strong> {prod?.name ?? stock_universe[t]?.name}{" "}
+                <span className="text-slate-500">· {prod ? `fee ${prod.fee}` : stock_universe[t]?.sector}</span>
               </li>
             );
           })}

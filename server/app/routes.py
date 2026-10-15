@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,7 @@ from app.domain.catalog import BUCKET_META, GROUP_BUCKETS, LABELS, PRODUCTS
 from app.domain.plan import allocate_pct, analyse, limits, suggest_picks, valid_pct
 from app.domain.schemas import PctModel, Profile, Risk
 from app.domain.sources import SOURCES
+from app.domain.stocks import SATELLITE, select_stocks, universe
 from app.domain.whatif import what_if
 
 router = APIRouter(prefix="/api")
@@ -43,6 +44,8 @@ def catalog():
         "group_buckets": GROUP_BUCKETS,
         "products": {g: [p.model_dump() for p in items] for g, items in PRODUCTS.items()},
         "sources": {k: s.model_dump() for k, s in SOURCES.items()},
+        "stock_universe": universe(),
+        "satellite": SATELLITE,
     }
 
 
@@ -53,6 +56,19 @@ async def market(request: Request, settings: SettingsDep):
     if not settings.market_enabled:
         return {**service.snapshot(), "items": {}}
     return await service.get()
+
+
+@router.get("/stocks")
+async def stocks(risk: Annotated[int, Query(ge=1, le=3)], request: Request, settings: SettingsDep):
+    """Individual stocks screened from the S&P 500 for a risk level, using live price history. The first
+    load takes about a minute; until then `ready` is false and the client asks again."""
+    service = request.app.state.stocks
+    if not settings.market_enabled:
+        return {"ready": False, "asof": None, "picks": []}
+    service.kick()
+    snap = service.snapshot()
+    picks = select_stocks(snap["items"], risk) if snap["items"] else []
+    return {"ready": bool(picks), "asof": snap["asof"], "picks": picks}
 
 
 class PlanRequest(BaseModel):
@@ -110,8 +126,14 @@ async def whatif(req: WhatIfRequest, request: Request, settings: SettingsDep):
         pct=pct,
         picks=req.picks,
         basis=req.basis if settings.market_enabled else "assumed",
-        closes_for=service.monthly_for,
+        closes_for=lambda tickers: monthly_for(request, tickers),
     )
+
+
+def monthly_for(request: Request, tickers: list[str]):
+    """Monthly closes for funds (market service) and S&P 500 stocks (screen service); None if any is missing."""
+    have = {**request.app.state.stocks.monthly, **request.app.state.market.monthly}
+    return {t: have[t] for t in tickers} if all(t in have for t in tickers) else None
 
 
 class ExplainRequest(BaseModel):
@@ -161,9 +183,13 @@ async def chat(req: ChatRequest, request: Request, settings: SettingsDep):
     live = service.snapshot()["items"] if settings.market_enabled else {}
     if settings.market_enabled:
         service.kick()  # never block a chat turn on market data; refresh in the background if stale
+    shortlist: list[dict] = []
+    if settings.market_enabled:
+        snap = request.app.state.stocks.snapshot()
+        shortlist = select_stocks(snap["items"], req.profile.risk) if snap["items"] else []
     try:
         result = await run_turn(
-            settings, req.messages, req.profile, req.confirmed, req.pct.model_dump() if req.pct else None, req.picks, live
+            settings, req.messages, req.profile, req.confirmed, req.pct.model_dump() if req.pct else None, req.picks, live, shortlist
         )
     except Exception as e:
         raise ai_error(e) from e

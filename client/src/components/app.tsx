@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useCatalog } from "@/lib/catalog";
 import { defaultProfile, groupOf, type Market, type Pct, type PlanResult, type ProductGroup, type Profile, type Risk } from "@/lib/types";
 import { Advisor, type AdvisorHandle } from "./advisor";
+import { useStocks } from "@/lib/use-stocks";
 import { PlanPage, type Pick } from "./plan";
 import { AnalysisStep, InfoStep, Loading } from "./steps";
 
@@ -19,7 +20,9 @@ export default function App() {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [confirmed, setConfirmed] = useState<(keyof Profile)[]>([]);
   const [override, setOverride] = useState<{ pct: Pct; key: string; reason: string } | null>(null);
-  const [advisorPicks, setAdvisorPicks] = useState<{ risk: Risk; items: Record<string, string> } | null>(null);
+  // Groups the advisor or the client has adjusted, with the funds they kept or added (ticker -> why). Other groups
+  // keep the system's suggestions. Valid only at the risk level they were made for.
+  const [chosen, setChosen] = useState<{ risk: Risk; groups: ProductGroup[]; items: Record<string, Pick> } | null>(null);
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const advisor = useRef<AdvisorHandle>(null);
   const [market, setMarket] = useState<Market | null>(null);
@@ -51,16 +54,25 @@ export default function App() {
   const active = override && override.key === profileKey ? override : null;
   const pct = active?.pct ?? plan?.base ?? null;
 
-  // Funds follow the risk level (steadier at low risk, higher-growth at high risk) unless the advisor picked some for a group.
-  const own = advisorPicks && advisorPicks.risk === profile.risk ? advisorPicks.items : {};
+  // The system suggests funds for the risk level (steadier at low risk, higher-growth at high risk) and
+  // individual stocks screened from the S&P 500. The client can remove or add any of them.
+  const stocks = useStocks(profile.risk);
+  const suggested: Record<string, string> = {
+    ...plan?.picks,
+    ...Object.fromEntries((stocks?.picks ?? []).map((s) => [s.ticker, s.reason])),
+  };
+  const own = chosen && chosen.risk === profile.risk ? chosen : null;
   const picks: Record<string, Pick> = {};
   for (const g of Object.keys(catalog.products) as ProductGroup[]) {
-    const mine = Object.keys(own).filter((t) => groupOf(catalog, t) === g);
-    if (mine.length) mine.forEach((t) => (picks[t] = { reason: own[t], by: "advisor" }));
-    else
-      Object.entries(plan?.picks ?? {})
+    if (own?.groups.includes(g)) {
+      Object.entries(own.items)
+        .filter(([t]) => groupOf(catalog, t) === g)
+        .forEach(([t, pick]) => (picks[t] = pick));
+    } else {
+      Object.entries(suggested)
         .filter(([t]) => groupOf(catalog, t) === g)
         .forEach(([t, reason]) => (picks[t] = { reason, by: "risk" }));
+    }
   }
 
   const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
@@ -79,11 +91,29 @@ export default function App() {
     return true;
   };
 
+  // Add or remove a fund. The first change in a group keeps the system's suggestions for it, minus or plus this one.
+  const togglePick = (ticker: string) => {
+    const group = groupOf(catalog, ticker);
+    if (!group) return;
+    setChosen((prev) => {
+      const cur = prev && prev.risk === profile.risk ? prev : { risk: profile.risk, groups: [], items: {} };
+      const items = { ...cur.items };
+      if (!cur.groups.includes(group))
+        Object.entries(picks)
+          .filter(([t]) => groupOf(catalog, t) === group)
+          .forEach(([t, pick]) => (items[t] = pick));
+      if (items[ticker]) delete items[ticker];
+      else items[ticker] = { reason: "Added by you.", by: "you" };
+      return { risk: profile.risk, groups: [...new Set([...cur.groups, group])], items };
+    });
+  };
+
   const applyProducts = (group: ProductGroup, tickers: string[], reason: string) => {
-    setAdvisorPicks((prev) => {
-      const items = prev && prev.risk === profile.risk ? prev.items : {};
-      const kept = Object.fromEntries(Object.entries(items).filter(([t]) => groupOf(catalog, t) !== group));
-      return { risk: profile.risk, items: { ...kept, ...Object.fromEntries(tickers.map((t) => [t, reason])) } };
+    setChosen((prev) => {
+      const cur = prev && prev.risk === profile.risk ? prev : { risk: profile.risk, groups: [], items: {} };
+      const kept = Object.fromEntries(Object.entries(cur.items).filter(([t]) => groupOf(catalog, t) !== group));
+      const added = Object.fromEntries(tickers.map((t) => [t, { reason, by: "advisor" as const }]));
+      return { risk: profile.risk, groups: [...new Set([...cur.groups, group])], items: { ...kept, ...added } };
     });
     setStep(2);
     return true;
@@ -117,12 +147,9 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <p className="hidden px-5 py-6 text-xs leading-relaxed text-slate-400 md:block">
-          Educational prototype. Not personalised financial advice.
-        </p>
       </aside>
 
-      <main className={`flex-1 px-5 py-8 md:px-12 md:py-10 ${advisorOpen ? "lg:pr-[26rem]" : ""}`}>
+      <main className="flex-1 px-5 py-8 md:px-12 md:py-10">
         {step === 0 && <InfoStep profile={profile} setProfile={setProfile} confirm={confirm} onNext={next} />}
         {step === 1 && (plan ? <AnalysisStep profile={profile} analysis={plan.analysis} onNext={next} /> : <Loading />)}
         {step === 2 &&
@@ -137,7 +164,9 @@ export default function App() {
               onReset={() => setOverride(null)}
               picks={picks}
               market={market}
-              onClearPicks={Object.keys(own).length ? () => setAdvisorPicks(null) : null}
+              onClearPicks={own ? () => setChosen(null) : null}
+              stocks={stocks}
+              onTogglePick={togglePick}
               onWhy={() => {
                 setAdvisorOpen(true);
                 advisor.current?.ask("Why did you choose this allocation for me?");

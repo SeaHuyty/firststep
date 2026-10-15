@@ -26,7 +26,8 @@ def chat_body(text: str, **over):
 
 def test_catalog(client):
     d = client.get("/api/catalog").json()
-    assert set(d) == {"labels", "buckets", "group_buckets", "products", "sources"}
+    assert set(d) == {"labels", "buckets", "group_buckets", "products", "sources", "stock_universe", "satellite"}
+    assert d["stock_universe"]["NVDA"]["sector"] == "Information Technology" and len(d["stock_universe"]) > 400
     assert d["labels"]["horizon"]["3"] == "2–5 years"
     assert d["sources"]["S1"]["url"].startswith("https://www.investor.gov")
 
@@ -111,8 +112,8 @@ def test_advisor_proposal_is_clamped_by_guardrails(client, monkeypatch):
 
 
 def test_advisor_rejects_products_outside_the_catalog(client, monkeypatch):
-    scripted(monkeypatch, [("propose_products", {"group": "Global Stocks (ETF)", "tickers": ["TSLA"], "reason": "hot"})])
-    d = client.post("/api/chat", json=chat_body("buy tesla")).json()
+    scripted(monkeypatch, [("propose_products", {"group": "Global Stocks (ETF)", "tickers": ["DOGE"], "reason": "hot"})])
+    d = client.post("/api/chat", json=chat_body("buy dogecoin")).json()
     assert not [a for a in d["actions"] if a["type"] == "products"]
 
 

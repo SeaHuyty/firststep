@@ -17,10 +17,13 @@ The browser only talks to the client origin. `client/next.config.ts` proxies `/a
 
 - `server/app/domain/` pure logic: default allocation, hard guardrails (stock caps, minimum emergency
   fund), analysis, projections, product catalog, curated sources.
+  `stocks.py` screens individual stocks from the S&P 500 (`server/app/data/sp500.csv`) on live price
+  history for the client's risk level, at most two per sector. Individual stocks are capped at 20% of
+  the stocks bucket (a satellite next to the ETFs). The shortlist is suggested by default, like the ETFs, and the client can remove or add any; the advisor is told to propose only from it.
 - `server/app/ai/` the LLM layer (pydantic-ai): streamed explanation with citations, and a tool-using
   advisor that can update the profile, *propose* allocation changes and product picks (always clamped by
   the guardrails, applied only when the user clicks Apply), and switch pages.
-- `client/src/` the three-step UI (info, analysis, one combined plan page) plus the advisor side panel.
+- `client/src/` the three-step UI (info, analysis, one combined plan page) plus the advisor chat card.
 
 ## Run
 

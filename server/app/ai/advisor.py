@@ -16,6 +16,7 @@ from app.ai.models import pick_model
 from app.config import Settings
 from app.domain.catalog import BUCKET_META, LABELS, PRODUCTS
 from app.domain.plan import allocate_pct, apply_targets, limits, valid_pct
+from app.domain.stocks import in_universe, universe
 from app.domain.schemas import BUCKETS, PROFILE_FIELDS, Pct, Profile, ProductGroup
 
 # The UI has three pages; plan, products and what-if share the last one.
@@ -118,10 +119,15 @@ def propose_products(
 ) -> str:
     """Pick which catalog products to consider for a product group, shown in the Products section of the plan page
     with your reason. Only tickers from the catalog are allowed. The client must press Apply."""
-    valid = [p.ticker for p in PRODUCTS[group]]
-    bad = [t for t in tickers if t not in valid]
-    if bad:
-        return f"Unknown tickers {', '.join(bad)} for {group}. Valid: {', '.join(valid)}."
+    if group == "Individual Stocks":
+        bad = [t for t in tickers if not in_universe(t)]
+        if bad:
+            return f"{', '.join(bad)} is not in the S&P 500 universe. Choose from the SCREENED STOCK SHORTLIST."
+    else:
+        valid = [p.ticker for p in PRODUCTS[group]]
+        bad = [t for t in tickers if t not in valid]
+        if bad:
+            return f"Unknown tickers {', '.join(bad)} for {group}. Valid: {', '.join(valid)}."
     ctx.deps.products[group] = {"type": "products", "group": group, "tickers": tickers, "reason": reason}
     return "Product picks shown to the client (not applied until they press Apply)."
 
@@ -155,7 +161,9 @@ def live_text(m: dict[str, Any] | None) -> str:
     return " LIVE: " + ", ".join(x for x in parts if x) + "."
 
 
-def build_system(state: ChatState, picks: list[str], market: dict[str, dict[str, Any]] | None = None) -> str:
+def build_system(
+    state: ChatState, picks: list[str], market: dict[str, dict[str, Any]] | None = None, shortlist: list[dict[str, Any]] | None = None
+) -> str:
     p = state.profile
     lim = limits(p)
     missing = [f for f in PROFILE_FIELDS if f not in state.known]
@@ -166,7 +174,11 @@ def build_system(state: ChatState, picks: list[str], market: dict[str, dict[str,
             for x in items
         )
         for g, items in PRODUCTS.items()
+        if items
     )
+    stock_lines = "\n".join(
+        f"  - {x['ticker']} {x['name']} ({x['sector']}): {x['reason']}" for x in (shortlist or [])
+    ) or "  (still loading; do not recommend individual stocks yet)"
     return f"""You are the AI advisor inside a wealth-planning website prototype. The client sees pages (profile form, analysis, allocation plan with a donut chart, product comparison, what-if chart) next to this chat. You change what they see by calling tools.
 
 CLIENT FACTS: ${p.amount:,.0f} available; goal: {LABELS['goal'][p.goal]}; horizon: {LABELS['horizon'][str(p.horizon)]}; emergency savings: {LABELS['emergency'][p.emergency]}; risk: {LABELS['risk'][str(p.risk)]}; debt: {LABELS['debt'][p.debt]}.
@@ -179,6 +191,9 @@ BUCKETS: {'; '.join(f'{b} = {BUCKET_META[b]["label"]}' for b in BUCKETS)}
 PRODUCT CATALOG (the only products you may recommend; you cannot research anything outside it in this prototype):
 {catalog}
 
+SCREENED STOCK SHORTLIST (individual S&P 500 stocks the system selected for this client's risk level from live price history, at most 2 per sector; code picked these, you may only discuss or propose from this list):
+{stock_lines}
+
 How to behave:
 - Reply in 1-4 short, plain sentences. Warm, direct, no markdown.
 - First learn any unconfirmed facts; call update_profile when the client states or corrects a fact. Once all six are confirmed, offer to show their analysis (show_step) and plan.
@@ -187,6 +202,7 @@ How to behave:
 - Be honest, not agreeable. Correct mistaken premises gently before acting. "ETFs" are a wrapper, not a risk level: stock ETFs are generally riskier than bond ETFs or savings, and more stocks means MORE risk, never "safer". If the client wants safety, move toward bonds/cash/emergency fund or suggest broad low-cost diversified ETFs instead of concentrated ones, and say why. If their request would raise risk, say so plainly.
 - If the client has clearly asked for a change, call the tool right away instead of asking permission first; the Apply button is their confirmation.
 - Respect the limits. If the client asks for more than a limit allows, propose the closest allowed value and tell them the limit (for example "stocks are capped at 55% for a moderate-risk profile") and that they could change their risk tolerance if they truly want more.
+- Individual stocks come only from the SCREENED STOCK SHORTLIST (propose_products with group "Individual Stocks"). Treat them as single-company bets: far more volatile than a diversified ETF, and they can lose most of their value. Code caps them at a small satellite of the stocks slice next to the ETF picks. Say so plainly when proposing them, and never call any stock a sure thing. If the client asks for a stock not on the shortlist, say the screen did not pick it for their risk level and suggest the closest shortlist option.
 - Each product lists where it invests. Only recommend a fund as "worldwide/global" if its region says Worldwide, or Developed markets for developed-world exposure; never call a US-only fund global.
 - LIVE figures come from Yahoo Finance and may be delayed. When comparing products, quote them exactly as given, say returns are historical (past performance does not predict future results), and rank by fit to the client's goal, horizon and risk, never by highest past return. Never compute or invent figures that are not shown.
 - Never promise returns. If asked about anything outside the catalog (specific stocks, crypto), say you can't research it here and suggest the closest catalog option.
@@ -209,6 +225,7 @@ async def run_turn(
     pct: Pct | None,
     picks: list[str],
     market: dict[str, dict[str, Any]] | None = None,
+    shortlist: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any] | None:
     """Returns {"reply", "actions"}, or None when no AI key is configured."""
     model = pick_model(settings, "chat")
@@ -219,7 +236,7 @@ async def run_turn(
     agent = Agent(
         model,
         deps_type=ChatState,
-        instructions=build_system(state, picks, market),
+        instructions=build_system(state, picks, market, shortlist),
         tools=[update_profile, propose_allocation, propose_products, show_step],
     )
     result = await agent.run(

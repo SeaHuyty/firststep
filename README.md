@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WealthPilot AI
 
-## Getting Started
+Prototype of an AI wealth advisor: it learns a client's situation, assesses risk, proposes a portfolio
+allocation, compares products, and explains the recommendation with cited, trusted sources.
 
-First, run the development server:
+> Educational prototype. Not financial advice. Product fees and minimums are illustrative.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Layout
+
+```
+client/   Next.js (React, Tailwind): UI only
+server/   FastAPI (Python): all finance logic + the AI
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The browser only talks to the client origin. `client/next.config.ts` proxies `/api/*` to the server
+(`API_URL`, default `http://127.0.0.1:8000`), so there is no CORS setup.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Design rule:** deterministic code decides every number; the AI only explains and proposes.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `server/app/domain/` pure logic: default allocation, hard guardrails (stock caps, minimum emergency
+  fund), analysis, projections, product catalog, curated sources.
+- `server/app/ai/` the LLM layer (pydantic-ai): streamed explanation with citations, and a tool-using
+  advisor that can update the profile, *propose* allocation changes and product picks (always clamped by
+  the guardrails, applied only when the user clicks Apply), and switch pages.
+- `client/src/` the five-step UI plus the advisor side panel.
 
-## Learn More
+## Run
 
-To learn more about Next.js, take a look at the following resources:
+Needs Node 20+ and Python 3.11+.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# server
+cd server
+python -m venv .venv
+.venv/Scripts/activate        # macOS/Linux: source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env          # add an AI key (see below)
+python -m uvicorn app.main:app --reload --port 8000
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# client (another terminal)
+cd client
+npm install
+npm run dev                   # http://localhost:3000
+```
 
-## Deploy on Vercel
+Shortcuts from the repo root: `npm run dev:server`, `npm run dev:client`, `npm run test:server`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### AI key
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set **one** in `server/.env`:
+
+- `GOOGLE_GENERATIVE_AI_API_KEY`: Gemini, has a free tier (https://aistudio.google.com/apikey)
+- `ANTHROPIC_API_KEY`: Claude (used instead if both are set)
+
+Without a key the app still runs: the explanation falls back to canned text and the advisor chat is
+disabled (use the form). Model names can be overridden in `.env` (see `.env.example`).
+
+## API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/catalog` | labels, buckets, products, sources |
+| POST | `/api/plan` | default allocation, limits, analysis for a profile |
+| POST | `/api/allocation/validate` | check a proposed allocation against the guardrails |
+| POST | `/api/projection` | what-if projection (3 scenarios) |
+| POST | `/api/explain` | streamed, cited explanation of an allocation |
+| POST | `/api/chat` | advisor turn: reply + actions for the UI |
+
+## Tests
+
+```bash
+cd server && python -m pytest -q   # domain logic, API, and the advisor's tool path (scripted fake LLM)
+cd client && npm run lint && npm run build
+```

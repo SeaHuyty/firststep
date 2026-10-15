@@ -1,32 +1,12 @@
 {
-  "name": "zhongguo_xiangmu",
-  "version": "0.1.0",
+  "name": "wealthpilot",
   "private": true,
+  "description": "WealthPilot AI prototype: Next.js client + FastAPI server",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@ai-sdk/anthropic": "^4.0.80",
-    "@ai-sdk/google": "^4.0.96",
-    "ai": "^7.0.141",
-    "next": "16.4.1",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "zod": "^4.6.7"
-  },
-  "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.1",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^4.1.11"
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "cd server && python -m uvicorn app.main:app --reload --port 8000",
+    "build:client": "npm --prefix client run build",
+    "lint:client": "npm --prefix client run lint",
+    "test:server": "cd server && python -m pytest -q"
   }
 }

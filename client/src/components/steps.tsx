@@ -1,34 +1,24 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { Donut, LineChart } from "./charts";
-import { Explanation } from "./explanation";
+import { useEffect, useState, type ReactNode } from "react";
+import { api } from "@/lib/api";
+import { useCatalog } from "@/lib/catalog";
 import {
-  analyse,
-  buckets,
-  bucketMeta,
-  debtLabels,
-  emergencyLabels,
-  groupBuckets,
-  goalLabels,
-  horizonLabels,
-  products,
-  project,
-  riskLabels,
+  BUCKETS,
+  BUCKET_COLORS,
   slicesFromPct,
   usd,
-  type Debt,
-  type Pct,
-  type Emergency,
+  type Analysis,
   type Goal,
   type Horizon,
-  type Profile,
+  type Pct,
   type ProductGroup,
+  type Profile,
   type Risk,
   type Status,
-} from "@/lib/plan";
-
-type StepProps = { profile: Profile; onNext: () => void };
+} from "@/lib/types";
+import { Donut, LineChart } from "./charts";
+import { Explanation } from "./explanation";
 
 const inputCls =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
@@ -62,25 +52,22 @@ function Next({ onClick, children }: { onClick: () => void; children: ReactNode 
   );
 }
 
-function Select<T extends string | number>({
+export function Loading() {
+  return <p className="text-sm text-slate-500">Loading…</p>;
+}
+
+function Select({
   value,
   options,
   onChange,
 }: {
-  value: T;
-  options: Record<T, string>;
-  onChange: (v: T) => void;
+  value: string | number;
+  options: Record<string, string>;
+  onChange: (v: string) => void;
 }) {
   return (
-    <select
-      className={inputCls}
-      value={value}
-      onChange={(e) => {
-        const raw = e.target.value;
-        onChange((typeof value === "number" ? Number(raw) : raw) as T);
-      }}
-    >
-      {Object.entries<string>(options).map(([k, label]) => (
+    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+      {Object.entries(options).map(([k, label]) => (
         <option key={k} value={k}>
           {label}
         </option>
@@ -97,7 +84,13 @@ export function InfoStep({
   setProfile,
   confirm,
   onNext,
-}: StepProps & { setProfile: (p: Profile) => void; confirm: (keys: (keyof Profile)[]) => void }) {
+}: {
+  profile: Profile;
+  setProfile: (p: Profile) => void;
+  confirm: (keys: (keyof Profile)[]) => void;
+  onNext: () => void;
+}) {
+  const { labels } = useCatalog();
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => {
     setProfile({ ...profile, [k]: v });
     confirm([k]);
@@ -120,7 +113,7 @@ export function InfoStep({
         <div>
           <span className="mb-1.5 block text-sm font-medium text-slate-700">Main goal</span>
           <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(goalLabels) as Goal[]).map((g) => (
+            {(Object.keys(labels.goal) as Goal[]).map((g) => (
               <button
                 key={g}
                 onClick={() => set("goal", g)}
@@ -130,23 +123,23 @@ export function InfoStep({
                     : "border-slate-300 text-slate-700 hover:bg-slate-50"
                 }`}
               >
-                {goalLabels[g]}
+                {labels.goal[g]}
               </button>
             ))}
           </div>
         </div>
 
         <Field label="When will you need the money?">
-          <Select<Horizon> value={profile.horizon} options={horizonLabels} onChange={(v) => set("horizon", v)} />
+          <Select value={profile.horizon} options={labels.horizon} onChange={(v) => set("horizon", Number(v) as Horizon)} />
         </Field>
         <Field label="Emergency savings">
-          <Select<Emergency> value={profile.emergency} options={emergencyLabels} onChange={(v) => set("emergency", v)} />
+          <Select value={profile.emergency} options={labels.emergency} onChange={(v) => set("emergency", v as Profile["emergency"])} />
         </Field>
         <Field label="Outstanding debt">
-          <Select<Debt> value={profile.debt} options={debtLabels} onChange={(v) => set("debt", v)} />
+          <Select value={profile.debt} options={labels.debt} onChange={(v) => set("debt", v as Profile["debt"])} />
         </Field>
 
-        <Field label={`Risk tolerance: ${riskLabels[profile.risk]}`}>
+        <Field label={`Risk tolerance: ${labels.risk[profile.risk]}`}>
           <input
             type="range"
             min={1}
@@ -177,8 +170,15 @@ const statusCls: Record<Status, string> = {
   bad: "text-rose-600",
 };
 
-export function AnalysisStep({ profile, onNext }: StepProps) {
-  const { score, rows, insights } = analyse(profile);
+const riskBlurb: Record<Risk, string> = {
+  1: "You prefer stability over higher returns.",
+  2: "You can accept some market swings for higher returns.",
+  3: "You accept large swings in pursuit of growth.",
+};
+
+export function AnalysisStep({ profile, analysis, onNext }: { profile: Profile; analysis: Analysis; onNext: () => void }) {
+  const { labels } = useCatalog();
+  const { score, rows, insights } = analysis;
   return (
     <div className="max-w-lg">
       <Title title="AI financial analysis" sub="Your financial profile and key insights." />
@@ -205,16 +205,8 @@ export function AnalysisStep({ profile, onNext }: StepProps) {
 
       <section className="mt-4 rounded-xl border border-slate-200 p-5">
         <h2 className="font-medium text-slate-900">Risk profile</h2>
-        <p className="mt-1 text-2xl font-semibold text-blue-600">{riskLabels[profile.risk]}</p>
-        <p className="text-sm text-slate-500">
-          {
-            {
-              1: "You prefer stability over higher returns.",
-              2: "You can accept some market swings for higher returns.",
-              3: "You accept large swings in pursuit of growth.",
-            }[profile.risk]
-          }
-        </p>
+        <p className="mt-1 text-2xl font-semibold text-blue-600">{labels.risk[profile.risk]}</p>
+        <p className="text-sm text-slate-500">{riskBlurb[profile.risk]}</p>
       </section>
 
       <section className="mt-4 rounded-xl border border-slate-200 p-5">
@@ -246,13 +238,14 @@ export function PlanStep({
   onReset: () => void;
   onNext: () => void;
 }) {
+  const { labels, buckets } = useCatalog();
   const slices = slicesFromPct(profile.amount, pct);
-  const rows = buckets.filter((b) => pct[b] > 0 || (adjusted && base[b] > 0));
+  const rows = BUCKETS.filter((b) => pct[b] > 0 || (adjusted && base[b] > 0));
   return (
     <div className="max-w-2xl">
       <Title
         title={`Your ${usd(profile.amount)} allocation plan`}
-        sub={`Based on your goal (${goalLabels[profile.goal].toLowerCase()}), risk level and situation.`}
+        sub={`Based on your goal (${labels.goal[profile.goal].toLowerCase()}), risk level and situation.`}
       />
       {adjusted && (
         <div className="mb-5 flex items-start justify-between gap-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
@@ -271,8 +264,8 @@ export function PlanStep({
             const delta = pct[b] - base[b];
             return (
               <li key={b} className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-sm" style={{ background: bucketMeta[b].color }} />
-                <span className="flex-1 text-slate-700">{bucketMeta[b].label}</span>
+                <span className="h-3 w-3 rounded-sm" style={{ background: BUCKET_COLORS[b] }} />
+                <span className="flex-1 text-slate-700">{buckets[b].label}</span>
                 {adjusted && delta !== 0 && (
                   <span className={`text-xs font-medium ${delta > 0 ? "text-emerald-600" : "text-amber-600"}`}>
                     {delta > 0 ? "+" : ""}
@@ -307,9 +300,10 @@ export function ProductsStep({
   onResetPicks: () => void;
   onNext: () => void;
 }) {
+  const { products, group_buckets } = useCatalog();
   const groups = Object.keys(products) as ProductGroup[];
   const [tab, setTab] = useState<ProductGroup>(groups[0]);
-  const slices = slicesFromPct(profile.amount, pct).filter((s) => groupBuckets[tab].includes(s.bucket));
+  const slices = slicesFromPct(profile.amount, pct).filter((s) => group_buckets[tab].includes(s.bucket));
   const share = slices.reduce((n, s) => n + s.pct, 0);
   const amount = slices.reduce((n, s) => n + s.amount, 0);
   const all = products[tab];
@@ -399,12 +393,37 @@ export function ProductsStep({
 /* 5 — What-if simulation */
 const horizons = [1, 3, 5, 10, 20];
 
+type Projection = { monthly: number; years: number; series: [number[], number[], number[]] };
+
 export function WhatIfStep({ profile }: { profile: Profile }) {
+  const { labels } = useCatalog();
   const [monthly, setMonthly] = useState(100);
   const [years, setYears] = useState(10);
   const [risk, setRisk] = useState<Risk>(profile.risk);
-  const series = project(profile.amount, monthly, years, risk);
-  const [low, base, high] = series.map((s) => s[s.length - 1]);
+  // The result carries its own inputs so the summary never mixes new inputs with an old series.
+  const [result, setResult] = useState<Projection | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => {
+      api
+        .projection({ amount: profile.amount, monthly, years, risk }, ctrl.signal)
+        .then((series) => {
+          setFailed(false);
+          setResult({ monthly, years, series });
+        })
+        .catch(() => {
+          if (!ctrl.signal.aborted) setFailed(true);
+        });
+    }, 150);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [profile.amount, monthly, years, risk]);
+
+  const ends = result?.series.map((s) => s[s.length - 1]);
 
   return (
     <div className="max-w-2xl">
@@ -431,23 +450,29 @@ export function WhatIfStep({ profile }: { profile: Profile }) {
           </select>
         </Field>
         <Field label="Risk level">
-          <Select<Risk> value={risk} options={riskLabels} onChange={setRisk} />
+          <Select value={risk} options={labels.risk} onChange={(v) => setRisk(Number(v) as Risk)} />
         </Field>
       </div>
 
-      <h2 className="mb-2 mt-8 font-medium text-slate-900">Projected portfolio value</h2>
-      <LineChart series={series} />
-      <div className="mt-2 flex gap-4 text-xs text-slate-600">
-        <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />Optimistic {usd(high)}</span>
-        <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-500" />Base {usd(base)}</span>
-        <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-red-500" />Pessimistic {usd(low)}</span>
-      </div>
+      {failed && <p className="mt-6 text-sm text-rose-600">Couldn’t load the projection. Is the server running?</p>}
+      {result && ends && (
+        <>
+          <h2 className="mb-2 mt-8 font-medium text-slate-900">Projected portfolio value</h2>
+          <LineChart series={result.series} />
+          <div className="mt-2 flex gap-4 text-xs text-slate-600">
+            <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />Optimistic {usd(ends[2])}</span>
+            <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-500" />Base {usd(ends[1])}</span>
+            <span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-red-500" />Pessimistic {usd(ends[0])}</span>
+          </div>
 
-      <p className="mt-6 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
-        <strong className="text-slate-900">Key takeaway:</strong> with {usd(monthly)} a month, your portfolio could
-        grow to around {usd(base)} in {years} {years === 1 ? "year" : "years"} (base case). Actual returns can be
-        higher or lower. Illustrative scenario, not financial advice.
-      </p>
+          <p className="mt-6 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+            <strong className="text-slate-900">Key takeaway:</strong> with {usd(result.monthly)} a month, your portfolio
+            could grow to around {usd(ends[1])} in {result.years} {result.years === 1 ? "year" : "years"} (base case).
+            Actual returns can be higher or lower. Illustrative scenario, not financial advice.
+          </p>
+        </>
+      )}
+      {!result && !failed && <p className="mt-8 text-sm text-slate-500">Loading…</p>}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { bucketMeta, usd, type Slice } from "@/lib/plan";
+import { BUCKET_COLORS, usd, type Slice } from "@/lib/types";
 
 export function Donut({ slices, total }: { slices: Slice[]; total: number }) {
   const r = 70;
@@ -16,7 +16,7 @@ export function Donut({ slices, total }: { slices: Slice[]; total: number }) {
               cy="100"
               r={r}
               fill="none"
-              stroke={bucketMeta[s.bucket].color}
+              stroke={BUCKET_COLORS[s.bucket]}
               strokeWidth="28"
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offset}

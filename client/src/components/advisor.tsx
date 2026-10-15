@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Action } from "@/lib/actions";
-import { bucketMeta, buckets, products, usd, type Pct, type ProductGroup, type Profile } from "@/lib/plan";
+import { api } from "@/lib/api";
+import { useCatalog } from "@/lib/catalog";
+import {
+  BUCKETS,
+  BUCKET_COLORS,
+  usd,
+  type Action,
+  type Catalog,
+  type Pct,
+  type ProductGroup,
+  type Profile,
+} from "@/lib/types";
 
 type Status = "pending" | "applied" | "dismissed" | "stale";
 type Proposal = { action: Extract<Action, { type: "allocation" | "products" }>; status: Status };
@@ -15,10 +25,22 @@ const GREETING: Msg = {
 };
 const SUGGESTIONS = ["I have $10,000 to invest for a house in 3 years", "Make my plan safer", "Pick cheap worldwide ETFs"];
 
-const profileNote = (u: Partial<Profile>) =>
+const FIELD_NAMES: Record<string, string> = {
+  amount: "Money",
+  goal: "Goal",
+  horizon: "Horizon",
+  emergency: "Emergency savings",
+  risk: "Risk",
+  debt: "Debt",
+};
+
+const profileNote = (u: Partial<Profile>, catalog: Catalog) =>
   "Updated: " +
   Object.entries(u)
-    .map(([k, v]) => `${k} → ${k === "amount" ? usd(v as number) : v}`)
+    .map(([k, v]) => {
+      const labels = catalog.labels[k as keyof Catalog["labels"]];
+      return `${FIELD_NAMES[k]} → ${k === "amount" ? usd(v as number) : (labels?.[String(v)] ?? v)}`;
+    })
     .join(", ");
 
 export function Advisor({
@@ -37,13 +59,14 @@ export function Advisor({
   onClose: () => void;
   profile: Profile;
   confirmed: string[];
-  pct: Pct;
+  pct: Pct | null;
   picks: string[];
   onProfile: (u: Partial<Profile>) => void;
-  onApplyAllocation: (after: Pct, reason: string) => boolean;
+  onApplyAllocation: (after: Pct, reason: string) => Promise<boolean>;
   onApplyProducts: (group: ProductGroup, tickers: string[], reason: string) => boolean;
   onGoto: (step: number) => void;
 }) {
+  const catalog = useCatalog();
   const [messages, setMessages] = useState<Msg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -63,27 +86,20 @@ export function Advisor({
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: history.slice(-20).map(({ role, content }) => ({ role, content })),
-          profile,
-          confirmed,
-          pct,
-          picks,
-        }),
+      const data = await api.chat({
+        messages: history.slice(-20).map(({ role, content }) => ({ role, content })),
+        profile,
+        confirmed,
+        pct,
+        picks,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
 
-      const actions: Action[] = data.actions ?? [];
       const notes: string[] = [];
       const proposals: Proposal[] = [];
-      for (const a of actions) {
+      for (const a of data.actions ?? []) {
         if (a.type === "profile") {
           onProfile(a.updates);
-          notes.push(profileNote(a.updates));
+          notes.push(profileNote(a.updates, catalog));
         } else if (a.type === "goto") onGoto(a.step);
         else proposals.push({ action: a, status: "pending" });
       }
@@ -103,10 +119,10 @@ export function Advisor({
     );
   }
 
-  function apply(msgIndex: number, propIndex: number, p: Proposal) {
+  async function apply(msgIndex: number, propIndex: number, p: Proposal) {
     const a = p.action;
     const ok =
-      a.type === "allocation" ? onApplyAllocation(a.after, a.reason) : onApplyProducts(a.group, a.tickers, a.reason);
+      a.type === "allocation" ? await onApplyAllocation(a.after, a.reason) : onApplyProducts(a.group, a.tickers, a.reason);
     resolve(msgIndex, propIndex, ok ? "applied" : "stale");
   }
 
@@ -189,6 +205,7 @@ export function Advisor({
 }
 
 function ProposalCard({ p, onApply, onDismiss }: { p: Proposal; onApply: () => void; onDismiss: () => void }) {
+  const { buckets, products } = useCatalog();
   const a = p.action;
   return (
     <div className="rounded-xl border border-slate-200 p-3 text-sm">
@@ -197,12 +214,10 @@ function ProposalCard({ p, onApply, onDismiss }: { p: Proposal; onApply: () => v
       </p>
       {a.type === "allocation" ? (
         <ul className="mt-2 space-y-1">
-          {buckets
-            .filter((b) => a.before[b] !== a.after[b])
-            .map((b) => (
+          {BUCKETS.filter((b) => a.before[b] !== a.after[b]).map((b) => (
               <li key={b} className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: bucketMeta[b].color }} />
-                <span className="flex-1 text-slate-700">{bucketMeta[b].label}</span>
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BUCKET_COLORS[b] }} />
+                <span className="flex-1 text-slate-700">{buckets[b].label}</span>
                 <span className="text-slate-500">
                   {a.before[b]}% → <strong className="text-slate-900">{a.after[b]}%</strong>
                 </span>

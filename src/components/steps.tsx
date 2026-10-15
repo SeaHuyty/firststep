@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Chat } from "./chat";
 import { Donut, LineChart } from "./charts";
 import { Explanation } from "./explanation";
 import {
-  allocate,
   analyse,
+  buckets,
   bucketMeta,
   debtLabels,
   emergencyLabels,
@@ -16,8 +15,10 @@ import {
   products,
   project,
   riskLabels,
+  slicesFromPct,
   usd,
   type Debt,
+  type Pct,
   type Emergency,
   type Goal,
   type Horizon,
@@ -89,32 +90,21 @@ function Select<T extends string | number>({
 }
 
 /* 1 — Enter information */
+const FIELD_KEYS: (keyof Profile)[] = ["amount", "goal", "horizon", "emergency", "risk", "debt"];
+
 export function InfoStep({
   profile,
   setProfile,
+  confirm,
   onNext,
-}: StepProps & { setProfile: (p: Profile) => void }) {
-  const [mode, setMode] = useState<"form" | "chat">("form");
-  const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setProfile({ ...profile, [k]: v });
+}: StepProps & { setProfile: (p: Profile) => void; confirm: (keys: (keyof Profile)[]) => void }) {
+  const set = <K extends keyof Profile>(k: K, v: Profile[K]) => {
+    setProfile({ ...profile, [k]: v });
+    confirm([k]);
+  };
   return (
     <div className="max-w-lg">
-      <Title title="Let’s get to know you" sub="Tell us about your finances and goals so we can build your plan." />
-      <div className="mb-6 inline-flex rounded-lg bg-slate-100 p-1 text-sm">
-        {(["form", "chat"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`rounded-md px-3 py-1.5 ${mode === m ? "bg-white font-medium shadow-sm" : "text-slate-600"}`}
-          >
-            {m === "form" ? "Fill a form" : "Chat with advisor"}
-          </button>
-        ))}
-      </div>
-      <div className={mode === "chat" ? "" : "hidden"}>
-        <Chat profile={profile} setProfile={setProfile} onNext={onNext} />
-      </div>
-      {mode === "form" && (
-      <>
+      <Title title="Let’s get to know you" sub="Tell us about your finances and goals, or just chat with the advisor." />
       <div className="space-y-5">
         <Field label="Available money">
           <input
@@ -168,9 +158,14 @@ export function InfoStep({
           />
         </Field>
       </div>
-      <Next onClick={onNext}>Analyse my situation →</Next>
-      </>
-      )}
+      <Next
+        onClick={() => {
+          confirm(FIELD_KEYS);
+          onNext();
+        }}
+      >
+        Analyse my situation →
+      </Next>
     </div>
   );
 }
@@ -236,60 +231,120 @@ export function AnalysisStep({ profile, onNext }: StepProps) {
 }
 
 /* 3 — Personalized plan */
-export function PlanStep({ profile, onNext }: StepProps) {
-  const slices = allocate(profile);
+export function PlanStep({
+  profile,
+  pct,
+  base,
+  adjusted,
+  onReset,
+  onNext,
+}: {
+  profile: Profile;
+  pct: Pct;
+  base: Pct;
+  adjusted: string | null;
+  onReset: () => void;
+  onNext: () => void;
+}) {
+  const slices = slicesFromPct(profile.amount, pct);
+  const rows = buckets.filter((b) => pct[b] > 0 || (adjusted && base[b] > 0));
   return (
     <div className="max-w-2xl">
       <Title
         title={`Your ${usd(profile.amount)} allocation plan`}
         sub={`Based on your goal (${goalLabels[profile.goal].toLowerCase()}), risk level and situation.`}
       />
+      {adjusted && (
+        <div className="mb-5 flex items-start justify-between gap-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          <p>
+            <strong>Adjusted with your advisor.</strong> {adjusted}
+          </p>
+          <button onClick={onReset} className="shrink-0 text-blue-700 underline hover:no-underline">
+            Reset
+          </button>
+        </div>
+      )}
       <div className="flex flex-col items-center gap-6 sm:flex-row">
         <Donut slices={slices} total={profile.amount} />
         <ul className="w-full space-y-2 text-sm">
-          {slices.map((s) => (
-            <li key={s.bucket} className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-sm" style={{ background: bucketMeta[s.bucket].color }} />
-              <span className="flex-1 text-slate-700">{bucketMeta[s.bucket].label}</span>
-              <span className="font-medium text-slate-900">{usd(s.amount)}</span>
-              <span className="w-10 text-right text-slate-500">{s.pct}%</span>
-            </li>
-          ))}
+          {rows.map((b) => {
+            const delta = pct[b] - base[b];
+            return (
+              <li key={b} className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-sm" style={{ background: bucketMeta[b].color }} />
+                <span className="flex-1 text-slate-700">{bucketMeta[b].label}</span>
+                {adjusted && delta !== 0 && (
+                  <span className={`text-xs font-medium ${delta > 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                    {delta > 0 ? "+" : ""}
+                    {delta}
+                  </span>
+                )}
+                <span className="font-medium text-slate-900">{usd(Math.round((profile.amount * pct[b]) / 100))}</span>
+                <span className="w-10 text-right text-slate-500">{pct[b]}%</span>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
-      <Explanation key={JSON.stringify(profile)} profile={profile} />
+      <Explanation key={JSON.stringify([profile, pct])} profile={profile} pct={pct} />
       <Next onClick={onNext}>View products →</Next>
     </div>
   );
 }
 
 /* 4 — Product details */
-export function ProductsStep({ profile, onNext }: StepProps) {
+export function ProductsStep({
+  profile,
+  pct,
+  picks,
+  onResetPicks,
+  onNext,
+}: {
+  profile: Profile;
+  pct: Pct;
+  picks: Record<string, string>;
+  onResetPicks: () => void;
+  onNext: () => void;
+}) {
   const groups = Object.keys(products) as ProductGroup[];
   const [tab, setTab] = useState<ProductGroup>(groups[0]);
-  const slices = allocate(profile).filter((s) => groupBuckets[tab].includes(s.bucket));
-  const pct = slices.reduce((n, s) => n + s.pct, 0);
+  const slices = slicesFromPct(profile.amount, pct).filter((s) => groupBuckets[tab].includes(s.bucket));
+  const share = slices.reduce((n, s) => n + s.pct, 0);
   const amount = slices.reduce((n, s) => n + s.amount, 0);
-  const list = products[tab];
-  const split = list.length ? Math.round(amount / list.length) : 0;
+  const all = products[tab];
+  const picked = all.filter((p) => picks[p.ticker]);
+  const list = [...picked, ...all.filter((p) => !picks[p.ticker])];
+  const each = picked.length ? Math.round(amount / picked.length) : 0;
   return (
     <div className="max-w-2xl">
       <Title title="Recommended products" sub="Example products for your plan. Illustrative only, not real-time data." />
-      <div className="mb-4 inline-flex rounded-lg bg-slate-100 p-1 text-sm">
-        {groups.map((g) => (
-          <button
-            key={g}
-            onClick={() => setTab(g)}
-            className={`rounded-md px-3 py-1.5 ${tab === g ? "bg-white font-medium shadow-sm" : "text-slate-600"}`}
-          >
-            {g}
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="inline-flex rounded-lg bg-slate-100 p-1 text-sm">
+          {groups.map((g) => (
+            <button
+              key={g}
+              onClick={() => setTab(g)}
+              className={`rounded-md px-3 py-1.5 ${tab === g ? "bg-white font-medium shadow-sm" : "text-slate-600"}`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+        {Object.keys(picks).length > 0 && (
+          <button onClick={onResetPicks} className="text-sm text-blue-700 underline hover:no-underline">
+            Clear advisor picks
           </button>
-        ))}
+        )}
       </div>
       <p className="mb-3 text-sm text-slate-600">
-        Your plan puts <strong className="text-slate-900">{usd(amount)}</strong> ({pct}%) here.
-        {list.length > 1 && <> Split evenly, about {usd(split)} each.</>}
+        Your plan puts <strong className="text-slate-900">{usd(amount)}</strong> ({share}%) here.
+        {picked.length > 0 && (
+          <>
+            {" "}
+            {picked.length > 1 ? `Split across your ${picked.length} picks, about ${usd(each)} each.` : "All of it goes to your pick."}
+          </>
+        )}
       </p>
       <div className="overflow-x-auto rounded-xl border border-slate-200">
         <table className="w-full min-w-[480px] text-left text-sm">
@@ -299,16 +354,23 @@ export function ProductsStep({ profile, onNext }: StepProps) {
               <th className="px-4 py-2 font-medium">Risk</th>
               <th className="px-4 py-2 font-medium">Fee</th>
               <th className="px-4 py-2 font-medium">Min.</th>
+              {picked.length > 0 && <th className="px-4 py-2 font-medium">Your $</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {list.map((p) => (
-              <tr key={p.ticker} className="align-top">
+              <tr key={p.ticker} className={`align-top ${picks[p.ticker] ? "bg-blue-50/50" : ""}`}>
                 <td className="px-4 py-3">
                   <div className="font-medium text-slate-900">
                     {p.name} <span className="text-xs font-normal text-slate-500">{p.ticker}</span>
+                    {picks[p.ticker] && (
+                      <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                        Advisor pick
+                      </span>
+                    )}
                   </div>
                   <p className="mt-0.5 text-xs text-slate-500">{p.blurb}</p>
+                  {picks[p.ticker] && <p className="mt-1 text-xs italic text-blue-800">{picks[p.ticker]}</p>}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1 pt-1" aria-label={`Risk ${p.risk} of 5`}>
@@ -319,6 +381,11 @@ export function ProductsStep({ profile, onNext }: StepProps) {
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-700">{p.fee}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-700">{p.min}</td>
+                {picked.length > 0 && (
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
+                    {picks[p.ticker] ? usd(each) : "–"}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

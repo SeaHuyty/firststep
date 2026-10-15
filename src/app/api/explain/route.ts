@@ -1,7 +1,7 @@
 import { streamText } from "ai";
 import { z } from "zod";
 import {
-  allocate,
+  allocatePct,
   analyse,
   bucketMeta,
   debtLabels,
@@ -9,7 +9,10 @@ import {
   goalLabels,
   horizonLabels,
   riskLabels,
+  slicesFromPct,
   usd,
+  validPct,
+  type Pct,
   type Profile,
 } from "@/lib/plan";
 import { fastProviderOptions, pickModel } from "@/lib/model";
@@ -31,8 +34,16 @@ Ground every factual claim in the provided SOURCES and cite with the marker [S#]
 Tie each explanation to the client's profile (goal, horizon, risk, emergency savings, debt).
 Plain language, no markdown, no guarantees of returns. Finish with one sentence saying this is educational, not personalised financial advice.`;
 
-function fallbackText(p: Profile): string {
-  const slices = allocate(p);
+const pctSchema = z.object({
+  emergency: z.number(),
+  stocks: z.number(),
+  bonds: z.number(),
+  cash: z.number(),
+  alt: z.number(),
+});
+
+function fallbackText(p: Profile, pct: Pct): string {
+  const slices = slicesFromPct(p.amount, pct);
   const body = slices
     .map((s) => {
       const cites = sourceIdsFor(s.bucket).map((id) => `[${id}]`).join("");
@@ -43,13 +54,18 @@ function fallbackText(p: Profile): string {
 }
 
 export async function POST(req: Request) {
-  const parsed = profileSchema.safeParse(await req.json().catch(() => null));
+  const parsed = z
+    .object({ profile: profileSchema, pct: pctSchema.optional() })
+    .safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Invalid profile" }, { status: 400 });
-  const profile: Profile = parsed.data;
+  const profile: Profile = parsed.data.profile;
+  // Use the client's adjusted allocation only if it passes the same guardrails as the default.
+  const pct = parsed.data.pct && validPct(profile, parsed.data.pct) ? parsed.data.pct : allocatePct(profile);
+  const adjusted = JSON.stringify(pct) !== JSON.stringify(allocatePct(profile));
 
-  const slices = allocate(profile);
+  const slices = slicesFromPct(profile.amount, pct);
   const model = pickModel();
-  if (!model) return new Response(fallbackText(profile), { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  if (!model) return new Response(fallbackText(profile, pct), { headers: { "Content-Type": "text/plain; charset=utf-8" } });
 
   const { score } = analyse(profile);
   const prompt = `CLIENT PROFILE
@@ -61,7 +77,7 @@ export async function POST(req: Request) {
 - Debt: ${debtLabels[profile.debt]}
 - Financial health score: ${score}/100
 
-ALLOCATION (fixed)
+ALLOCATION (fixed${adjusted ? ", adjusted by the client within safe limits from the rules-based default" : ""})
 ${slices.map((s) => `- ${bucketMeta[s.bucket].label}: ${usd(s.amount)} (${s.pct}%)`).join("\n")}
 
 SOURCES

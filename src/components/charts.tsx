@@ -20,6 +20,7 @@ export function Donut({ slices, total }: { slices: Slice[]; total: number }) {
               strokeWidth="28"
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offset}
+              style={{ transition: "stroke-dasharray 0.6s ease, stroke-dashoffset 0.6s ease" }}
             />
           );
         })}

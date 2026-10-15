@@ -90,8 +90,11 @@ export const bucketMeta: Record<
 };
 
 export type Slice = { bucket: Bucket; pct: number; amount: number };
+export type Pct = Record<Bucket, number>;
+export const buckets: Bucket[] = ["emergency", "stocks", "bonds", "cash", "alt"];
 
-export function allocate(p: Profile): Slice[] {
+// Rules-based default allocation (percent per bucket, sums to 100).
+export function allocatePct(p: Profile): Pct {
   const emergency =
     { none: 30, insufficient: 20, enough: 5 }[p.emergency] +
     (p.debt === "significant" ? 5 : 0);
@@ -105,15 +108,77 @@ export function allocate(p: Profile): Slice[] {
   const stocks = Math.round(rest * stockShare);
   const bonds = Math.round(Math.max(0, rest - alt - stocks) * 0.65);
   const cash = 100 - emergency - alt - stocks - bonds;
+  return { emergency, stocks, bonds, cash, alt };
+}
 
-  const pcts: Record<Bucket, number> = { emergency, stocks, bonds, cash, alt };
-  return (Object.keys(pcts) as Bucket[])
-    .filter((b) => pcts[b] > 0)
-    .map((bucket) => ({
-      bucket,
-      pct: pcts[bucket],
-      amount: Math.round((p.amount * pcts[bucket]) / 100),
-    }));
+export function slicesFromPct(amount: number, pct: Pct): Slice[] {
+  return buckets
+    .filter((b) => pct[b] > 0)
+    .map((bucket) => ({ bucket, pct: pct[bucket], amount: Math.round((amount * pct[bucket]) / 100) }));
+}
+
+export const allocate = (p: Profile): Slice[] => slicesFromPct(p.amount, allocatePct(p));
+
+// Hard guardrails for any change (AI-proposed or otherwise).
+// Stocks may move at most 15 points above the rules-based default and never past a risk cap;
+// the emergency fund can never drop below the rules-based minimum.
+export function limits(p: Profile): { min: Pct; max: Pct } {
+  const base = allocatePct(p);
+  const riskCap = { 1: 40, 2: 65, 3: 85 }[p.risk];
+  return {
+    min: { emergency: base.emergency, stocks: 0, bonds: 0, cash: 0, alt: 0 },
+    max: {
+      emergency: 100,
+      stocks: Math.min(riskCap, base.stocks + 15),
+      bonds: 100,
+      cash: 100,
+      alt: p.risk === 1 ? 5 : 10,
+    },
+  };
+}
+
+export function validPct(p: Profile, pct: Pct): boolean {
+  const { min, max } = limits(p);
+  return (
+    buckets.reduce((n, b) => n + pct[b], 0) === 100 &&
+    buckets.every((b) => Number.isInteger(pct[b]) && pct[b] >= min[b] && pct[b] <= max[b])
+  );
+}
+
+// Apply requested targets for some buckets. Each target is clamped to the guardrails, then the
+// total is rebalanced to 100 using the buckets that weren't explicitly targeted first.
+export function applyTargets(
+  p: Profile,
+  current: Pct,
+  targets: Partial<Pct>,
+): { pct: Pct; notes: string[] } {
+  const { min, max } = limits(p);
+  const notes: string[] = [];
+  const next: Pct = { ...current };
+  const targeted = buckets.filter((b) => targets[b] !== undefined);
+
+  for (const b of targeted) {
+    const requested = Math.round(targets[b]!);
+    next[b] = Math.min(max[b], Math.max(min[b], requested));
+    if (next[b] !== requested)
+      notes.push(`${bucketMeta[b].label} limited to ${next[b]}% (allowed ${min[b]}–${max[b]}% for this profile).`);
+  }
+
+  let diff = 100 - buckets.reduce((n, b) => n + next[b], 0);
+  const preferred: Bucket[] = diff > 0 ? ["bonds", "cash", "stocks", "alt", "emergency"] : ["cash", "bonds", "stocks", "alt", "emergency"];
+  const sequence = [...preferred.filter((b) => !targeted.includes(b)), ...preferred.filter((b) => targeted.includes(b))];
+  const sign = diff > 0 ? 1 : -1;
+  const touched = new Set<Bucket>();
+  for (const b of sequence) {
+    if (diff === 0) break;
+    const room = sign > 0 ? max[b] - next[b] : next[b] - min[b];
+    const moved = Math.max(0, Math.min(Math.abs(diff), room));
+    if (moved > 0 && targeted.includes(b)) touched.add(b);
+    next[b] += sign * moved;
+    diff -= sign * moved;
+  }
+  for (const b of touched) notes.push(`${bucketMeta[b].label} ended at ${next[b]}% so the total stays 100%.`);
+  return { pct: next, notes };
 }
 
 export type Status = "good" | "ok" | "bad";
@@ -171,6 +236,9 @@ export const products: Record<
     { name: "Vanguard S&P 500 ETF", ticker: "VOO", risk: 3, fee: "0.03%", min: "~$100", blurb: "Tracks 500 large U.S. companies. Long-term growth with diversified exposure." },
     { name: "iShares Core MSCI World ETF", ticker: "IWDA", risk: 3, fee: "0.20%", min: "~$100", blurb: "Diversified exposure across developed markets." },
     { name: "Invesco NASDAQ 100 ETF", ticker: "QQQM", risk: 4, fee: "0.15%", min: "~$100", blurb: "Leading technology companies. Higher potential return, higher volatility." },
+    { name: "Vanguard Total Stock Market ETF", ticker: "VTI", risk: 3, fee: "0.03%", min: "~$100", blurb: "Thousands of U.S. companies of every size, the broadest U.S. exposure." },
+    { name: "Vanguard Total World Stock ETF", ticker: "VT", risk: 3, fee: "0.06%", min: "~$100", blurb: "One fund holding stocks from developed and emerging markets worldwide." },
+    { name: "Vanguard Real Estate ETF", ticker: "VNQ", risk: 4, fee: "0.13%", min: "~$100", blurb: "U.S. real estate investment trusts (REITs). Adds a non-stock, non-bond diversifier." },
   ],
   Bonds: [
     { name: "Vanguard Total Bond Market ETF", ticker: "BND", risk: 2, fee: "0.03%", min: "~$100", blurb: "Broad U.S. investment-grade bonds for stability." },
@@ -179,8 +247,13 @@ export const products: Record<
   Savings: [
     { name: "High-yield Savings Account", ticker: "HYSA", risk: 1, fee: "None", min: "$0", blurb: "Instant access, insured deposits. Good home for an emergency fund." },
     { name: "Money Market Fund", ticker: "MMF", risk: 1, fee: "~0.10%", min: "~$500", blurb: "Short-term, low-risk securities with competitive yield." },
+    { name: "iShares 0-3 Month Treasury Bond ETF", ticker: "SGOV", risk: 1, fee: "0.09%", min: "~$100", blurb: "Very short-term U.S. Treasury bills. Cash-like, tradable like a stock." },
   ],
 };
+
+export type Product = (typeof products)[ProductGroup][number];
+export const groupOf = (ticker: string): ProductGroup | undefined =>
+  (Object.keys(products) as ProductGroup[]).find((g) => products[g].some((p) => p.ticker === ticker));
 
 // Annual return assumptions [pessimistic, base, optimistic] per risk level.
 const rates: Record<Risk, [number, number, number]> = {

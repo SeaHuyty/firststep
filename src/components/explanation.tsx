@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useState } from "react";
 import { sources } from "@/lib/sources";
-import type { Profile } from "@/lib/plan";
+import type { Pct, Profile } from "@/lib/plan";
 
 function Cited({ text }: { text: string }) {
   return (
@@ -28,7 +28,7 @@ function Cited({ text }: { text: string }) {
 }
 
 // Remount with a new `key` when the profile changes; effect only sets state from async callbacks.
-export function Explanation({ profile }: { profile: Profile }) {
+export function Explanation({ profile, pct }: { profile: Profile; pct: Pct }) {
   const [text, setText] = useState("");
   const [state, setState] = useState<"loading" | "done" | "error">("loading");
 
@@ -39,7 +39,7 @@ export function Explanation({ profile }: { profile: Profile }) {
         const res = await fetch("/api/explain", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(profile),
+          body: JSON.stringify({ profile, pct }),
           signal: ctrl.signal,
         });
         if (!res.ok || !res.body) throw new Error(String(res.status));
@@ -58,7 +58,7 @@ export function Explanation({ profile }: { profile: Profile }) {
       }
     })();
     return () => ctrl.abort();
-  }, [profile]);
+  }, [profile, pct]);
 
   const cited = [...new Set([...text.matchAll(/\[(S\d+)\]/g)].map((m) => m[1]))].filter((id) => sources[id]);
 

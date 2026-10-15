@@ -28,7 +28,7 @@ const profileSchema = z.object({
 // Claude if ANTHROPIC_API_KEY is set, else Gemini free tier, else null (canned fallback).
 function pickModel(): LanguageModel | null {
   if (process.env.ANTHROPIC_API_KEY) return anthropic(process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5");
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return google(process.env.GEMINI_MODEL ?? "gemini-2.5-flash");
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return google(process.env.GEMINI_MODEL ?? "gemini-3.8-flash");
   return null;
 }
 

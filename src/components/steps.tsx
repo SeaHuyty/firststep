@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Donut, LineChart } from "./charts";
+import { Explanation } from "./explanation";
 import {
   allocate,
   analyse,
@@ -236,17 +237,7 @@ export function PlanStep({ profile, onNext }: StepProps) {
         </ul>
       </div>
 
-      <h2 className="mb-3 mt-8 font-medium text-slate-900">Why this allocation?</h2>
-      <ul className="space-y-2">
-        {slices.map((s) => (
-          <li key={s.bucket} className="rounded-lg border border-slate-200 p-3 text-sm">
-            <span className="font-medium text-slate-900">
-              {usd(s.amount)} · {bucketMeta[s.bucket].label} ({s.pct}%)
-            </span>
-            <p className="text-slate-500">{bucketMeta[s.bucket].why}</p>
-          </li>
-        ))}
-      </ul>
+      <Explanation key={JSON.stringify(profile)} profile={profile} />
       <Next onClick={onNext}>View products →</Next>
     </div>
   );

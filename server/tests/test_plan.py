@@ -8,7 +8,12 @@ from app.domain.schemas import BUCKETS, Profile
 
 PROFILES = [
     Profile(amount=10000, goal="wealth", horizon=h, emergency=e, debt=d, risk=r)
-    for h, e, d, r in itertools.product([1, 3, 7, 12], ["none", "insufficient", "enough"], ["none", "some", "significant"], [1, 2, 3])
+    for h, e, d, r in itertools.product(
+        [1, 3, 7, 12],
+        ["none", "insufficient", "enough"],
+        ["none", "some", "significant"],
+        [1, 2, 3],
+    )
 ]
 
 
@@ -18,8 +23,17 @@ def find(**kw) -> Profile:
 
 def test_default_matches_known_values():
     # Same numbers the TypeScript prototype produced for these inputs.
-    p = Profile(amount=10000, goal="wealth", horizon=7, emergency="insufficient", debt="none", risk=2)
-    assert allocate_pct(p) == {"emergency": 20, "stocks": 30, "single": 10, "bonds": 23, "cash": 12, "alt": 5}
+    p = Profile(
+        amount=10000, goal="wealth", horizon=7, emergency="insufficient", debt="none", risk=2
+    )
+    assert allocate_pct(p) == {
+        "emergency": 20,
+        "stocks": 30,
+        "single": 10,
+        "bonds": 23,
+        "cash": 12,
+        "alt": 5,
+    }
 
 
 def test_default_sums_to_100_and_is_inside_limits_for_every_combination():
@@ -77,7 +91,9 @@ def test_valid_pct_rejects_bad_sum_and_out_of_limit():
     good = allocate_pct(p)
     assert valid_pct(p, good)
     assert not valid_pct(p, {**good, "stocks": good["stocks"] + 1})  # sum != 100
-    assert not valid_pct(p, {"emergency": 0, "stocks": 100, "single": 0, "bonds": 0, "cash": 0, "alt": 0})
+    assert not valid_pct(
+        p, {"emergency": 0, "stocks": 100, "single": 0, "bonds": 0, "cash": 0, "alt": 0}
+    )
 
 
 def test_analyse_score_range_and_ordering():
@@ -90,7 +106,8 @@ def test_analyse_score_range_and_ordering():
 
 def test_projection_orders_scenarios_and_starts_at_deposit():
     low, base, high = project(10000, 100, 10, 2)
-    assert low[0] == 10000 and len(low) == 11
+    assert low[0] == 10000
+    assert len(low) == 11
     assert low[-1] <= base[-1] <= high[-1]
 
 

@@ -1,12 +1,17 @@
+"""Settings read from the environment and server/.env."""
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Server settings; every field can be set in server/.env."""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # Pick ONE provider. Claude wins if both are set. Gemini has a free tier.
+    # Pick ONE provider. Claude wins if both are set. Gemini has a free
+    # tier.
     google_generative_ai_api_key: str | None = None
     anthropic_api_key: str | None = None
 
@@ -22,4 +27,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return the cached settings object."""
     return Settings()

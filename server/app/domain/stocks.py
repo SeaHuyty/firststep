@@ -1,11 +1,13 @@
 """Individual-stock screening over the S&P 500.
 
-The system, not a hand-written list, chooses the stocks: every company in the universe is scored on its
-own live price history, filtered for the client's risk level, and picked so that no sector dominates.
-Deterministic and explainable: the AI only discusses the shortlist it is given and cannot add to it.
+The system, not a hand-written list, chooses the stocks: every company
+in the universe is scored on its own live price history, filtered for
+the client's risk level, and picked so that no sector dominates.
+Deterministic and explainable: the AI only discusses the shortlist it is
+given and cannot add to it.
 
-Limits: ranks by past price history only (no fundamentals, no forecasts), and past performance does not
-predict future results.
+Limits: ranks by past price history only (no fundamentals, no
+forecasts), and past performance does not predict future results.
 """
 
 import csv
@@ -22,17 +24,18 @@ PER_SECTOR = 2  # so the shortlist always spans at least five sectors
 
 @lru_cache
 def universe() -> dict[str, dict[str, str]]:
-    """symbol (Yahoo style) -> {name, sector}."""
+    """Return symbol (Yahoo style) -> {name, sector}."""
     with DATA.open(encoding="utf-8", newline="") as f:
         return {r["symbol"]: {"name": r["name"], "sector": r["sector"]} for r in csv.DictReader(f)}
 
 
 def in_universe(ticker: str) -> bool:
+    """Return whether a ticker is in the S&P 500 universe."""
     return ticker in universe()
 
 
 def risk_rating(vol: float) -> int:
-    """1-5 scale like the catalog's: single stocks start at 3."""
+    """Return a catalog-style 1-5 risk; single stocks start at 3."""
     return 3 if vol < 25 else 4 if vol < 40 else 5
 
 
@@ -45,33 +48,55 @@ def _reason(risk: int, m: dict[str, Any]) -> str:
     return f"Growth-oriented: {ret:+.0f}%/yr over 3 years, with {vol:.0f}% volatility."
 
 
-def select_stocks(stats: dict[str, dict[str, Any]], risk: int, n: int = PICKS) -> list[dict[str, Any]]:
-    """Shortlist `n` S&P 500 stocks for a risk level, at most PER_SECTOR from any one sector.
+def select_stocks(
+    stats: dict[str, dict[str, Any]], risk: int, n: int = PICKS
+) -> list[dict[str, Any]]:
+    """Shortlist `n` S&P 500 stocks for a risk level.
 
-    1 Conservative: the calmest third, best return per unit of volatility.
-    2 Moderate: the middle band of volatility, best return per unit of volatility.
+    At most PER_SECTOR come from any one sector.
+
+    1 Conservative: the calmest third, best return per unit of
+    volatility.
+    2 Moderate: the middle band of volatility, best return per unit of
+    volatility.
     3 Aggressive: the more volatile half, highest 3-year return.
     """
     uni = universe()
     rows = {
         s: m
         for s, m in stats.items()
-        if s in uni and m.get("volatility_pct") and m.get("ret_3y_pct") is not None and m.get("price")
+        if s in uni
+        and m.get("volatility_pct")
+        and m.get("ret_3y_pct") is not None
+        and m.get("price")
     }
     if len(rows) < n * 2:
         return []
     vols = np.array([m["volatility_pct"] for m in rows.values()])
-    q = lambda p: float(np.percentile(vols, p))  # noqa: E731
 
+    def q(p: float) -> float:
+        return float(np.percentile(vols, p))
+
+    def return_per_vol(m: dict[str, Any]) -> float:
+        return float(m["ret_3y_pct"] / m["volatility_pct"])
+
+    def return_3y(m: dict[str, Any]) -> float:
+        return float(m["ret_3y_pct"])
+
+    score = return_per_vol
     if risk == 1:
-        pool = {s: m for s, m in rows.items() if m["volatility_pct"] <= q(33) and m["ret_3y_pct"] > 0}
-        score = lambda m: m["ret_3y_pct"] / m["volatility_pct"]  # noqa: E731
+        pool = {
+            s: m for s, m in rows.items() if m["volatility_pct"] <= q(33) and m["ret_3y_pct"] > 0
+        }
     elif risk == 2:
-        pool = {s: m for s, m in rows.items() if q(33) < m["volatility_pct"] <= q(66) and m["ret_3y_pct"] > 0}
-        score = lambda m: m["ret_3y_pct"] / m["volatility_pct"]  # noqa: E731
+        pool = {
+            s: m
+            for s, m in rows.items()
+            if q(33) < m["volatility_pct"] <= q(66) and m["ret_3y_pct"] > 0
+        }
     else:
         pool = {s: m for s, m in rows.items() if m["volatility_pct"] >= q(50)}
-        score = lambda m: m["ret_3y_pct"]  # noqa: E731
+        score = return_3y
 
     picks: list[dict[str, Any]] = []
     per_sector: dict[str, int] = {}
@@ -88,7 +113,18 @@ def select_stocks(stats: dict[str, dict[str, Any]], risk: int, n: int = PICKS) -
                 "sector": sector,
                 "risk": risk_rating(m["volatility_pct"]),
                 "reason": _reason(risk, m),
-                "metrics": {k: m[k] for k in ("price", "ret_1y_pct", "ret_3y_pct", "ret_5y_pct", "volatility_pct", "max_drawdown_pct") if m.get(k) is not None},
+                "metrics": {
+                    k: m[k]
+                    for k in (
+                        "price",
+                        "ret_1y_pct",
+                        "ret_3y_pct",
+                        "ret_5y_pct",
+                        "volatility_pct",
+                        "max_drawdown_pct",
+                    )
+                    if m.get(k) is not None
+                },
             }
         )
         if len(picks) == n:

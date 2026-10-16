@@ -12,7 +12,9 @@ from app.domain.schemas import Profile
 from app.main import app
 from app.market.service import MarketService, compute_metrics
 
-PROFILE = Profile(amount=10000, goal="wealth", horizon=7, emergency="insufficient", risk=2, debt="none")
+PROFILE = Profile(
+    amount=10000, goal="wealth", horizon=7, emergency="insufficient", risk=2, debt="none"
+)
 
 
 def series(daily_growth: float, days: int, crash_at: int | None = None) -> pd.Series:
@@ -24,7 +26,9 @@ def series(daily_growth: float, days: int, crash_at: int | None = None) -> pd.Se
 
 
 def test_metrics_for_steady_growth():
-    m = compute_metrics(series(0.10 ** 0 * (1.10 ** (1 / 252) - 1), 5 * 252 + 40))  # ~10%/yr, no noise
+    m = compute_metrics(
+        series(0.10**0 * (1.10 ** (1 / 252) - 1), 5 * 252 + 40)
+    )  # ~10%/yr, no noise
     assert m["ret_1y_pct"] == pytest.approx(10, abs=0.5)
     assert m["ret_3y_pct"] == pytest.approx(10, abs=0.5)
     assert m["ret_5y_pct"] == pytest.approx(10, abs=0.5)
@@ -39,8 +43,11 @@ def test_metrics_report_a_drawdown():
 
 def test_young_fund_has_no_long_windows():
     m = compute_metrics(series(0.0004, 150))
-    assert m["ret_1y_pct"] is None and m["ret_3y_pct"] is None and m["ret_5y_pct"] is None
-    assert m["volatility_pct"] is None and m["max_drawdown_pct"] is not None
+    assert m["ret_1y_pct"] is None
+    assert m["ret_3y_pct"] is None
+    assert m["ret_5y_pct"] is None
+    assert m["volatility_pct"] is None
+    assert m["max_drawdown_pct"] is not None
 
 
 def test_too_little_data_gives_nothing():
@@ -56,7 +63,10 @@ class Clock:
 
 
 def make_service(responses, ttl=100):
-    """Service whose fetcher yields the given results in order; an Exception means 'Yahoo is down'."""
+    """Return a service whose fetcher yields the given results in order.
+
+    An Exception result means 'Yahoo is down'.
+    """
     calls = []
     clock = Clock()
 
@@ -72,14 +82,16 @@ def make_service(responses, ttl=100):
 
 def test_first_get_waits_for_data_then_serves_from_cache():
     async def run():
-        svc, clock, calls = make_service([{"VOO": {"price": 1.0}}])
+        svc, _clock, calls = make_service([{"VOO": {"price": 1.0}}])
         first = await svc.get()
         second = await svc.get()
         return first, second, calls
 
     first, second, calls = asyncio.run(run())
-    assert first["items"] == {"VOO": {"price": 1.0}} and first["asof"]
-    assert second == first and len(calls) == 1
+    assert first["items"] == {"VOO": {"price": 1.0}}
+    assert first["asof"]
+    assert second == first
+    assert len(calls) == 1
 
 
 def test_stale_data_is_served_immediately_and_refreshed_in_background():
@@ -93,7 +105,8 @@ def test_stale_data_is_served_immediately_and_refreshed_in_background():
 
     stale, fresh, n = asyncio.run(run())
     assert stale["items"]["VOO"]["price"] == 1.0  # didn't block on the refresh
-    assert fresh["items"]["VOO"]["price"] == 2.0 and n == 2
+    assert fresh["items"]["VOO"]["price"] == 2.0
+    assert n == 2
 
 
 def test_failures_keep_the_last_good_snapshot_and_do_not_hammer_the_source():
@@ -108,7 +121,8 @@ def test_failures_keep_the_last_good_snapshot_and_do_not_hammer_the_source():
         return svc.snapshot(), len(calls)
 
     snap, n = asyncio.run(run())
-    assert snap["items"] == {"VOO": {"price": 1.0}} and n == 2
+    assert snap["items"] == {"VOO": {"price": 1.0}}
+    assert n == 2
 
 
 def test_source_down_from_the_start_returns_an_empty_snapshot():
@@ -117,12 +131,15 @@ def test_source_down_from_the_start_returns_an_empty_snapshot():
         return await svc.get()
 
     snap = asyncio.run(run())
-    assert snap["items"] == {} and snap["asof"] is None
+    assert snap["items"] == {}
+    assert snap["asof"] is None
 
 
 def test_partial_results_merge_instead_of_wiping_other_tickers():
     async def run():
-        svc, clock, _ = make_service([{"VOO": {"price": 1.0}, "BND": {"price": 5.0}}, {"VOO": {"price": 2.0}}])
+        svc, clock, _ = make_service(
+            [{"VOO": {"price": 1.0}, "BND": {"price": 5.0}}, {"VOO": {"price": 2.0}}]
+        )
         await svc.get()
         clock.t += 500
         await svc.get()
@@ -136,8 +153,19 @@ def test_partial_results_merge_instead_of_wiping_other_tickers():
 @pytest.fixture
 def client():
     original = app.state.market
-    app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None, google_generative_ai_api_key=None, anthropic_api_key=None, market_enabled=True)
-    app.state.market = MarketService(fetcher=lambda: ({"VOO": {"price": 707.43, "expense_ratio_pct": 0.03, "ret_1y_pct": 17.55}}, {}), ttl=100)
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        _env_file=None,
+        google_generative_ai_api_key=None,
+        anthropic_api_key=None,
+        market_enabled=True,
+    )
+    app.state.market = MarketService(
+        fetcher=lambda: (
+            {"VOO": {"price": 707.43, "expense_ratio_pct": 0.03, "ret_1y_pct": 17.55}},
+            {},
+        ),
+        ttl=100,
+    )
     yield TestClient(app)
     app.dependency_overrides.clear()
     app.state.market = original
@@ -145,7 +173,9 @@ def client():
 
 def test_market_endpoint(client):
     d = client.get("/api/market").json()
-    assert d["items"]["VOO"]["price"] == 707.43 and d["asof"] and "Yahoo" in d["source"]
+    assert d["items"]["VOO"]["price"] == 707.43
+    assert d["asof"]
+    assert "Yahoo" in d["source"]
 
 
 def test_market_endpoint_is_empty_when_disabled():
@@ -164,14 +194,30 @@ def test_catalog_marks_accounts_as_not_live_and_maps_symbols():
     finally:
         app.dependency_overrides.clear()
     flat = {p["ticker"]: p for items in products.values() for p in items}
-    assert flat["HYSA"]["live"] is False and flat["MMF"]["live"] is False
-    assert flat["IWDA"]["symbol"] == "IWDA.L" and flat["VOO"]["live"] is True
+    assert flat["HYSA"]["live"] is False
+    assert flat["MMF"]["live"] is False
+    assert flat["IWDA"]["symbol"] == "IWDA.L"
+    assert flat["VOO"]["live"] is True
 
 
 def test_advisor_prompt_includes_live_metrics_and_stays_valid_without_them():
     state = ChatState(profile=PROFILE, pct=allocate_pct(PROFILE), known=set())
-    live = {"VOO": {"price": 707.43, "expense_ratio_pct": 0.03, "yield_pct": 1.06, "ret_1y_pct": 17.55, "ret_5y_pct": 13.11, "volatility_pct": 14.8, "max_drawdown_pct": -24.52}}
+    live = {
+        "VOO": {
+            "price": 707.43,
+            "expense_ratio_pct": 0.03,
+            "yield_pct": 1.06,
+            "ret_1y_pct": 17.55,
+            "ret_5y_pct": 13.11,
+            "volatility_pct": 14.8,
+            "max_drawdown_pct": -24.52,
+        }
+    }
     with_live = build_system(state, [], live)
-    assert "LIVE: price $707.43, expense ratio 0.03%, yield 1.1%, return 1y +17.6%, 5y/yr +13.1%, volatility 14.8%, worst drawdown -24.5%." in with_live
+    assert (
+        "LIVE: price $707.43, expense ratio 0.03%, yield 1.1%, return 1y +17.6%, "
+        "5y/yr +13.1%, volatility 14.8%, worst drawdown -24.5%." in with_live
+    )
     assert "LIVE:" not in build_system(state, [], None).split("How to behave:")[0]
-    assert live_text(None) == "" and live_text({}) == ""
+    assert live_text(None) == ""
+    assert live_text({}) == ""

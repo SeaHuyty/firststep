@@ -1,10 +1,13 @@
 import os
 
-os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")  # silence the library's startup banner
+# Silence the library's startup banner; must run before pydantic-ai
+# is imported.
+os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -14,20 +17,25 @@ from app.routes import router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Start the background market loads when the app starts."""
     if get_settings().market_enabled:
-        app.state.stocks.kick()  # the S&P 500 screen takes about a minute, so it always loads in the background
-        app.state.market.kick()  # warm the cache in the background so the first page view has live data
+        # The S&P 500 screen takes about a minute, so it always loads in
+        # the background.
+        app.state.stocks.kick()
+        # Warm the cache so the first page view has live data.
+        app.state.market.kick()
     yield
 
 
 app = FastAPI(title="WealthPilot AI server", version="0.1.0", lifespan=lifespan)
 app.state.market = MarketService(ttl=get_settings().market_ttl_seconds)
-app.state.stocks = MarketService(fetcher=fetch_stocks, ttl=6 * 3600)  # whole-universe price history, for the stock screen
+# Whole-universe price history, for the stock screen.
+app.state.stocks = MarketService(fetcher=fetch_stocks, ttl=6 * 3600)
 app.include_router(router)
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_error(_, exc: RequestValidationError):
-    # Keep the client contract simple: one error string, no echoing of submitted values.
+async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    """Return one error string, never echoing the submitted values."""
     return JSONResponse({"error": "Invalid request"}, status_code=422)

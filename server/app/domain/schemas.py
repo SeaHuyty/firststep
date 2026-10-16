@@ -13,11 +13,14 @@ ProductGroup = Literal["Global Stocks (ETF)", "Individual Stocks", "Bonds", "Sav
 BUCKETS: list[str] = list(get_args(Bucket))
 PROFILE_FIELDS = ["amount", "goal", "horizon", "emergency", "risk", "debt"]
 
-# Percent per bucket. Plain dict inside the domain, validated model at the edges.
+# Percent per bucket. Plain dict inside the domain, validated model at
+# the edges.
 Pct = dict[str, int]
 
 
 class Profile(BaseModel):
+    """The client's situation, as answered in the profile form."""
+
     amount: float = Field(ge=0, le=100_000_000)
     goal: Goal
     horizon: Horizon
@@ -27,6 +30,8 @@ class Profile(BaseModel):
 
 
 class PctModel(BaseModel):
+    """Percent per bucket, validated at the API edge."""
+
     emergency: int
     stocks: int
     single: int
@@ -36,6 +41,8 @@ class PctModel(BaseModel):
 
 
 class Product(BaseModel):
+    """One catalog product (fund, ETF or savings account)."""
+
     name: str
     ticker: str
     risk: int
@@ -43,7 +50,8 @@ class Product(BaseModel):
     min: str
     blurb: str
     region: str = ""  # where it invests, e.g. "US", "Worldwide"
-    # Market-data symbol when it differs from the ticker; `live=False` for accounts/funds with no listing.
+    # Market-data symbol when it differs from the ticker; `live=False`
+    # for accounts and funds with no listing.
     symbol: str | None = None
     live: bool = True
     domain: str | None = None  # issuer website, used for its logo

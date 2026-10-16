@@ -62,3 +62,18 @@ disabled (use the form). Model names can be overridden in `.env` (see `.env.exam
 cd server && python -m pytest -q   # domain logic, API, and the advisor's tool path (scripted fake LLM)
 cd client && npm run lint && npm run build
 ```
+
+## Code quality (server)
+
+Ruff (PEP 8 format and lint), mypy `--strict`, import-linter (layer rules) and pytest with an 80%
+coverage gate. Settings live in `server/pyproject.toml`; CI runs the same checks on every push.
+
+```bash
+cd server
+ruff format . && ruff check --fix .
+mypy
+lint-imports
+pytest
+```
+
+Run `pre-commit install` once from the repo root to run these on every commit.

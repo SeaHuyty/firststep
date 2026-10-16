@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 .env
 *.egg-info/
+.coverage
+.mypy_cache/
+.ruff_cache/

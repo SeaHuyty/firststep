@@ -10,9 +10,8 @@ from app.agent.executor import Outcome
 from app.core.types import Stage
 
 WELCOME = (
-    "Hi, I'm Sprout. I'll help you make a first investing plan, one step at a time. First I'll "
-    "check whether now is a good time to invest, then how you feel about ups and downs, then "
-    "your goal. Nothing happens without your OK, and you can ask me what anything means."
+    "Hi, I'm Sprout. I'll check whether now is a good time for you to invest, then build a "
+    "plan with you, one short question at a time."
 )
 
 _BY_TOOL_OK = {

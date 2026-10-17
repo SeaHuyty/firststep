@@ -1148,6 +1148,11 @@
             "title": "Question Id",
             "type": "string"
           },
+          "section": {
+            "default": "",
+            "title": "Section",
+            "type": "string"
+          },
           "step": {
             "title": "Step",
             "type": "integer"
@@ -1740,7 +1745,7 @@
   "paths": {
     "/api/catalog": {
       "get": {
-        "description": "Return the shelf, glossary, rules, personas and first question.",
+        "description": "Return the shelf, glossary, rules, personas, first question.",
         "operationId": "catalog_api_catalog_get",
         "responses": {
           "200": {

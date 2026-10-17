@@ -8,7 +8,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import type { Card, CardOf } from "@/lib/types";
 import { TermView } from "./cards";
 import { PLAN_TYPES, View } from "./plan-panel";
-import { QuestionView } from "./question";
+import { QUESTION, QuestionView } from "./question";
 import { Avatar, BUBBLE, RevealText, TypingIndicator } from "./bubble";
 import { ResultLine } from "./result-line";
 
@@ -168,7 +168,9 @@ function SproutTurn({
       <Avatar />
       <div className="min-w-0 flex-1 space-y-3">
         {spoken && (
-          <p className={BUBBLE}>{m.animate ? <RevealText text={spoken} onDone={done} onTick={onTick} /> : spoken}</p>
+          <p className={!m.text && asking ? QUESTION : BUBBLE}>
+            {m.animate ? <RevealText text={spoken} onDone={done} onTick={onTick} /> : spoken}
+          </p>
         )}
         {revealed && blocks.map((b, i) => (m.animate ? <Rise key={i} index={i}>{b}</Rise> : <div key={i}>{b}</div>))}
       </div>
@@ -250,12 +252,24 @@ export function MessageList({
   );
 }
 
-export function Composer({ onSend, busy, placeholder }: { onSend: (text: string) => void; busy: boolean; placeholder: string }) {
+/** The message box. While Sprout waits for a tap it steps back (no shadow, softer edge) so the
+ * answers are the obvious next step; typing is still there for questions. */
+export function Composer({
+  onSend,
+  busy,
+  placeholder,
+  quiet = false,
+}: {
+  onSend: (text: string) => void;
+  busy: boolean;
+  placeholder: string;
+  quiet?: boolean;
+}) {
   const [text, setText] = useState("");
   const id = useId();
   return (
     <form
-      className="flex items-end gap-2 rounded-md border border-border-strong bg-surface p-2 shadow-popover"
+      className={`flex items-end gap-2 rounded-md border bg-surface p-2 transition-shadow duration-[var(--duration-base)] focus-within:border-border-strong focus-within:shadow-popover ${quiet ? "border-line" : "border-border-strong shadow-popover"}`}
       onSubmit={(e) => {
         e.preventDefault();
         const t = text.trim();

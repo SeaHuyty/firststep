@@ -29,6 +29,7 @@ class QuestionCard(_Card):
     why: str
     kind: str
     chips: list[Chip]
+    section: str = ""  # the part of the journey, e.g. "Money check"
     step: int
     of: int
 

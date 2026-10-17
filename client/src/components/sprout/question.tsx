@@ -6,11 +6,15 @@ import { Check } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CardOf } from "@/lib/types";
+import { BUBBLE } from "./bubble";
 
 /** A tappable answer. Outlined pill in the brand colour: clearly a button, quieter than the
  * one primary action. Shared with the welcome page. */
 export const CHIP =
   "inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-primary bg-surface px-4 text-label text-primary transition-colors hover:bg-primary-soft active:translate-y-px disabled:opacity-40";
+
+/** The question Sprout is asking now: Sprout's bubble, a step heavier than the conversation. */
+export const QUESTION = `${BUBBLE} font-semibold`;
 
 type Answer = (questionId: string, value: unknown, label: string) => void;
 
@@ -18,6 +22,16 @@ function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/** Marks the demo person's answer, so a judge can click straight through. */
+function DemoTag() {
+  return <span className="rounded-full bg-primary-soft px-2 text-caption">demo answer</span>;
+}
+
+/**
+ * The current question is the one thing to do on the screen: tappable answers directly under
+ * it, one way to answer at a time (typing a number or adding debts opens from a chip), and the
+ * progress and "Why do you ask?" below, quieter (docs/ux-psychology.md, "One focal point").
+ */
 export function QuestionView({
   card,
   onAnswer,
@@ -33,63 +47,76 @@ export function QuestionView({
   showPrompt?: boolean;
 }) {
   const [showWhy, setShowWhy] = useState(false);
+  const typed = card.kind === "money" || card.kind === "number";
+  const money = card.kind === "money";
+  // A demo answer that is not one of the chips (Mei is 58) starts with the box open.
+  const [typing, setTyping] = useState(typed && typeof hint === "number" && !card.chips.some((c) => same(hint, c.value)));
+  const [owing, setOwing] = useState(Array.isArray(hint) && hint.length > 0);
   return (
     <div className="space-y-3">
-      {showPrompt && (
-        <p className="max-w-[60ch] rounded-md rounded-tl-sm border border-line bg-surface px-4 py-3 text-body-lg text-ink">
-          {card.prompt}
-        </p>
-      )}
+      {showPrompt && <p className={QUESTION}>{card.prompt}</p>}
+      <div className="flex flex-wrap gap-2" role="group" aria-label={card.prompt}>
+        {card.kind === "debts" ? (
+          <>
+            <button type="button" disabled={busy} onClick={() => onAnswer(card.question_id, [], "No debts")} className={CHIP}>
+              No debts
+              {same(hint, []) && <DemoTag />}
+            </button>
+            <button type="button" disabled={busy} aria-expanded={owing} onClick={() => setOwing(!owing)} className={CHIP}>
+              I have debts
+            </button>
+          </>
+        ) : (
+          card.chips.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              disabled={busy}
+              onClick={() => onAnswer(card.question_id, chip.value, chip.label)}
+              className={CHIP}
+            >
+              {chip.label}
+              {hint !== undefined && same(hint, chip.value) && <DemoTag />}
+            </button>
+          ))
+        )}
+        {typed && (
+          <button type="button" disabled={busy} aria-expanded={typing} onClick={() => setTyping(!typing)} className={CHIP}>
+            {money ? "Type an amount" : "Type it"}
+          </button>
+        )}
+      </div>
+      {typing && <NumberAnswer card={card} onAnswer={onAnswer} busy={busy} hint={hint} />}
+      {card.kind === "debts" && owing && <DebtsForm card={card} onAnswer={onAnswer} busy={busy} hint={hint} />}
       <div className="flex items-center justify-between gap-3">
         <p className="text-caption text-muted">
-          Question {card.step} of {card.of}
+          {card.section ? `${card.section} · ` : "Question "}
+          {card.step} of {card.of}
         </p>
         <button
           type="button"
           onClick={() => setShowWhy(!showWhy)}
           aria-expanded={showWhy}
-          className="min-h-11 text-label text-primary underline decoration-dotted underline-offset-4"
+          className="min-h-11 text-caption text-primary underline decoration-dotted underline-offset-4"
         >
           Why do you ask?
         </button>
       </div>
       {showWhy && <p className="rounded-sm bg-sunken p-3 text-body-sm text-ink-2">{card.why}</p>}
-      {card.kind !== "debts" && (
-        <div className="flex flex-wrap gap-2" role="group" aria-label={card.prompt}>
-          {card.chips.map((chip) => {
-            const suggested = hint !== undefined && same(hint, chip.value);
-            return (
-              <button
-                key={chip.label}
-                type="button"
-                disabled={busy}
-                onClick={() => onAnswer(card.question_id, chip.value, chip.label)}
-                className={CHIP}
-              >
-                {chip.label}
-                {suggested && <span className="rounded-full bg-primary-soft px-2 text-caption">demo answer</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
-      {(card.kind === "money" || card.kind === "number") && (
-        <NumberAnswer card={card} onAnswer={onAnswer} busy={busy} hint={hint} />
-      )}
-      {card.kind === "debts" && <DebtsAnswer card={card} onAnswer={onAnswer} busy={busy} hint={hint} />}
     </div>
   );
 }
 
 function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
   const id = useId();
-  const [value, setValue] = useState(typeof hint === "number" ? String(hint) : "");
+  const preset = typeof hint === "number" ? String(hint) : "";
+  const [value, setValue] = useState(preset);
   const money = card.kind === "money";
   const n = Number(value.replace(/[$,\s]/g, ""));
   const valid = value.trim() !== "" && Number.isFinite(n) && n >= 0;
   return (
     <form
-      className="flex flex-wrap items-end gap-2"
+      className="flex flex-wrap items-end gap-2 animate-rise"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) onAnswer(card.question_id, n, money ? `$${n.toLocaleString("en-US")}` : String(n));
@@ -97,7 +124,7 @@ function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">
     >
       <div>
         <label htmlFor={id} className="block text-label text-ink-2">
-          {money ? "Or type an amount" : "Or type it"}
+          {money ? "Amount" : "Your answer"}
         </label>
         <div className="mt-2 flex items-center rounded-sm border border-border-strong bg-surface focus-within:border-2 focus-within:border-primary">
           {money && <span className="pl-3 text-muted">$</span>}
@@ -105,6 +132,10 @@ function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">
             id={id}
             inputMode="decimal"
             value={value}
+            // Opened by a tap: the next thing to do is type, so focus the box.
+            ref={(el) => {
+              if (el && !preset) el.focus();
+            }}
             onChange={(e) => setValue(e.target.value)}
             className="h-12 w-36 bg-transparent px-3 outline-none"
           />
@@ -125,7 +156,7 @@ const KINDS = [
   ["car_loan", "Car loan"],
 ] as const;
 
-function DebtsAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
+function DebtsForm({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
   const preset = Array.isArray(hint) ? (hint as Debt[]) : [];
   const [debts, setDebts] = useState<Debt[]>(preset);
   const [kind, setKind] = useState<string>("credit_card");
@@ -136,12 +167,9 @@ function DebtsAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">;
   const a = Number(apr.replace(/[%\s]/g, ""));
   const canAdd = balance !== "" && apr !== "" && b > 0 && a >= 0 && a <= 100;
   return (
-    <div className="space-y-3">
-      <Button variant="secondary" disabled={busy} onClick={() => onAnswer(card.question_id, [], "No debts")}>
-        No debts
-      </Button>
+    <div className="space-y-3 animate-rise">
       <fieldset className="rounded-md border border-line p-3">
-        <legend className="px-1 text-label text-ink-2">Or add each debt</legend>
+        <legend className="px-1 text-label text-ink-2">Add each debt</legend>
         <div className="flex flex-wrap items-end gap-2">
           <div>
             <label htmlFor={ids.kind} className="block text-label text-ink-2">Type</label>

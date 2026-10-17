@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Catalog
-         * @description Return the shelf, glossary, rules, personas and first question.
+         * @description Return the shelf, glossary, rules, personas, first question.
          */
         get: operations["catalog_api_catalog_get"];
         put?: never;
@@ -613,6 +613,11 @@ export interface components {
             prompt: string;
             /** Question Id */
             question_id: string;
+            /**
+             * Section
+             * @default
+             */
+            section: string;
             /** Step */
             step: number;
             /**

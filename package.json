@@ -1,12 +1,16 @@
 {
-  "name": "wealthpilot",
+  "name": "firststep",
   "private": true,
-  "description": "WealthPilot AI prototype: Next.js client + FastAPI server",
+  "description": "FirstStep: a trustworthy first advisor for first-time investors (Next.js client + FastAPI server)",
   "scripts": {
+    "setup": "cd server && python3 -m venv .venv && .venv/bin/pip install -q -e '.[dev]' && (test -f .env || cp .env.example .env) && cd ../client && npm install",
+    "dev": "bash scripts/dev.sh",
+    "dev:server": "cd server && .venv/bin/python -m uvicorn app.main:app --reload --port 8000",
     "dev:client": "npm --prefix client run dev",
-    "dev:server": "cd server && python -m uvicorn app.main:app --reload --port 8000",
-    "build:client": "npm --prefix client run build",
-    "lint:client": "npm --prefix client run lint",
-    "test:server": "cd server && python -m pytest -q"
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && .venv/bin/ruff format --check . && .venv/bin/ruff check . && .venv/bin/mypy && .venv/bin/lint-imports && .venv/bin/pytest",
+    "test:client": "npm --prefix client run check && npm --prefix client run build",
+    "test:e2e": "cd client && npx playwright test",
+    "evidence": "cd server && .venv/bin/python scripts/run_personas.py && .venv/bin/python scripts/run_redteam.py && .venv/bin/python scripts/verify_chain.py evidence/logs/*.jsonl && .venv/bin/python scripts/metrics.py"
   }
 }

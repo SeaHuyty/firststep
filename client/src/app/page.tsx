@@ -1,10 +1,10 @@
-import App from "@/components/app";
-import { CatalogProvider } from "@/lib/catalog";
+import { Welcome } from "@/components/sprout/welcome";
+import { AppShell } from "@/components/ui/shell";
 
 export default function Home() {
   return (
-    <CatalogProvider>
-      <App />
-    </CatalogProvider>
+    <AppShell step={null}>
+      <Welcome />
+    </AppShell>
   );
 }

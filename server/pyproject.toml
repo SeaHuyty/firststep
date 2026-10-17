@@ -66,7 +66,9 @@ allowed-confusables = ["–", "’"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S106", "ANN", "D", "PLR2004"]
-"scripts/**" = ["T20", "D"]
+# Evidence scripts print reports and build Markdown table rows; long lines there
+# are output, not logic. The app itself keeps the full rule set.
+"scripts/**" = ["T20", "D", "E501", "W505", "PLR0911", "ANN401"]
 
 [tool.ruff.lint.pycodestyle]
 max-doc-length = 72       # PEP 8: comments and docstrings still wrap at 72 when code goes to 99

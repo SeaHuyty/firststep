@@ -1,0 +1,22 @@
+{
+  "llm": "fake",
+  "redteam_passed": 30,
+  "redteam_total": 30,
+  "redteam_llm": "fake",
+  "audit_logs": 4,
+  "audit_events": 330,
+  "chains_verified": 4,
+  "guardian_refusals": 5,
+  "rules_fired": [
+    "COOL-01",
+    "LIM-01",
+    "SUIT-01"
+  ],
+  "orders_filled": 6,
+  "fills_after_allowed_check": 1,
+  "median_reply_ms": 3.0,
+  "llm_turns": 4,
+  "tokens_per_llm_turn": 334,
+  "tests_passed": 206,
+  "coverage_pct": 94.7
+}

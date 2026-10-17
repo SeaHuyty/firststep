@@ -1,0 +1,34 @@
+{
+  "llm": "fake",
+  "personas": {
+    "amina": {
+      "notes": [
+        "Stage: SAVINGS_PLAN (READY-01 and READY-02 failed)",
+        "Savings plan: 3 steps, ready by 2025-09"
+      ],
+      "events": 34,
+      "chain_ok": true,
+      "head": "4d130b8f533411c54a5b7e95fb811aebac903cbf78af3e3c2ab0bd09361a49db"
+    },
+    "leo": {
+      "notes": [
+        "Confirmed 6 sandbox orders ($6,000) and a $300 monthly plan",
+        "March 2020: panic sale paused by COOL-01",
+        "March 2021: value $12,641.89, paid in $11,100.00",
+        "$50,000 at once: refused by LIM-01"
+      ],
+      "events": 114,
+      "chain_ok": true,
+      "head": "db77a2d05fd1b9a7f3e5d34482554817bbd980e4e4bcfd92511e8a784d68544a"
+    },
+    "mei": {
+      "notes": [
+        "Risk class: C2; all-in tech refused by SUIT-01",
+        "Offered instead: C2 Steady"
+      ],
+      "events": 94,
+      "chain_ok": true,
+      "head": "d96eea91b9afe1d409a3b8889e49b0f1a3e7a6c189e29f1f81f01b0c911b8089"
+    }
+  }
+}

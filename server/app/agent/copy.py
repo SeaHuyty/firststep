@@ -62,9 +62,10 @@ def _advance_note(out: dict[str, Any]) -> str:
         else f"that's ${-diff:,.0f} below what you put in for now"
     )
     dropped = any(str(e).startswith("drawdown") for e in out.get("events", []))
+    # The drop alert card says what fell and why to hold on;
+    # the note only points to it.
     calm = (
-        " Markets have fallen, and drops like this have happened before. Your plan was built "
-        "for years, not months."
+        " Part of your plan fell along the way; more on that below."
         if dropped
         else " Ups and downs along the way are normal."
     )

@@ -3,10 +3,11 @@
 // One view per card type the server sends. Formatting only: no finance happens here.
 import { useState } from "react";
 import { Card, DataTable, Notice, RiskBadge, RuleChip } from "@/components/ui/primitives";
+import { RuleNote } from "@/components/ui/rule-note";
 import { FAMILY_LABEL } from "@/lib/copy";
 import { duration, money, moneyCents, month, pctChange } from "@/lib/format";
 import type { CardOf } from "@/lib/types";
-import { AllocationDonut, ProjectionFan } from "./charts";
+import { AllocationDonut, FamilyDot, ProjectionFan } from "./charts";
 import { Term } from "./term";
 
 type WhyLine = { rule_id?: string | null; text: string };
@@ -50,14 +51,12 @@ export function ReadinessView({ card }: { card: CardOf<"readiness"> }) {
   }
   return (
     <Notice tone="pause" title="Not yet, and here's why">
-      <ul className="mt-1 space-y-2">
+      <ul className="mt-1 list-disc space-y-1 pl-5">
         {card.reasons.map((r) => (
-          <li key={r.rule_id} className="flex items-start gap-2">
-            {r.rule_id && <RuleChip id={r.rule_id} />}
-            <span>{r.text}</span>
-          </li>
+          <li key={r.rule_id ?? r.text}>{r.text}</li>
         ))}
       </ul>
+      <RuleNote ids={card.reasons.flatMap((r) => (r.rule_id ? [r.rule_id] : []))} />
     </Notice>
   );
 }
@@ -128,9 +127,10 @@ export function GoalView({ card }: { card: CardOf<"goal"> }) {
         {money(card.monthly_usd)} a month.
       </p>
       {card.capped && (
-        <p className="mt-2 flex items-start gap-2 text-body-sm text-ink-2">
-          <RuleChip id="HOR-01" /> A short goal keeps your plan at {card.client_class} or below.
-        </p>
+        <>
+          <p className="mt-2 text-body-sm text-ink-2">A short goal keeps your plan at {card.client_class} or below.</p>
+          <RuleNote ids={["HOR-01"]} />
+        </>
       )}
     </Card>
   );
@@ -147,18 +147,23 @@ export function AllocationView({ card }: { card: CardOf<"allocation"> }) {
   const parts = Object.entries(card.families).filter(([, w]) => w > 0);
   return (
     <Card overline={`Your plan · ${card.client_class} ${card.label.split(" ").slice(1).join(" ")}`} title={`What your ${money(card.total_usd)} is made of`}>
-      <AllocationDonut families={card.families} total={card.total_usd} />
-      <ul className="mt-4 space-y-2">
-        {parts.map(([family, weight]) => {
-          const meaning = FAMILY_MEANING[family];
-          return (
-            <li key={family} className="text-body text-ink-2">
-              <strong className="text-ink">{Math.round(weight)}% in {meaning ? <Term id={meaning.term}>{FAMILY_LABEL[family]?.toLowerCase()}</Term> : FAMILY_LABEL[family]}</strong>
-              {meaning ? `: ${meaning.text}.` : "."}
-            </li>
-          );
-        })}
-      </ul>
+      {/* The words are the legend: each part says what it is for, next to its colour. */}
+      <AllocationDonut families={card.families} total={card.total_usd}>
+        <ul className="w-full space-y-3">
+          {parts.map(([family, weight]) => {
+            const meaning = FAMILY_MEANING[family];
+            return (
+              <li key={family} className="flex gap-2 text-body text-ink-2">
+                <FamilyDot family={family} />
+                <span>
+                  <strong className="text-ink">{Math.round(weight)}% in {meaning ? <Term id={meaning.term}>{FAMILY_LABEL[family]?.toLowerCase()}</Term> : FAMILY_LABEL[family]}</strong>
+                  {meaning ? `: ${meaning.text}.` : "."}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </AllocationDonut>
       <div className="mt-4 rounded-sm bg-sunken p-3 text-body text-ink-2">
         <p>
           <strong className="text-ink">The honest part:</strong> in its worst 12 months since 2000, a mix like this would
@@ -377,9 +382,10 @@ export function ProductsView({ card }: { card: CardOf<"products"> }) {
         ))}
       </ul>
       {card.excluded_count > 0 && (
-        <p className="mt-2 flex items-start gap-2 text-body-sm text-ink-2">
-          <RuleChip id="SUIT-01" /> {card.excluded_count} funds are hidden because they are above your level.
-        </p>
+        <>
+          <p className="mt-2 text-body-sm text-ink-2">{card.excluded_count} funds are hidden because they are above your level.</p>
+          <RuleNote ids={["SUIT-01"]} />
+        </>
       )}
     </Card>
   );

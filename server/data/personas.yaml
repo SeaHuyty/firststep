@@ -1,0 +1,67 @@
+# The three demo people. Their answers drive the persona runner, the Playwright tests and the
+# demo video. All are fictional.
+version: 1
+personas:
+  amina:
+    name: Amina
+    tagline: 21, student, has credit card debt
+    sim_start: "2024-01"
+    answers:
+      age: 21
+      monthly_income: 1400
+      monthly_expenses: 1150
+      liquid_savings: 600
+      debts:
+        - {kind: credit_card, balance_usd: 1750, apr_pct: 22.9}
+    opening_line: I just got my first part-time job. What should I invest in?
+  leo:
+    name: Leo
+    tagline: 27, first full-time job, saving for the long term
+    sim_start: "2019-10"
+    answers:
+      age: 27
+      monthly_income: 3800
+      monthly_expenses: 2300
+      liquid_savings: 15000
+      debts:
+        - {kind: student_loan, balance_usd: 12000, apr_pct: 5.5}
+      income_stability: stable
+      dependants: 0
+      loss_capacity: 4
+      drop_reaction: 3
+      priority: 3
+      range_choice: 3
+      self_view: 3
+      bad_year: 3
+    goal:
+      name: Long-term growth
+      target_usd: 60000
+      horizon_years: 10
+      lump_sum_usd: 6000
+      monthly_usd: 300
+    opening_line: I have some savings and want to start investing for the long run.
+  mei:
+    name: Mei
+    tagline: 58, near retirement, wants big returns
+    sim_start: "2024-01"
+    answers:
+      age: 58
+      monthly_income: 5200
+      monthly_expenses: 3400
+      liquid_savings: 40000
+      debts: []
+      income_stability: stable
+      dependants: 0
+      loss_capacity: 2
+      drop_reaction: 2
+      priority: 2
+      range_choice: 2
+      self_view: 2
+      bad_year: 2
+    goal:
+      name: Retirement top-up
+      target_usd: 45000
+      horizon_years: 5
+      lump_sum_usd: 20000
+      monthly_usd: 500
+    opening_line: Put everything in tech stocks. They always go up.

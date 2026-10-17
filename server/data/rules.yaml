@@ -1,0 +1,172 @@
+# FirstStep guardrails. The rules engine (app/policy) reads this file once at start-up.
+# Rule IDs appear verbatim in code, audit logs, tests and the UI, so one rule can be traced end
+# to end. A compliance team changes a threshold here, not in code. Sources: docs/methodology.md.
+version: 1
+
+SUIT-01:
+  title: Product risk within the client's class
+  description: >-
+    A product may be listed, proposed or ordered only if its risk rating does not exceed the
+    client's risk class (C1 buys R1; C2 buys up to R2; ... C5 buys all).
+  max_rating_for_class: {C1: R1, C2: R2, C3: R3, C4: R4, C5: R5}
+  cites:
+    - CSRC, Measures for the Suitability Management of Securities and Futures Investors (2016, amended 2022)
+    - Fund distributors' suitability matching disclosures under the AMAC guidelines (C1-R1 ... C5-all)
+
+READY-01:
+  title: Emergency fund first
+  description: Savings must cover at least this many months of living costs before investing.
+  min_emergency_months: 3
+  cites:
+    - Vanguard UK, Five steps to take before you start investing (3-6 months)
+    - HSBC UK, Invest or repay your debts (at least 3 months)
+    - CFPB, An essential guide to building an emergency fund
+
+READY-02:
+  title: Expensive debt first
+  description: >-
+    No investment plan while any debt costs more than this annual rate; paying it off is a
+    surer return than investing.
+  max_apr_pct: 8
+  cites:
+    - Vanguard UK and Vanguard Canada guidance (pay the highest-rate debt first; lower-rate loans can coexist with investing)
+    - Personal-finance consensus places the cut-off at 6-8% APR
+
+HOR-01:
+  title: Short goals stay cautious
+  description: A goal under 3 years caps the class at C2, under 1 year at C1.
+  caps:
+    - {under_years: 1, max_class: C1}
+    - {under_years: 3, max_class: C2}
+  cites:
+    - SEC Investor.gov, Asset allocation (shorter horizons suit less volatile holdings)
+
+CONC-01:
+  title: Diversification limits
+  description: >-
+    No single product above max_product_pct of a portfolio, and no single equity asset class
+    above max_equity_class_pct, except for the exempt classes.
+  max_product_pct: 40
+  max_equity_class_pct: 60
+  exempt_classes: [C5]
+  cites:
+    - SEC Investor.gov, Beginners' guide to asset allocation, diversification and rebalancing
+
+LIM-01:
+  title: Sandbox order limits
+  description: Each order and each simulated day has a dollar ceiling.
+  max_order_usd: 10000
+  max_daily_usd: 20000
+  cites:
+    - Pre-trade order limits as a standard brokerage risk control (simplified for the sandbox)
+
+CONF-01:
+  title: The user confirms every trade
+  description: >-
+    Tier 2 actions need a one-time confirmation token minted only by the user's Confirm button
+    and bound to the exact proposal. The LLM never sees a token.
+  token_ttl_minutes: 10
+  cites:
+    - CAC, NDRC and MIIT, Implementation Opinions on intelligent agents (2026); financial trading needs a human decision
+    - OWASP Top 10 for LLM Applications, Excessive Agency (human approval for high-impact actions)
+
+COOL-01:
+  title: Cooling-off before a panic sale
+  description: >-
+    Selling more than sell_share_pct of the portfolio while it is down more than drawdown_pct
+    from its peak starts a simulated cooling-off period, then asks again.
+  drawdown_pct: 15
+  sell_share_pct: 20
+  cooling_off_hours: 24
+
+DRIFT-01:
+  title: Rebalance when the mix drifts
+  description: Propose a rebalance when any asset class is this many points away from target.
+  max_drift_pts: 5
+  cites:
+    - SEC Investor.gov, Beginners' guide to asset allocation, diversification and rebalancing
+
+STAGE-01:
+  title: Tools follow the journey
+  description: A tool can run only in the stages listed for it.
+  allowed:
+    ONBOARD: [answer_question, update_profile, explain]
+    READINESS: [answer_question, update_profile, assess_readiness, explain]
+    SAVINGS_PLAN: [answer_question, update_profile, assess_readiness, build_savings_plan, explain]
+    PROFILE: [answer_question, update_profile, score_risk_profile, explain]
+    GOAL: [answer_question, set_goal, list_suitable_products, explain]
+    PROPOSE:
+      - set_goal
+      - list_suitable_products
+      - compare_products
+      - propose_allocation
+      - propose_custom_allocation
+      - project_outcomes
+      - prepare_orders
+      - explain
+    CONFIRM:
+      - place_order
+      - propose_allocation
+      - propose_custom_allocation
+      - project_outcomes
+      - prepare_orders
+      - explain
+    EXECUTED: [create_auto_invest, get_portfolio, advance_time, explain]
+    MONITOR:
+      - get_portfolio
+      - advance_time
+      - check_drift
+      - propose_rebalance
+      - place_order
+      - create_auto_invest
+      - request_sell
+      - project_outcomes
+      - explain
+
+TIERS:
+  title: Permission tiers
+  description: >-
+    0 read, 1 propose (drafts only), 2 execute (user confirmation and limits), 3 sensitive
+    (cooling-off and a second ask). Tier 2 tools are never offered to the LLM.
+  tier_of:
+    answer_question: 0
+    update_profile: 0
+    assess_readiness: 0
+    score_risk_profile: 0
+    set_goal: 0
+    list_suitable_products: 0
+    compare_products: 0
+    explain: 0
+    get_portfolio: 0
+    check_drift: 0
+    advance_time: 0
+    build_savings_plan: 1
+    propose_allocation: 1
+    propose_custom_allocation: 1
+    project_outcomes: 1
+    prepare_orders: 1
+    propose_rebalance: 1
+    place_order: 2
+    create_auto_invest: 2
+    request_sell: 3
+
+LANG:
+  title: Language policy
+  description: >-
+    Sprout's replies are checked before they are shown. A hit regenerates the reply once,
+    then falls back to a safe message.
+  cites:
+    - FINRA Rule 2210(d)(1) (no promissory or exaggerated claims, no projections, no implied guarantees)
+  rules:
+    - id: LANG-01
+      title: No guarantees
+      patterns: ['\bguarantee(d|s)?\b']
+    - id: LANG-02
+      title: No claims of zero risk
+      patterns: ['\brisk[- ]free\b', '\bno risk\b', "\\bcan(no|')t lose\\b", '\bsafe bet\b']
+    - id: LANG-03
+      title: No promises of growth
+      patterns: ['\bwill (double|triple|grow|go up|rise|increase)\b', '\bsure thing\b']
+    - id: LANG-04
+      title: No price predictions
+      patterns: ['\bprice target\b', '\b(is|are) going to (rise|fall|crash|go up|go down)\b']

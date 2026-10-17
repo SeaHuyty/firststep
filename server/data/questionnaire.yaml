@@ -1,0 +1,184 @@
+# Every question Sprout asks, in order, with the chips shown under it. Chips call the
+# answer_question tool directly; free text goes through the LLM, which calls update_profile.
+#
+# Risk profile design (docs/methodology.md): willingness to take risk ("tolerance") and the
+# ability to bear losses ("capacity") are scored separately and the lower one wins, as the FSA
+# (FG11/05) and ESMA (MiFID II suitability guidelines) require. Tolerance uses situational
+# items in the style of the Grable & Lytton scale and is averaged; capacity takes its weakest
+# component, because one hard constraint (no buffer, dependants, money needed soon) is enough
+# to limit how much loss a person can absorb.
+version: 1
+
+questions:
+  # ONBOARD
+  - id: age
+    stage: ONBOARD
+    field: age
+    kind: number
+    prompt: How old are you?
+    why: Age changes how long your money can stay invested and recover from drops.
+    min: 18
+    max: 100
+    options:
+      - {label: "18–24", value: 21}
+      - {label: "25–34", value: 30}
+      - {label: "35–44", value: 40}
+      - {label: "45–54", value: 50}
+      - {label: "55–64", value: 60}
+      - {label: "65 or over", value: 68}
+
+  # READINESS (READY-01, READY-02)
+  - id: monthly_income
+    stage: READINESS
+    field: monthly_income_usd
+    kind: money
+    prompt: How much money comes in each month, after tax?
+    why: This tells me how much you could set aside safely.
+    options:
+      - {label: "Under $1,000", value: 800}
+      - {label: "$1,000–2,500", value: 1750}
+      - {label: "$2,500–5,000", value: 3750}
+      - {label: "Over $5,000", value: 6000}
+  - id: monthly_expenses
+    stage: READINESS
+    field: monthly_expenses_usd
+    kind: money
+    prompt: What do you spend in a normal month, including rent and bills?
+    why: Your emergency fund is measured in months of these costs.
+    options:
+      - {label: "Under $1,000", value: 800}
+      - {label: "$1,000–2,000", value: 1500}
+      - {label: "$2,000–3,500", value: 2750}
+      - {label: "Over $3,500", value: 4000}
+  - id: liquid_savings
+    stage: READINESS
+    field: liquid_savings_usd
+    kind: money
+    prompt: How much do you have in savings you could reach within a week?
+    why: Savings you can reach quickly are your safety cushion if income stops.
+    options:
+      - {label: "Under $1,000", value: 500}
+      - {label: "$1,000–5,000", value: 3000}
+      - {label: "$5,000–20,000", value: 12500}
+      - {label: "Over $20,000", value: 25000}
+  - id: debts
+    stage: READINESS
+    field: debts
+    kind: debts
+    prompt: Do you owe money on credit cards or loans? Tell me the balance and the yearly interest rate.
+    why: Paying off expensive debt is often a better use of money than investing.
+    options:
+      - {label: "No debts", value: []}
+
+  # PROFILE: capacity (ability to bear losses)
+  - id: income_stability
+    stage: PROFILE
+    field: income_stability
+    kind: choice
+    scale: capacity
+    prompt: How steady is your income?
+    why: A steady income makes it easier to ride out a bad year.
+    options:
+      - {label: "Steady salary", value: stable, score: 5}
+      - {label: "It changes month to month", value: variable, score: 3}
+      - {label: "I have no regular income", value: none, score: 1}
+  - id: dependants
+    stage: PROFILE
+    field: dependants
+    kind: choice
+    scale: capacity
+    prompt: How many people rely on your income?
+    why: More people relying on you means less room for losses.
+    options:
+      - {label: "Just me", value: 0, score: 5}
+      - {label: "1 person", value: 1, score: 4}
+      - {label: "2 people", value: 2, score: 3}
+      - {label: "3 or more", value: 3, score: 2}
+  - id: loss_capacity
+    stage: PROFILE
+    field: loss_capacity
+    kind: choice
+    scale: capacity
+    prompt: If the money you invest fell by a third, would it change your plans?
+    why: This checks how much loss you could actually afford, not just how you feel about it.
+    options:
+      - {label: "Yes, I'd need it within a year", value: 1, score: 1}
+      - {label: "Yes, it would delay an important goal", value: 2, score: 2}
+      - {label: "A little, I'd adjust", value: 3, score: 3}
+      - {label: "Not much, I could wait", value: 4, score: 4}
+      - {label: "No, I won't need it for many years", value: 5, score: 5}
+
+  # PROFILE: tolerance (willingness to take risk)
+  - id: drop_reaction
+    stage: PROFILE
+    field: tolerance_answers.drop_reaction
+    kind: choice
+    scale: tolerance
+    prompt: Your $1,000 drops to $800 in a month. What do you do?
+    why: How people act in a drop matters more than how they expect to feel.
+    options:
+      - {label: "Sell everything", value: 1, score: 1}
+      - {label: "Sell some", value: 2, score: 2}
+      - {label: "Do nothing", value: 3, score: 3}
+      - {label: "Wait, maybe add a little", value: 4, score: 4}
+      - {label: "Buy more", value: 5, score: 5}
+  - id: priority
+    stage: PROFILE
+    field: tolerance_answers.priority
+    kind: choice
+    scale: tolerance
+    prompt: Which matters more to you?
+    why: There is always a trade-off between steadiness and growth.
+    options:
+      - {label: "Never losing money", value: 1, score: 1}
+      - {label: "Mostly steady, a little growth", value: 2, score: 2}
+      - {label: "A balance of both", value: 3, score: 3}
+      - {label: "Mostly growth", value: 4, score: 4}
+      - {label: "The most growth, even with big drops", value: 5, score: 5}
+  - id: range_choice
+    stage: PROFILE
+    field: tolerance_answers.range_choice
+    kind: choice
+    scale: tolerance
+    prompt: You invest $10,000 for one year. Which range of results would you pick?
+    why: Bigger possible gains always come with bigger possible losses.
+    options:
+      - {label: "$10,000 to $10,200", value: 1, score: 1}
+      - {label: "$9,700 to $10,600", value: 2, score: 2}
+      - {label: "$9,300 to $11,000", value: 3, score: 3}
+      - {label: "$8,800 to $11,500", value: 4, score: 4}
+      - {label: "$8,000 to $12,500", value: 5, score: 5}
+  - id: self_view
+    stage: PROFILE
+    field: tolerance_answers.self_view
+    kind: choice
+    scale: tolerance
+    prompt: How would a close friend describe you with money?
+    why: Your everyday habits are a good guide to what will feel comfortable.
+    options:
+      - {label: "Very careful", value: 1, score: 1}
+      - {label: "Careful", value: 2, score: 2}
+      - {label: "In between", value: 3, score: 3}
+      - {label: "Willing to take chances", value: 4, score: 4}
+      - {label: "A real risk taker", value: 5, score: 5}
+  - id: bad_year
+    stage: PROFILE
+    field: tolerance_answers.bad_year
+    kind: choice
+    scale: tolerance
+    prompt: In a bad year your investments fall by a third. How would you feel?
+    why: Drops of this size have happened to stock markets several times since 2000.
+    options:
+      - {label: "I couldn't sleep", value: 1, score: 1}
+      - {label: "Very worried", value: 2, score: 2}
+      - {label: "Uneasy, but I'd wait", value: 3, score: 3}
+      - {label: "Calm, it's part of investing", value: 4, score: 4}
+      - {label: "I'd see it as a chance to buy", value: 5, score: 5}
+
+capacity_by_age:
+  # Age bands for the capacity score: longer time to recover from a loss scores higher.
+  - {under: 30, score: 5}
+  - {under: 45, score: 4}
+  - {under: 55, score: 3}
+  - {under: 65, score: 2}
+  - {under: 200, score: 1}

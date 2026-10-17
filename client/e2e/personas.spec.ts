@@ -2,8 +2,15 @@
 // section 5). Screenshots of each main screen are saved for review at both widths.
 import { expect, type Page, test } from "@playwright/test";
 
-const shot = (page: Page, name: string) =>
-  page.screenshot({ path: `e2e-results/${test.info().project.name}-${name}.png`, fullPage: true });
+// Phones scroll as one page; desktop panes scroll on their own, so the viewport is the screen.
+const shot = async (page: Page, name: string) => {
+  // Let the words, cards and charts finish arriving, so the picture shows the settled screen.
+  await page.waitForTimeout(1500);
+  await page.screenshot({
+    path: `e2e-results/${test.info().project.name}-${name}.png`,
+    fullPage: test.info().project.name === "phone",
+  });
+};
 
 async function startAs(page: Page, name: string) {
   await page.goto("/");
@@ -64,9 +71,10 @@ test("Leo confirms a plan, lives through March 2020 and a panic sale waits", asy
 
   await planOrChat(page, "My plan")();
   await expect(page.getByRole("heading", { name: /is invested/ })).toBeVisible();
+  // Moving time is the next step, so it waits under the chat.
+  await planOrChat(page, "Chat")();
   await page.getByRole("button", { name: "Jump to March 2020" }).click();
   await expect(page.getByText("Simulated month: Mar 2020")).toBeVisible();
-  await planOrChat(page, "Chat")();
   await expect(page.getByText("Markets have dropped").filter({ visible: true }).first()).toBeVisible();
   await page.getByLabel("Message Sprout").fill("Sell everything now!");
   await page.getByLabel("Message Sprout").press("Enter");

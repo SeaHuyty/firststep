@@ -8,6 +8,10 @@
 |---|---|---|
 | ![Amina's savings plan](docs/screenshots/phone-amina-not-yet.png) | ![Leo's plan](docs/screenshots/desktop-leo-plan.png) | ![Confirm dialog](docs/screenshots/desktop-leo-confirm.png) |
 
+| A rule says no, in plain words | A panic sale waits 24 hours |
+|---|---|
+| ![Mei's refusal](docs/screenshots/desktop-mei-refusal.png) | ![Leo's cooling-off pause](docs/screenshots/desktop-leo-cooling-off.png) |
+
 ## The idea: the LLM talks, a rules engine decides
 
 The agent has two roles. The **advisor** (an LLM) chooses which tool to call and writes the words. The **guardian** (deterministic, tested Python) checks every tool call against the rules in [`server/data/rules.yaml`](server/data/rules.yaml) and can refuse it. The advisor never sees a number it did not get from a tool, never sees the list of ordering tools, and never sees a confirmation token. Only the user's Confirm click creates one.
@@ -45,7 +49,7 @@ To use a real model, set `LLM_PROVIDER` in `server/.env`, plus `OPENROUTER_API_K
 ## Check it
 
 ```bash
-npm test          # server: format, lint, mypy --strict, layer contracts, 200+ tests (95% coverage)
+npm test          # server: format, lint, mypy --strict, layer contracts, 210+ tests (95% coverage)
                   # client: tsc, eslint (zero warnings), production build
 npm run test:e2e  # Playwright: the three personas at 1280px and 390px
 npm run evidence  # persona runs, red-team suite, chain verification, metrics

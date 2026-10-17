@@ -1,5 +1,4 @@
 # Every push and PR must be green before merge.
-# Backend only for now; the frontend job is added once the frontend stack is decided.
 name: CI
 on: [push, pull_request]
 
@@ -20,3 +19,32 @@ jobs:
       - run: mypy
       - run: lint-imports
       - run: pytest -m "not llm"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: client } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: client/package-lock.json }
+      - run: npm ci
+      - run: npm run check   # tsc --noEmit and eslint, zero warnings
+      - run: npm run build
+
+  e2e:
+    # The three personas in a real browser at 1280px and 390px, on the scripted fake LLM.
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: client/package-lock.json }
+      - run: python -m venv server/.venv && server/.venv/bin/pip install -e server
+      - run: npm ci --prefix client
+      - run: npx --prefix client playwright install --with-deps chromium
+      - run: cd client && npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: screenshots, path: client/e2e-results/ }

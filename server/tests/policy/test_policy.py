@@ -221,6 +221,7 @@ def test_cool_01_allows_a_small_sale_in_a_drop(policy: Policy) -> None:
 def test_cool_01_blocks_a_panic_sale(policy: Policy) -> None:
     d = policy.cooling_off(D(5000), D(10000), drawdown_pct=30)
     assert (d.allowed, d.rule_id) == (False, "COOL-01")
+    assert d.message.startswith("This fund is 30% below its high")
     assert "wait 24 hours" in d.message
 
 

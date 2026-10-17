@@ -71,7 +71,7 @@ The whole monthly surplus (income minus costs) goes to one step at a time: (1) a
 ## 9. Monitoring: drift and cooling-off (`DRIFT-01`, `COOL-01`)
 
 - **Drift.** Each month of fast-forward, fund prices move by their asset class's return minus a twelfth of the yearly fee. If any asset class drifts more than 5 percentage points from target, Sprout proposes a rebalance, which goes through the same confirmation as any order. Vanguard's rebalancing research concludes that annual or semiannual monitoring with rebalancing at 5% thresholds is likely to balance risk control and cost for most investors [V4].
-- **Cooling-off.** Selling more than 20% of the portfolio while it is more than 15% below its peak starts a 24-hour simulated cooling-off period, then Sprout asks again.
+- **Cooling-off.** Selling more than 20% of the portfolio in funds that are more than 15% below their 12-month high starts a 24-hour simulated cooling-off period, then Sprout asks again. We measure the fall on the fund being sold, not on the whole portfolio, because that is the decision being made: in March 2020 Leo's balanced C3 portfolio fell only about 8% (bonds rose while stocks fell), but his US stock fund was about 20% below its high, and selling it then would have locked in the loss.
 
 ## 10. Language policy (`LANG-*`)
 

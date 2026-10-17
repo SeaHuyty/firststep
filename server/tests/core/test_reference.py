@@ -81,7 +81,7 @@ def test_every_product_tracks_a_known_asset_class(ref: Reference) -> None:
 
 def test_tier_2_tools_are_the_execution_tools(ref: Reference) -> None:
     tier_2 = {tool for tool, tier in ref.rules.tiers.tier_of.items() if tier == 2}
-    assert tier_2 == {"place_order", "create_auto_invest"}
+    assert tier_2 == {"place_order"}
 
 
 def test_scored_questions_have_a_score_on_every_option(ref: Reference) -> None:

@@ -59,6 +59,16 @@ def get_proposal(con: sqlite3.Connection, proposal_id: str) -> ProposalRow | Non
     )
 
 
+def latest_proposal(con: sqlite3.Connection, session_id: str, kind: str) -> ProposalRow | None:
+    """Return the newest live proposal of a kind, or None."""
+    r = con.execute(
+        "SELECT id FROM proposals WHERE session_id = ? AND kind = ? AND status != 'superseded'"
+        " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (session_id, kind),
+    ).fetchone()
+    return get_proposal(con, r["id"]) if r else None
+
+
 def mark_executed(con: sqlite3.Connection, proposal_id: str) -> None:
     """Record that a proposal's orders were placed."""
     con.execute("UPDATE proposals SET status = 'executed' WHERE id = ?", (proposal_id,))
@@ -169,6 +179,14 @@ def orders(con: sqlite3.Connection, session_id: str) -> list[OrderRow]:
     ]
 
 
+def auto_invested(con: sqlite3.Connection, session_id: str) -> Money:
+    """Return the total bought by the monthly plan so far."""
+    rows = con.execute(
+        "SELECT amount FROM orders WHERE session_id = ? AND source = 'auto_invest'", (session_id,)
+    ).fetchall()
+    return sum((Decimal(r["amount"]) for r in rows), Decimal(0))
+
+
 def spent_on(con: sqlite3.Connection, session_id: str, day: str) -> Money:
     """Return the user's buy total on a calendar day (for LIM-01)."""
     rows = con.execute(
@@ -254,10 +272,14 @@ def add_cooling_off(con: sqlite3.Connection, session_id: str, row: CoolingOffRow
     )
 
 
-def cooling_offs(con: sqlite3.Connection, session_id: str) -> list[CoolingOffRow]:
-    """Return the session's cooling-off periods still waiting."""
+def cooling_offs(
+    con: sqlite3.Connection, session_id: str, *, include_released: bool = False
+) -> list[CoolingOffRow]:
+    """Return waiting (and optionally released) cooling-off periods."""
+    statuses = ("waiting", "released") if include_released else ("waiting", "waiting")
     rows = con.execute(
-        "SELECT * FROM cooling_off WHERE session_id = ? AND status = 'waiting'", (session_id,)
+        "SELECT * FROM cooling_off WHERE session_id = ? AND status IN (?, ?)",
+        (session_id, *statuses),
     ).fetchall()
     return [
         CoolingOffRow(

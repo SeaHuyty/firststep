@@ -113,4 +113,15 @@ test("a visitor answers the first question on the welcome page and carries on in
   await expect(page.getByText(/How much money comes in each month/).filter({ visible: true }).first()).toBeVisible();
   await page.reload();
   await expect(page.getByText("25–34", { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  // Back to the welcome page: everything works again (it is kept alive, not reloaded).
+  await page.goBack();
+  await expect(page.getByRole("button", { name: "35–44" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Try as Leo/ })).toBeEnabled();
+});
+
+test("going back after starting a demo leaves the welcome page usable", async ({ page }) => {
+  await startAs(page, "Leo");
+  await page.goBack();
+  await expect(page.getByRole("button", { name: /Try as Mei/ })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "18–24" })).toBeEnabled();
 });

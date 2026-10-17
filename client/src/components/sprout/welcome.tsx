@@ -11,7 +11,7 @@
 //    so they clearly can be (NN/g, cards: a drop shadow signals clickability).
 import { ArrowRight, Clock, Eye, Lock, ShieldCheck, Sprout } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/primitives";
 import { api } from "@/lib/api";
@@ -60,6 +60,17 @@ export function Welcome() {
   const { question, failed } = useFirstQuestion();
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Next keeps this page alive (hidden) after we navigate away, so Back would show it still
+  // "starting" with every button disabled. Reset when it is hidden
+  // (node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md).
+  useLayoutEffect(
+    () => () => {
+      setStarting(null);
+      setError(null);
+    },
+    [],
+  );
 
   const start = async (key: string, persona?: string, first?: Chip) => {
     if (starting) return;

@@ -2,13 +2,13 @@
 
 // The plan builds up here as Sprout works (docs/standards/onboarding-ux.md section 2): the latest
 // card of each kind, in the order of the journey.
-import { Gauge, PieChart, ShieldCheck, Target, Wallet } from "lucide-react";
+import { Check, ChevronDown, Gauge, PieChart, ShieldCheck, Target, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
-import { Card as Box, Notice, Skeleton } from "@/components/ui/primitives";
+import { Card as Box, Notice, RiskBadge, Skeleton } from "@/components/ui/primitives";
 import { api } from "@/lib/api";
-import { month } from "@/lib/format";
+import { money, month } from "@/lib/format";
 import type { AuditView, Card, Stage } from "@/lib/types";
 import {
   AllocationView,
@@ -28,18 +28,19 @@ export const PLAN_TYPES = new Set<string>([
   "projection", "comparison", "products",
 ]);
 
-const ORDER = [
-  "portfolio",
-  "receipt",
-  "readiness",
-  "savings_plan",
-  "risk_badge",
-  "goal",
-  "allocation",
-  "projection",
-  "comparison",
-  "products",
+// The journey in phases. The latest phase is the plan as it stands now and is shown in full;
+// earlier phases fold to one line each, so what matters now is the one focal point
+// (docs/ux-psychology.md, "One focal point") and the history is one click away.
+const PHASES = [
+  { types: ["readiness", "savings_plan"], label: "Money check" },
+  { types: ["risk_badge"], label: "Risk level" },
+  { types: ["goal"], label: "Goal" },
+  { types: ["allocation", "projection", "comparison", "products"], label: "Your plan" },
+  { types: ["receipt"], label: "Invested" },
+  { types: ["portfolio"], label: "Practice account" },
 ] as const;
+
+type Phase = (typeof PHASES)[number];
 
 function signature(card: Card): string {
   const text = JSON.stringify(card);
@@ -78,10 +79,18 @@ export function View({ card }: { card: Card }) {
 function useSpotlight(root: React.RefObject<HTMLDivElement | null>, spotlight: { type: string; n: number } | null) {
   useEffect(() => {
     if (!spotlight) return;
-    const el = root.current?.querySelector<HTMLElement>(`[data-plan-type="${spotlight.type}"]`);
+    const el = root.current?.querySelector<HTMLElement>(`[data-plan-types~="${spotlight.type}"]`);
     if (!el || el.offsetParent === null) return; // hidden (e.g. the plan tab on a phone)
+    if (el instanceof HTMLDetailsElement) el.open = true; // an earlier step, folded away
     const reduced = prefersReducedMotion();
-    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    // Scroll only the pane that holds the plan: scrollIntoView would also nudge the page.
+    const pane = el.closest<HTMLElement>("[data-plan-scroll]");
+    if (pane && pane.scrollHeight > pane.clientHeight) {
+      const top = el.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - 8;
+      pane.scrollTo({ top, behavior: reduced ? "auto" : "smooth" });
+    } else {
+      el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    }
     if (reduced) return;
     const color = getComputedStyle(document.documentElement).getPropertyValue("--fs-primary").trim();
     el.animate(
@@ -107,25 +116,75 @@ export function PlanPanel({
   const root = useRef<HTMLDivElement>(null);
   useSpotlight(root, spotlight);
   const latest = latestByType(cards);
-  // Once there is a portfolio, the readiness check and old receipts are history: keep the plan
-  // panel about now (progressive disclosure).
-  const hide = new Set<string>(stage === "MONITOR" ? ["receipt", "readiness", "goal", "risk_badge", "projection", "products", "comparison"] : stage === "EXECUTED" ? ["readiness"] : []);
-  const shown = ORDER.filter((t) => latest[t] && !hide.has(t));
+  const at = PHASES.findLastIndex((p) => p.types.some((t) => latest[t]));
+  const now = PHASES[at]?.types.filter((t) => latest[t]) ?? [];
+  const earlier = PHASES.slice(0, Math.max(at, 0)).filter((p) => p.types.some((t) => latest[t]));
   const coming = upcoming(latest, stage);
   return (
     <div ref={root} className="space-y-4">
-      {shown.map((t) => {
+      {now.map((t) => {
         const c = latest[t];
         // Keyed by content, so a card rises in when it first appears and again when it changes
         // (a new plan, a new month), drawing the eye to what Sprout just did.
         return c ? (
-          <div key={`${t}:${signature(c)}`} data-plan-type={t} className="animate-rise scroll-mt-2 rounded-md">
+          <div key={`${t}:${signature(c)}`} data-plan-types={t} className="animate-rise scroll-mt-2 rounded-md">
             <View card={c} />
           </div>
         ) : null;
       })}
-      {coming.length > 0 && <ComingUp items={coming} first={shown.length === 0} />}
+      {coming.length > 0 && <ComingUp items={coming} first={now.length === 0} />}
+      {earlier.length > 0 && (
+        <section aria-labelledby="so-far">
+          <h3 id="so-far" className="text-overline uppercase text-muted">Earlier steps</h3>
+          <ul className="mt-3 space-y-2">
+            {earlier.map((p) => (
+              <li key={p.label}>
+                <Folded phase={p} latest={latest} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
+  );
+}
+
+/** One line for what an earlier step decided, in the person's own terms. */
+function gist(phase: Phase, latest: Partial<Record<Card["type"], Card>>): React.ReactNode {
+  const c = phase.types.map((t) => latest[t]).find(Boolean);
+  switch (c?.type) {
+    case "readiness":
+      return c.ready ? `Ready: ${c.emergency_months.toFixed(1)} months of savings, no expensive debt` : "Not yet";
+    case "risk_badge":
+      return <RiskBadge code={c.client_class} label={c.label} />;
+    case "goal":
+      return `${c.name}: ${money(c.target_usd)} in ${c.horizon_years} years`;
+    case "allocation":
+      return `${c.label}, ${money(c.total_usd)} across ${c.lines.length} funds`;
+    case "receipt":
+      return `${money(c.fills.reduce((sum, f) => sum + Number(f.amount_usd), 0))} in ${month(c.sim_month)}`;
+    default:
+      return null;
+  }
+}
+
+function Folded({ phase, latest }: { phase: Phase; latest: Partial<Record<Card["type"], Card>> }) {
+  const shown = phase.types.filter((t) => latest[t]);
+  return (
+    <details data-plan-types={shown.join(" ")} className="group scroll-mt-2 rounded-md border border-line bg-surface">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 px-4 py-2 [&::-webkit-details-marker]:hidden">
+        <Check aria-hidden className="size-4 shrink-0 text-primary" />
+        <span className="w-28 shrink-0 text-label text-ink">{phase.label}</span>
+        <span className="min-w-0 flex-1 text-body-sm text-ink-2">{gist(phase, latest)}</span>
+        <ChevronDown aria-hidden className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="space-y-3 border-t border-line bg-sunken p-3">
+        {shown.map((t) => {
+          const c = latest[t];
+          return c ? <View key={t} card={c} /> : null;
+        })}
+      </div>
+    </details>
   );
 }
 
@@ -188,10 +247,11 @@ export function WatchControls({
   onRebalance: () => void;
 }) {
   return (
-    <Box overline={`Simulated month: ${month(simMonth)}`} title="Watch your plan over time">
+    // Moving time is the next step here, so it sits under the chat, where the person is looking.
+    <div className="rounded-md border border-line bg-surface p-3">
       <p className="text-body-sm text-ink-2">
-        Fast-forward through real market history. Looking yearly, not daily, keeps short drops in
-        proportion.
+        <span className="text-label text-ink">Simulated month: {month(simMonth)}</span>. Move through real
+        market history; looking yearly, not daily, keeps short drops in proportion.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="primary" busy={busy} busyLabel="Moving time…" onClick={() => onAdvance({ months: 12 })}>
@@ -211,7 +271,7 @@ export function WatchControls({
           </Button>
         )}
       </div>
-    </Box>
+    </div>
   );
 }
 

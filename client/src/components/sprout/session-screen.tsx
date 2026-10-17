@@ -21,8 +21,9 @@ import { GlossaryProvider } from "./term";
 type Tab = "chat" | "plan" | "audit";
 
 const PLACEHOLDER: Partial<Record<Stage, string>> = {
-  PROPOSE: "Ask anything, e.g. \"What is a bond?\"",
-  MONITOR: "Ask Sprout anything about your plan",
+  // Short enough for one line on a phone.
+  PROPOSE: "Ask, e.g. \"What is a bond?\"",
+  MONITOR: "Ask about your plan",
   SAVINGS_PLAN: "Ask about your savings plan",
 };
 
@@ -37,6 +38,15 @@ export function SessionScreen() {
   const [turnError, setTurnError] = useState<{ message: string; retry: () => void } | null>(null);
   const [reviewing, setReviewing] = useState<CardOf<"confirm"> | null>(null);
   const [tab, setTab] = useState<Tab>("chat");
+  // Phones show one view at a time on one scrolling page: the chat opens at its newest line,
+  // the plan and the audit log at their top, not at whatever offset the last view had.
+  const showTab = (t: Tab) => {
+    setTab(t);
+    requestAnimationFrame(() => {
+      if (t === "chat") document.querySelector("[data-chat-end]")?.scrollIntoView({ block: "end" });
+      else window.scrollTo({ top: 0 });
+    });
+  };
   const [auditKey, setAuditKey] = useState(0);
   const [auditOpen, setAuditOpen] = useState(false);
   const [spotlight, setSpotlight] = useState<{ type: string; n: number } | null>(null);
@@ -118,8 +128,9 @@ export function SessionScreen() {
   }
   if (!view) return <SessionSkeleton />;
 
+  // What to do next sits at the end of the chat, and the chat follows it into view.
   const chatBody = (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="pb-2">
       <MessageList
         messages={messages}
         busy={busy}
@@ -127,7 +138,7 @@ export function SessionScreen() {
         onAnswer={(qid, value, label) => act({ tool: "answer_question", args: { question_id: qid, value } }, label)}
         onReview={setReviewing}
         onShow={showInPlan}
-      />
+      >
       {turnError && (
         <Notice tone="error" title="That didn't go through" action={<Button onClick={turnError.retry}>Try again</Button>}>
           {turnError.message}
@@ -149,20 +160,23 @@ export function SessionScreen() {
           </Button>
         </div>
       )}
+      {(stage === "EXECUTED" || stage === "MONITOR") && (
+        <div className="animate-rise">
+          <WatchControls
+            simMonth={simMonth}
+            busy={busy}
+            driftAlert={driftAlert}
+            onAdvance={(args) => act({ tool: "advance_time", args }, args.until ? "Jump to March 2020" : args.months === 12 ? "Fast-forward a year" : "Fast-forward a month")}
+            onRebalance={() => act({ tool: "propose_rebalance" }, "Show me a rebalance")}
+          />
+        </div>
+      )}
+      </MessageList>
     </div>
   );
 
   const plan = (
     <div className="space-y-4">
-      {(stage === "EXECUTED" || stage === "MONITOR") && (
-        <WatchControls
-          simMonth={simMonth}
-          busy={busy}
-          driftAlert={driftAlert}
-          onAdvance={(args) => act({ tool: "advance_time", args }, args.until ? "Jump to March 2020" : args.months === 12 ? "Fast-forward a year" : "Fast-forward a month")}
-          onRebalance={() => act({ tool: "propose_rebalance" }, "Show me a rebalance")}
-        />
-      )}
       <Safeguards cards={allCards} stage={stage} />
       <PlanPanel cards={allCards} stage={stage} spotlight={spotlight} />
     </div>
@@ -186,7 +200,7 @@ export function SessionScreen() {
             role="tab"
             type="button"
             aria-selected={tab === t}
-            onClick={() => setTab(t)}
+            onClick={() => showTab(t)}
             className={`min-h-11 flex-1 rounded-sm text-label ${tab === t ? "bg-surface text-ink shadow-popover" : "text-ink-2"}`}
           >
             {t === "chat" ? "Chat" : t === "plan" ? "My plan" : "Audit log"}
@@ -212,6 +226,7 @@ export function SessionScreen() {
         </section>
         <section
           aria-label="My plan"
+          data-plan-scroll
           className={`lg:col-span-7 lg:min-h-0 lg:overflow-y-auto lg:pr-2 ${tab === "plan" ? "" : "hidden lg:block"}`}
         >
           {plan}

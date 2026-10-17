@@ -38,20 +38,26 @@ const STEP_LABEL: Record<string, string> = {
   explain: "Looked up the definition",
 };
 
-function InlineCard({ card }: { card: Card }) {
+const squash = (t: string) => t.replace(/\s+/g, " ").trim().toLowerCase();
+
+/** `said`: Sprout's reply already says the card's sentence, so the card keeps only its title. */
+function InlineCard({ card, said }: { card: Card; said: string }) {
+  const body = (text: string) => (said && squash(said).includes(squash(text)) ? null : text);
   switch (card.type) {
-    case "refusal":
+    case "refusal": {
+      const text = [body(card.text), card.next_step].filter(Boolean).join(" ");
       return (
         <Notice tone="error" title={card.title} ruleId={card.rule_id}>
-          {card.text} {card.next_step}
+          {text || null}
         </Notice>
       );
+    }
     case "pause":
-      return <Notice tone="pause" title={card.title} ruleId={card.rule_id}>{card.text}</Notice>;
+      return <Notice tone="pause" title={card.title} ruleId={card.rule_id}>{body(card.text)}</Notice>;
     case "alert":
       return (
         <Notice tone={card.tone === "pause" ? "pause" : "info"} title={card.title} ruleId={card.rule_id}>
-          {card.text}
+          {body(card.text)}
         </Notice>
       );
     case "term":
@@ -108,7 +114,7 @@ function SproutTurn({
     );
   }
   m.cards.forEach((c, j) => {
-    const inline = <InlineCard card={c} />;
+    const inline = <InlineCard card={c} said={m.text} />;
     if (c.type === "refusal" || c.type === "pause" || c.type === "alert" || c.type === "term") {
       blocks.push(<div key={`i${j}`}>{inline}</div>);
     }
@@ -185,6 +191,7 @@ export function MessageList({
   hints,
   onReview,
   onShow,
+  children,
 }: {
   messages: ChatMessage[];
   busy: boolean;
@@ -192,6 +199,8 @@ export function MessageList({
   hints: Record<string, unknown>;
   onReview: (card: CardOf<"confirm">) => void;
   onShow: (type: string) => void;
+  /** The next step (a form, a button), after the messages and inside what the chat follows. */
+  children?: React.ReactNode;
 }) {
   const end = useRef<HTMLDivElement>(null);
   // Follow new content only while the reader is near the bottom; if they scrolled up to reread,
@@ -246,8 +255,9 @@ export function MessageList({
         ),
       )}
       {busy && <TypingIndicator />}
+      {children}
       {/* The sticky message box sits over the bottom of the page; keep the newest line above it. */}
-      <div ref={end} className="scroll-mb-[104px] lg:scroll-mb-2" />
+      <div ref={end} data-chat-end className="scroll-mb-[104px] lg:scroll-mb-2" />
     </div>
   );
 }

@@ -180,6 +180,14 @@ def test_a_refreshed_page_gets_the_whole_conversation(client: TestClient) -> Non
     assert view["persona"]["name"] == "Leo"
 
 
+def test_questions_are_counted_per_part_of_the_journey(client: TestClient) -> None:
+    s = Session(client)
+    first = s.view["messages"][0]["cards"][0]
+    assert (first["section"], first["step"], first["of"]) == ("Money check", 1, 5)
+    card = s.answer("age", 30)["cards"][-1]
+    assert (card["section"], card["step"], card["of"]) == ("Money check", 2, 5)
+
+
 def test_a_chip_label_is_kept_as_the_user_message(client: TestClient) -> None:
     s = Session(client)
     body = {"tool": "answer_question", "args": {"question_id": "age", "value": 30}}

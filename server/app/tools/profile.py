@@ -53,8 +53,25 @@ def stage_questions(ctx: ToolContext, stage: Stage) -> list[Question]:
     return [q for q in ctx.ref.questionnaire.questions if q.stage == stage]
 
 
-def question_card(questions: list[Question], i: int) -> QuestionCard:
-    """Return question ``i`` of a stage as a card with its chips."""
+# Questions are counted per part of the journey the step bar shows, so
+# the age question and the money questions read "1 of 5" to "5 of 5"
+# rather than "1 of 1" and then "1 of 4".
+SECTIONS = {
+    Stage.ONBOARD: "Money check",
+    Stage.READINESS: "Money check",
+    Stage.PROFILE: "Your comfort with risk",
+}
+
+
+def section_questions(ref: Reference, stage: Stage) -> list[Question]:
+    """Return every question in the same part of the journey."""
+    section = SECTIONS.get(stage)
+    stages = {s for s, name in SECTIONS.items() if name == section} if section else {stage}
+    return [q for q in ref.questionnaire.questions if q.stage in stages]
+
+
+def question_card(questions: list[Question], i: int, stage: Stage) -> QuestionCard:
+    """Return question ``i`` of a part of the journey as a card."""
     q = questions[i]
     return QuestionCard(
         question_id=q.id,
@@ -62,6 +79,7 @@ def question_card(questions: list[Question], i: int) -> QuestionCard:
         why=q.why,
         kind=q.kind,
         chips=[Chip(label=o.label, value=o.value) for o in q.options],
+        section=SECTIONS.get(stage, ""),
         step=i + 1,
         of=len(questions),
     )
@@ -69,16 +87,16 @@ def question_card(questions: list[Question], i: int) -> QuestionCard:
 
 def first_question(ref: Reference) -> QuestionCard:
     """Return the question every new session starts with."""
-    questions = [q for q in ref.questionnaire.questions if q.stage == Stage.ONBOARD]
-    return question_card(questions, 0)
+    return question_card(section_questions(ref, Stage.ONBOARD), 0, Stage.ONBOARD)
 
 
 def next_question(ctx: ToolContext) -> QuestionCard | None:
     """Return the first unanswered question of the current stage."""
-    questions = stage_questions(ctx, ctx.session.stage)
+    stage = ctx.session.stage
+    questions = section_questions(ctx.ref, stage)
     for i, q in enumerate(questions):
-        if not _answered(ctx.session.profile, q):
-            return question_card(questions, i)
+        if q.stage == stage and not _answered(ctx.session.profile, q):
+            return question_card(questions, i, stage)
     return None
 
 

@@ -1,0 +1,27 @@
+# Model portfolios, one per client class, as percent per product (each sums to 100).
+# Suitability is checked per product (SUIT-01), as under the CSRC suitability Measures, so a C1
+# or C2 portfolio can only hold R1-R2 funds and has no equity. Equity shares step up like
+# target-risk fund ranges (e.g. Vanguard LifeStrategy 20/40/60/80/100). A test checks every
+# portfolio against SUIT-01 and CONC-01 for its own class.
+version: 1
+portfolios:
+  C1:
+    label: Cautious
+    summary: Keeps your money steady. Growth will be small.
+    weights: {MMF01: 30, TBL01: 30, STB01: 40}
+  C2:
+    label: Steady
+    summary: Mostly bonds for steady income, with small ups and downs.
+    weights: {MMF01: 10, STB01: 30, GOV01: 35, GOV02: 25}
+  C3:
+    label: Balanced
+    summary: Half stocks for growth, half bonds and cash to soften the drops.
+    weights: {MMF01: 5, STB01: 10, GOV01: 25, GOV02: 10, USE01: 30, INT01: 20}
+  C4:
+    label: Growth
+    summary: Mostly stocks for long-term growth. Expect bigger drops along the way.
+    weights: {STB01: 5, GOV01: 20, USE01: 30, USE02: 10, INT01: 20, EME01: 10, GLD01: 5}
+  C5:
+    label: Adventurous
+    summary: Nearly all stocks. The biggest long-term growth and the biggest drops.
+    weights: {GOV01: 10, USE01: 35, USE02: 15, INT01: 25, EME01: 15}

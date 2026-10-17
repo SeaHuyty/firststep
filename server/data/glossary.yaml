@@ -1,0 +1,103 @@
+# Fixed definitions for the explain tool and the Term component. Sprout never generates these:
+# each is at most two sentences plus one everyday example, and cites its source.
+version: 1
+
+sources:
+  SEC-ALLOC:
+    title: Asset Allocation and Diversification
+    publisher: SEC Investor.gov
+    url: https://www.investor.gov/introduction-investing/getting-started/asset-allocation
+  SEC-BEGIN:
+    title: Beginners' Guide to Asset Allocation, Diversification, and Rebalancing
+    publisher: SEC Investor.gov
+    url: https://www.investor.gov/additional-resources/general-resources/publications-research/info-sheets/beginners-guide-asset
+  SEC-ETF:
+    title: Exchange-Traded Funds (ETFs)
+    publisher: SEC Investor.gov
+    url: https://www.investor.gov/introduction-investing/investing-basics/investment-products/mutual-funds-and-exchange-traded-2
+  SEC-BONDS:
+    title: Bonds - FAQs
+    publisher: SEC Investor.gov
+    url: https://www.investor.gov/introduction-investing/investing-basics/investment-products/bonds-or-fixed-income-products/bonds
+  CFPB-EF:
+    title: An essential guide to building an emergency fund
+    publisher: CFPB
+    url: https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/
+  CSRC-SUIT:
+    title: Measures for the Suitability Management of Securities and Futures Investors
+    publisher: CSRC (English text via LexisNexis)
+    url: https://www.lexiscn.com/law/law-english-1-4389916-T.html?eng=0
+
+terms:
+  etf:
+    term: ETF
+    text: >-
+      An exchange-traded fund is a basket of investments you can buy as one product. Example:
+      one ETF can hold small pieces of 500 companies.
+    source: SEC-ETF
+  index_fund:
+    term: Index fund
+    text: >-
+      A fund that copies a market list, such as the 500 largest US companies, instead of a
+      manager picking stocks. That keeps its fees low.
+    source: SEC-ETF
+  bond:
+    term: Bond
+    text: >-
+      A loan you make to a government or company, which pays you interest. Example: a 10-year
+      government bond pays interest every year and returns your money after 10 years.
+    source: SEC-BONDS
+  fee:
+    term: Fee (TER)
+    text: >-
+      The yearly cost of a fund, shown as a percent of what you hold. Example: 0.10% a year on
+      $5,000 is about $5 a year.
+    source: SEC-ETF
+  diversification:
+    term: Diversification
+    text: >-
+      Spreading your money across many investments so one bad result hurts less. Example: owning
+      thousands of companies instead of one.
+    source: SEC-ALLOC
+  volatility:
+    term: Volatility
+    text: >-
+      How much an investment's value goes up and down. Stocks are more volatile than bonds, so
+      their value can drop further in a bad year.
+    source: SEC-ALLOC
+  risk_class:
+    term: Risk class
+    text: >-
+      Your level from C1 (most cautious) to C5, set by the lower of how much risk you want and
+      how much loss you could afford. You can only buy funds rated at or below your level.
+    source: CSRC-SUIT
+  risk_rating:
+    term: Risk rating
+    text: >-
+      A fund's level from R1 (steadiest) to R5. Example: a money market fund is R1; a fund
+      holding only technology companies is R4.
+    source: CSRC-SUIT
+  emergency_fund:
+    term: Emergency fund
+    text: >-
+      Savings you can reach quickly for surprises such as losing a job or a big repair. A
+      common target is 3 to 6 months of living costs.
+    source: CFPB-EF
+  rebalancing:
+    term: Rebalancing
+    text: >-
+      Moving money between investments to get back to your planned mix. Example: if stocks grow
+      from 50% to 57% of your plan, you move some back into bonds.
+    source: SEC-BEGIN
+  drawdown:
+    term: Drawdown
+    text: >-
+      How far your investments have fallen from their highest value. Example: from $10,000 down
+      to $8,000 is a 20% drawdown.
+    source: SEC-BEGIN
+  outcome_range:
+    term: Range of outcomes
+    text: >-
+      A spread of results from replaying past market years in many different orders: a bad
+      case, a typical case and a good case. It shows what could happen, not a prediction.
+    source: SEC-ALLOC

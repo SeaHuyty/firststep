@@ -1,16 +1,17 @@
 [project]
-name = "wealthpilot-server"
+name = "firststep-server"
 version = "0.1.0"
-description = "FastAPI backend for the WealthPilot AI prototype"
+description = "FirstStep: a trustworthy first investing advisor (FastAPI backend)"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi",
   "uvicorn",
   "pydantic-settings",
-  "pydantic-ai-slim[google,anthropic]",
-  "yfinance",
+  "pydantic-ai-slim[openai,anthropic,google]",
+  "pyyaml",
   "numpy",
-  "pandas",
+  "yfinance",          # old market layer; removed with app/market in M4
+  "pandas",            # old what-if layer; removed in M4
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,8 @@ dev = [
   "hypothesis>=6",      # property tests for the finance engine
   "pre-commit>=4",
   "import-linter>=2",   # enforces the layer rules in standards/backend.md
+  "types-PyYAML",
+  "openpyxl",           # scripts/build_returns.py reads the World Bank workbook
 ]
 
 [tool.setuptools]
@@ -90,7 +93,7 @@ warn_unreachable = true
 files = ["app"]
 
 [[tool.mypy.overrides]]
-module = ["yaml.*", "pandas.*", "yfinance.*"]
+module = ["pandas.*", "yfinance.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -105,12 +108,60 @@ markers = [
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 
-# Layer rules, adapted to the current layout (routes -> ai -> domain).
-# Run with `lint-imports`. They move to api/agent/policy/tools/engine when
-# the package is restructured as in standards/backend.md section 2.
+# Layer rules from standards/backend.md section 2. Run with `lint-imports`.
+# A module may import from layers below it, never above. store, audit,
+# llm and core are services handed to the upper layers.
 [tool.importlinter]
 root_package = "app"
 include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: api -> agent -> policy -> tools -> engine"
+type = "layers"
+layers = ["app.api", "app.agent", "app.policy", "app.tools", "app.engine"]
+
+[[tool.importlinter.contracts]]
+name = "Engine is pure: no web, database, LLM, files or upper layers"
+type = "forbidden"
+source_modules = ["app.engine"]
+forbidden_modules = [
+  "fastapi", "pydantic_ai", "yaml", "sqlite3",
+  "app.store", "app.audit", "app.llm", "app.core.settings", "app.core.reference",
+]
+
+[[tool.importlinter.contracts]]
+name = "Core depends on nothing else in app"
+type = "forbidden"
+source_modules = ["app.core"]
+forbidden_modules = [
+  "app.api", "app.agent", "app.policy", "app.tools", "app.engine",
+  "app.store", "app.audit", "app.llm",
+]
+
+[[tool.importlinter.contracts]]
+name = "Store and audit are services: they never call back up"
+type = "forbidden"
+source_modules = ["app.store", "app.audit"]
+forbidden_modules = ["app.api", "app.agent", "app.policy", "app.tools", "app.llm"]
+
+[[tool.importlinter.contracts]]
+name = "Only app.llm knows an LLM provider exists"
+type = "forbidden"
+source_modules = [
+  "app.api", "app.agent", "app.policy", "app.tools", "app.engine",
+  "app.store", "app.audit", "app.core",
+]
+forbidden_modules = ["anthropic", "openai", "google"]
+
+[[tool.importlinter.contracts]]
+name = "Only app.llm and app.agent use pydantic-ai"
+type = "forbidden"
+source_modules = [
+  "app.api", "app.policy", "app.tools", "app.engine", "app.store", "app.audit", "app.core",
+]
+forbidden_modules = ["pydantic_ai"]
+
+# Contracts for the old layout, removed with the old modules in M4.
 
 [[tool.importlinter.contracts]]
 name = "Layers: main -> routes -> ai -> domain"

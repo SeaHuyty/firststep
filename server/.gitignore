@@ -6,3 +6,6 @@ __pycache__/
 .coverage
 .mypy_cache/
 .ruff_cache/
+.cache/
+sandbox.db
+sandbox.db-*

@@ -77,7 +77,29 @@ The whole monthly surplus (income minus costs) goes to one step at a time: (1) a
 
 Before a reply is shown, it is checked for guarantees, claims of no risk, promises of growth and price predictions. A hit regenerates the reply once, then falls back to a safe message. The categories follow FINRA Rule 2210, which bars promissory and exaggerated claims, performance predictions and statements implying guaranteed results [FN1]. Outcomes are always shown as ranges, never one number, and never called a "backtest".
 
+## 11. Security design: the guardian (`app/policy`, `app/audit`)
+
+The design follows the OWASP Top 10 for LLM Applications (2025) [OW1, OW2]:
+
+| OWASP guidance | FirstStep |
+|---|---|
+| LLM06 Excessive Agency: "require a human to approve high-impact actions before they are taken" | Tier 2 tools (`place_order`, `create_auto_invest`) are never offered to the LLM. Only the Confirm button's request mints a one-time token (`CONF-01`). |
+| LLM06: "implement authorization in downstream systems rather than relying on an LLM" | `app/policy` checks every tool call (`STAGE-01`, `SUIT-01`, `CONC-01`, `LIM-01`, `COOL-01`) whatever the model asked for. |
+| LLM06: limit extensions and their functionality to the minimum | Each stage exposes only its own tools (`STAGE-01`); tools take strict schemas (`extra="forbid"`). |
+| LLM01 Prompt Injection: "use deterministic code to validate" outputs; input and output filtering | Input guard for injection patterns and PII; output filter for `LANG-*` and missing disclosures. |
+| LLM06: log and monitor the activity of extensions | Every tool call, policy decision, confirmation and fill goes to the hash-chained audit log. |
+
+**Confirmation tokens (`CONF-01`).** A token is an HMAC-SHA256 over the proposal id, the SHA-256 of the proposal's exact contents, a random nonce and an expiry (10 minutes). Signatures are compared with `hmac.compare_digest`, which the Python documentation recommends over `==` for HMAC checks [PY1]. The nonce is stored when used, so a replayed token fails, as nonce checks do in OpenID [OI1]. A token for one plan cannot execute a changed plan, because the content hash would differ.
+
+**Audit chain.** Each event stores the SHA-256 of the previous event, following the chained-record idea of Schneier and Kelsey's secure audit logs [SK1]. A plain hash chain cannot stop someone who rewrites the whole file and recomputes every hash, so the latest hash is also anchored outside the file (the sandbox database and each order receipt), and the verifier checks against it. Schneier and Kelsey note a limit that applies to us too: the log is only as trustworthy as the machine at the moment it writes.
+
 ## Sources
+
+- [OI1] OpenID security list, on nonce checks in OpenID 2.0 (2010). https://lists.openid.net/pipermail/openid-security/2010-July/001160.html
+- [OW1] OWASP GenAI, LLM06:2025 Excessive Agency. https://genai.owasp.org/llmrisk/llm062025-excessive-agency/
+- [OW2] OWASP GenAI, LLM01:2025 Prompt Injection. https://genai.owasp.org/llmrisk/llm01-prompt-injection/
+- [PY1] Python documentation, hmac.compare_digest. https://docs.python.org/3/library/hmac.html
+- [SK1] Schneier, B. and Kelsey, J. (1999). Secure audit logs to support computer forensics. *ACM TISSEC* 2(2). https://www.schneier.com/academic/archives/1999/05/secure_audit_logs_to.html
 
 - [AL1] Ally Invest, Monte Carlo methodology. https://www.ally.com/docs/invest/monte-carlo-methodology
 - [KU1] Künsch, H. R. (1989). The jackknife and the bootstrap for general stationary observations. *Annals of Statistics* 17(3).

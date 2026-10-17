@@ -1,0 +1,1957 @@
+{
+  "components": {
+    "schemas": {
+      "Action": {
+        "additionalProperties": false,
+        "description": "A chip or button: the tool to run and its arguments.",
+        "properties": {
+          "args": {
+            "additionalProperties": true,
+            "title": "Args",
+            "type": "object"
+          },
+          "tool": {
+            "maxLength": 40,
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool"
+        ],
+        "title": "Action",
+        "type": "object"
+      },
+      "AlertCard": {
+        "additionalProperties": false,
+        "description": "Something that happened while time moved forward.",
+        "properties": {
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "sim_month": {
+            "title": "Sim Month",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "info",
+              "success",
+              "pause",
+              "error"
+            ],
+            "title": "Tone",
+            "type": "string"
+          },
+          "type": {
+            "const": "alert",
+            "default": "alert",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tone",
+          "title",
+          "text",
+          "sim_month"
+        ],
+        "title": "AlertCard",
+        "type": "object"
+      },
+      "AllocationCard": {
+        "additionalProperties": false,
+        "description": "A proposed plan: donut families plus the fund table.",
+        "properties": {
+          "client_class": {
+            "title": "Client Class",
+            "type": "string"
+          },
+          "families": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Families",
+            "type": "object"
+          },
+          "fee_pct": {
+            "title": "Fee Pct",
+            "type": "number"
+          },
+          "fee_usd_a_year": {
+            "title": "Fee Usd A Year",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/AllocationLine"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "total_usd": {
+            "title": "Total Usd",
+            "type": "string"
+          },
+          "type": {
+            "const": "allocation",
+            "default": "allocation",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "client_class",
+          "label",
+          "families",
+          "lines",
+          "total_usd",
+          "fee_pct",
+          "fee_usd_a_year"
+        ],
+        "title": "AllocationCard",
+        "type": "object"
+      },
+      "AllocationLine": {
+        "additionalProperties": false,
+        "description": "One fund in a proposed plan.",
+        "properties": {
+          "amount_usd": {
+            "title": "Amount Usd",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "risk_rating": {
+            "title": "Risk Rating",
+            "type": "string"
+          },
+          "weight_pct": {
+            "title": "Weight Pct",
+            "type": "number"
+          },
+          "why": {
+            "items": {
+              "$ref": "#/components/schemas/WhyLine"
+            },
+            "title": "Why",
+            "type": "array"
+          }
+        },
+        "required": [
+          "product_id",
+          "name",
+          "family",
+          "risk_rating",
+          "weight_pct",
+          "amount_usd",
+          "why"
+        ],
+        "title": "AllocationLine",
+        "type": "object"
+      },
+      "AuditCheck": {
+        "description": "Result of verifying the session's chain against its anchor.",
+        "properties": {
+          "anchored_head": {
+            "title": "Anchored Head",
+            "type": "string"
+          },
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "first_bad_seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Bad Seq"
+          },
+          "head": {
+            "title": "Head",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "ok",
+          "events",
+          "head",
+          "anchored_head",
+          "first_bad_seq",
+          "reason"
+        ],
+        "title": "AuditCheck",
+        "type": "object"
+      },
+      "AuditView": {
+        "description": "The session's audit events and the chain check.",
+        "properties": {
+          "check": {
+            "$ref": "#/components/schemas/AuditCheck"
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events",
+          "check"
+        ],
+        "title": "AuditView",
+        "type": "object"
+      },
+      "Chip": {
+        "additionalProperties": false,
+        "description": "One quick reply.",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "Chip",
+        "type": "object"
+      },
+      "ComparisonCard": {
+        "additionalProperties": false,
+        "description": "Two to four funds side by side.",
+        "properties": {
+          "as_of": {
+            "title": "As Of",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "type": {
+            "const": "comparison",
+            "default": "comparison",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rows",
+          "as_of"
+        ],
+        "title": "ComparisonCard",
+        "type": "object"
+      },
+      "ComparisonRow": {
+        "additionalProperties": false,
+        "description": "One fund in a comparison table.",
+        "properties": {
+          "fee_per_year_on_1000_usd": {
+            "title": "Fee Per Year On 1000 Usd",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "liquidity_days": {
+            "title": "Liquidity Days",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "return_5y_pct_a_year": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return 5Y Pct A Year"
+          },
+          "risk_rating": {
+            "title": "Risk Rating",
+            "type": "string"
+          },
+          "ter_pct": {
+            "title": "Ter Pct",
+            "type": "number"
+          },
+          "worst_12m_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst 12M Pct"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "risk_rating",
+          "ter_pct",
+          "fee_per_year_on_1000_usd",
+          "return_5y_pct_a_year",
+          "worst_12m_pct",
+          "liquidity_days"
+        ],
+        "title": "ComparisonRow",
+        "type": "object"
+      },
+      "ConfirmCard": {
+        "additionalProperties": false,
+        "description": "Exactly what will happen if the user presses Confirm.",
+        "properties": {
+          "button": {
+            "title": "Button",
+            "type": "string"
+          },
+          "fee_usd_a_year": {
+            "title": "Fee Usd A Year",
+            "type": "number"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "monthly_usd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Usd"
+          },
+          "orders": {
+            "items": {
+              "$ref": "#/components/schemas/OrderView"
+            },
+            "title": "Orders",
+            "type": "array"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "total_usd": {
+            "title": "Total Usd",
+            "type": "string"
+          },
+          "type": {
+            "const": "confirm",
+            "default": "confirm",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "kind",
+          "orders",
+          "total_usd",
+          "monthly_usd",
+          "fee_usd_a_year",
+          "button"
+        ],
+        "title": "ConfirmCard",
+        "type": "object"
+      },
+      "GoalCard": {
+        "additionalProperties": false,
+        "description": "The goal as set.",
+        "properties": {
+          "capped": {
+            "title": "Capped",
+            "type": "boolean"
+          },
+          "client_class": {
+            "title": "Client Class",
+            "type": "string"
+          },
+          "horizon_years": {
+            "title": "Horizon Years",
+            "type": "number"
+          },
+          "lump_sum_usd": {
+            "title": "Lump Sum Usd",
+            "type": "number"
+          },
+          "monthly_usd": {
+            "title": "Monthly Usd",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "target_usd": {
+            "title": "Target Usd",
+            "type": "number"
+          },
+          "type": {
+            "const": "goal",
+            "default": "goal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "target_usd",
+          "horizon_years",
+          "lump_sum_usd",
+          "monthly_usd",
+          "client_class",
+          "capped"
+        ],
+        "title": "GoalCard",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "description": "Liveness and which LLM provider is in use.",
+        "properties": {
+          "llm": {
+            "title": "Llm",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "llm"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "HoldingView": {
+        "additionalProperties": false,
+        "description": "One holding in the portfolio.",
+        "properties": {
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "target_pct": {
+            "title": "Target Pct",
+            "type": "number"
+          },
+          "units": {
+            "title": "Units",
+            "type": "string"
+          },
+          "value_usd": {
+            "title": "Value Usd",
+            "type": "string"
+          },
+          "weight_pct": {
+            "title": "Weight Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "product_id",
+          "name",
+          "family",
+          "units",
+          "value_usd",
+          "weight_pct",
+          "target_pct"
+        ],
+        "title": "HoldingView",
+        "type": "object"
+      },
+      "Message": {
+        "description": "One chat message with its cards.",
+        "properties": {
+          "cards": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "alert": "#/components/schemas/AlertCard",
+                  "allocation": "#/components/schemas/AllocationCard",
+                  "comparison": "#/components/schemas/ComparisonCard",
+                  "confirm": "#/components/schemas/ConfirmCard",
+                  "goal": "#/components/schemas/GoalCard",
+                  "pause": "#/components/schemas/PauseCard",
+                  "portfolio": "#/components/schemas/PortfolioCard",
+                  "products": "#/components/schemas/ProductsCard",
+                  "projection": "#/components/schemas/ProjectionCard",
+                  "question": "#/components/schemas/QuestionCard",
+                  "readiness": "#/components/schemas/ReadinessCard",
+                  "receipt": "#/components/schemas/ReceiptCard",
+                  "refusal": "#/components/schemas/RefusalCard",
+                  "risk_badge": "#/components/schemas/RiskBadgeCard",
+                  "savings_plan": "#/components/schemas/SavingsPlanCard",
+                  "term": "#/components/schemas/TermCard"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/QuestionCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ReadinessCard"
+                },
+                {
+                  "$ref": "#/components/schemas/SavingsPlanCard"
+                },
+                {
+                  "$ref": "#/components/schemas/RiskBadgeCard"
+                },
+                {
+                  "$ref": "#/components/schemas/GoalCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ProductsCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ComparisonCard"
+                },
+                {
+                  "$ref": "#/components/schemas/AllocationCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectionCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ConfirmCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ReceiptCard"
+                },
+                {
+                  "$ref": "#/components/schemas/PortfolioCard"
+                },
+                {
+                  "$ref": "#/components/schemas/AlertCard"
+                },
+                {
+                  "$ref": "#/components/schemas/RefusalCard"
+                },
+                {
+                  "$ref": "#/components/schemas/PauseCard"
+                },
+                {
+                  "$ref": "#/components/schemas/TermCard"
+                }
+              ]
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "text",
+          "cards"
+        ],
+        "title": "Message",
+        "type": "object"
+      },
+      "NewSession": {
+        "additionalProperties": false,
+        "description": "Start a session, optionally as a demo person.",
+        "properties": {
+          "persona": {
+            "anyOf": [
+              {
+                "pattern": "^(amina|leo|mei)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona"
+          }
+        },
+        "title": "NewSession",
+        "type": "object"
+      },
+      "OrderView": {
+        "additionalProperties": false,
+        "description": "One order to confirm, or one fill.",
+        "properties": {
+          "amount_usd": {
+            "title": "Amount Usd",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nav_usd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Usd"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "side": {
+            "title": "Side",
+            "type": "string"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          }
+        },
+        "required": [
+          "product_id",
+          "name",
+          "side",
+          "amount_usd"
+        ],
+        "title": "OrderView",
+        "type": "object"
+      },
+      "PauseCard": {
+        "additionalProperties": false,
+        "description": "Amber \"not yet\" or cooling-off; never an error.",
+        "properties": {
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "const": "pause",
+            "default": "pause",
+            "title": "Type",
+            "type": "string"
+          },
+          "until_month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until Month"
+          }
+        },
+        "required": [
+          "rule_id",
+          "title",
+          "text"
+        ],
+        "title": "PauseCard",
+        "type": "object"
+      },
+      "PersonaHint": {
+        "description": "What a demo person answers, so a demo can be tapped through.",
+        "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "title": "Answers",
+            "type": "object"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opening_line": {
+            "title": "Opening Line",
+            "type": "string"
+          },
+          "tagline": {
+            "title": "Tagline",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "tagline",
+          "answers",
+          "goal",
+          "opening_line"
+        ],
+        "title": "PersonaHint",
+        "type": "object"
+      },
+      "PlanStepView": {
+        "additionalProperties": false,
+        "description": "One step of the savings plan.",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "interest_usd": {
+            "title": "Interest Usd",
+            "type": "number"
+          },
+          "monthly_usd": {
+            "title": "Monthly Usd",
+            "type": "number"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          },
+          "target_usd": {
+            "title": "Target Usd",
+            "type": "number"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "title",
+          "monthly_usd",
+          "months",
+          "target_usd",
+          "interest_usd"
+        ],
+        "title": "PlanStepView",
+        "type": "object"
+      },
+      "PortfolioCard": {
+        "additionalProperties": false,
+        "description": "The paper account now.",
+        "properties": {
+          "cash_usd": {
+            "title": "Cash Usd",
+            "type": "string"
+          },
+          "drawdown_pct": {
+            "title": "Drawdown Pct",
+            "type": "number"
+          },
+          "gain_usd": {
+            "title": "Gain Usd",
+            "type": "string"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingView"
+            },
+            "title": "Holdings",
+            "type": "array"
+          },
+          "max_drift_pts": {
+            "title": "Max Drift Pts",
+            "type": "number"
+          },
+          "paid_in_usd": {
+            "title": "Paid In Usd",
+            "type": "string"
+          },
+          "sim_month": {
+            "title": "Sim Month",
+            "type": "string"
+          },
+          "type": {
+            "const": "portfolio",
+            "default": "portfolio",
+            "title": "Type",
+            "type": "string"
+          },
+          "value_usd": {
+            "title": "Value Usd",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sim_month",
+          "holdings",
+          "cash_usd",
+          "value_usd",
+          "paid_in_usd",
+          "gain_usd",
+          "drawdown_pct",
+          "max_drift_pts"
+        ],
+        "title": "PortfolioCard",
+        "type": "object"
+      },
+      "ProductView": {
+        "additionalProperties": false,
+        "description": "One fund as listed or compared.",
+        "properties": {
+          "asset_class": {
+            "title": "Asset Class",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "fee_per_1000_usd": {
+            "title": "Fee Per 1000 Usd",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "risk_rating": {
+            "title": "Risk Rating",
+            "type": "string"
+          },
+          "ter_pct": {
+            "title": "Ter Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "asset_class",
+          "risk_rating",
+          "ter_pct",
+          "fee_per_1000_usd",
+          "description"
+        ],
+        "title": "ProductView",
+        "type": "object"
+      },
+      "ProductsCard": {
+        "additionalProperties": false,
+        "description": "The suitable shelf.",
+        "properties": {
+          "client_class": {
+            "title": "Client Class",
+            "type": "string"
+          },
+          "excluded_count": {
+            "title": "Excluded Count",
+            "type": "integer"
+          },
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductView"
+            },
+            "title": "Products",
+            "type": "array"
+          },
+          "type": {
+            "const": "products",
+            "default": "products",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "products",
+          "excluded_count",
+          "client_class"
+        ],
+        "title": "ProductsCard",
+        "type": "object"
+      },
+      "ProjectionCard": {
+        "additionalProperties": false,
+        "description": "Range of outcomes (never called a backtest).",
+        "properties": {
+          "caption": {
+            "title": "Caption",
+            "type": "string"
+          },
+          "goal_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal Usd"
+          },
+          "p10": {
+            "items": {
+              "type": "number"
+            },
+            "title": "P10",
+            "type": "array"
+          },
+          "p50": {
+            "items": {
+              "type": "number"
+            },
+            "title": "P50",
+            "type": "array"
+          },
+          "p90": {
+            "items": {
+              "type": "number"
+            },
+            "title": "P90",
+            "type": "array"
+          },
+          "paid_in": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Paid In",
+            "type": "array"
+          },
+          "prob_below_paid_in_year1": {
+            "title": "Prob Below Paid In Year1",
+            "type": "number"
+          },
+          "prob_reach_goal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob Reach Goal"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "type": {
+            "const": "projection",
+            "default": "projection",
+            "title": "Type",
+            "type": "string"
+          },
+          "years": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "years",
+          "p10",
+          "p50",
+          "p90",
+          "paid_in",
+          "prob_below_paid_in_year1",
+          "prob_reach_goal",
+          "goal_usd",
+          "caption"
+        ],
+        "title": "ProjectionCard",
+        "type": "object"
+      },
+      "QuestionCard": {
+        "additionalProperties": false,
+        "description": "The next question, with tappable answers.",
+        "properties": {
+          "chips": {
+            "items": {
+              "$ref": "#/components/schemas/Chip"
+            },
+            "title": "Chips",
+            "type": "array"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "of": {
+            "title": "Of",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          },
+          "type": {
+            "const": "question",
+            "default": "question",
+            "title": "Type",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "prompt",
+          "why",
+          "kind",
+          "chips",
+          "step",
+          "of"
+        ],
+        "title": "QuestionCard",
+        "type": "object"
+      },
+      "ReadinessCard": {
+        "additionalProperties": false,
+        "description": "Green \"ready\" or amber \"not yet\".",
+        "properties": {
+          "emergency_months": {
+            "title": "Emergency Months",
+            "type": "number"
+          },
+          "investable_monthly_usd": {
+            "title": "Investable Monthly Usd",
+            "type": "number"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/WhyLine"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "type": {
+            "const": "readiness",
+            "default": "readiness",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ready",
+          "emergency_months",
+          "investable_monthly_usd",
+          "reasons"
+        ],
+        "title": "ReadinessCard",
+        "type": "object"
+      },
+      "ReceiptCard": {
+        "additionalProperties": false,
+        "description": "A calm receipt after orders fill.",
+        "properties": {
+          "audit_head": {
+            "title": "Audit Head",
+            "type": "string"
+          },
+          "cash_usd": {
+            "title": "Cash Usd",
+            "type": "string"
+          },
+          "fills": {
+            "items": {
+              "$ref": "#/components/schemas/OrderView"
+            },
+            "title": "Fills",
+            "type": "array"
+          },
+          "monthly_usd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Usd"
+          },
+          "proposal_id": {
+            "title": "Proposal Id",
+            "type": "string"
+          },
+          "sim_month": {
+            "title": "Sim Month",
+            "type": "string"
+          },
+          "type": {
+            "const": "receipt",
+            "default": "receipt",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "fills",
+          "cash_usd",
+          "monthly_usd",
+          "sim_month",
+          "audit_head"
+        ],
+        "title": "ReceiptCard",
+        "type": "object"
+      },
+      "RefusalCard": {
+        "additionalProperties": false,
+        "description": "A rule said no: what, why, what instead.",
+        "properties": {
+          "next_step": {
+            "title": "Next Step",
+            "type": "string"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "const": "refusal",
+            "default": "refusal",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_id",
+          "title",
+          "text",
+          "next_step"
+        ],
+        "title": "RefusalCard",
+        "type": "object"
+      },
+      "RiskBadgeCard": {
+        "additionalProperties": false,
+        "description": "The C1-C5 reveal.",
+        "properties": {
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "client_class": {
+            "title": "Client Class",
+            "type": "string"
+          },
+          "horizon_cap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizon Cap"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "limited_by": {
+            "title": "Limited By",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tolerance": {
+            "title": "Tolerance",
+            "type": "integer"
+          },
+          "type": {
+            "const": "risk_badge",
+            "default": "risk_badge",
+            "title": "Type",
+            "type": "string"
+          },
+          "why": {
+            "items": {
+              "$ref": "#/components/schemas/WhyLine"
+            },
+            "title": "Why",
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_class",
+          "label",
+          "summary",
+          "tolerance",
+          "capacity",
+          "horizon_cap",
+          "limited_by",
+          "why"
+        ],
+        "title": "RiskBadgeCard",
+        "type": "object"
+      },
+      "SavingsPlanCard": {
+        "additionalProperties": false,
+        "description": "The plan instead of a portfolio.",
+        "properties": {
+          "months_to_ready": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Months To Ready"
+          },
+          "ready_month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ready Month"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/PlanStepView"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "type": {
+            "const": "savings_plan",
+            "default": "savings_plan",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "steps",
+          "months_to_ready",
+          "ready_month"
+        ],
+        "title": "SavingsPlanCard",
+        "type": "object"
+      },
+      "SessionView": {
+        "description": "Everything needed to (re)draw a session after a refresh.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonaHint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sim_month": {
+            "title": "Sim Month",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "persona",
+          "stage",
+          "sim_month",
+          "messages"
+        ],
+        "title": "SessionView",
+        "type": "object"
+      },
+      "TermCard": {
+        "additionalProperties": false,
+        "description": "A glossary definition with its source.",
+        "properties": {
+          "source_title": {
+            "title": "Source Title",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "term": {
+            "title": "Term",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "const": "term",
+            "default": "term",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "term",
+          "text",
+          "source_title",
+          "source_url"
+        ],
+        "title": "TermCard",
+        "type": "object"
+      },
+      "TurnIn": {
+        "additionalProperties": false,
+        "description": "Either typed text or a chip/button action.",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Action"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "title": "TurnIn",
+        "type": "object"
+      },
+      "TurnOut": {
+        "description": "What changed in one turn.",
+        "properties": {
+          "cards": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "alert": "#/components/schemas/AlertCard",
+                  "allocation": "#/components/schemas/AllocationCard",
+                  "comparison": "#/components/schemas/ComparisonCard",
+                  "confirm": "#/components/schemas/ConfirmCard",
+                  "goal": "#/components/schemas/GoalCard",
+                  "pause": "#/components/schemas/PauseCard",
+                  "portfolio": "#/components/schemas/PortfolioCard",
+                  "products": "#/components/schemas/ProductsCard",
+                  "projection": "#/components/schemas/ProjectionCard",
+                  "question": "#/components/schemas/QuestionCard",
+                  "readiness": "#/components/schemas/ReadinessCard",
+                  "receipt": "#/components/schemas/ReceiptCard",
+                  "refusal": "#/components/schemas/RefusalCard",
+                  "risk_badge": "#/components/schemas/RiskBadgeCard",
+                  "savings_plan": "#/components/schemas/SavingsPlanCard",
+                  "term": "#/components/schemas/TermCard"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/QuestionCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ReadinessCard"
+                },
+                {
+                  "$ref": "#/components/schemas/SavingsPlanCard"
+                },
+                {
+                  "$ref": "#/components/schemas/RiskBadgeCard"
+                },
+                {
+                  "$ref": "#/components/schemas/GoalCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ProductsCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ComparisonCard"
+                },
+                {
+                  "$ref": "#/components/schemas/AllocationCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectionCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ConfirmCard"
+                },
+                {
+                  "$ref": "#/components/schemas/ReceiptCard"
+                },
+                {
+                  "$ref": "#/components/schemas/PortfolioCard"
+                },
+                {
+                  "$ref": "#/components/schemas/AlertCard"
+                },
+                {
+                  "$ref": "#/components/schemas/RefusalCard"
+                },
+                {
+                  "$ref": "#/components/schemas/PauseCard"
+                },
+                {
+                  "$ref": "#/components/schemas/TermCard"
+                }
+              ]
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "pending_confirmation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Confirmation"
+          },
+          "reply": {
+            "title": "Reply",
+            "type": "string"
+          },
+          "sim_month": {
+            "title": "Sim Month",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reply",
+          "cards",
+          "stage",
+          "sim_month",
+          "steps",
+          "pending_confirmation"
+        ],
+        "title": "TurnOut",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WhyLine": {
+        "additionalProperties": false,
+        "description": "One reason behind a number, with its rule when there is one.",
+        "properties": {
+          "rule_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Id"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule_id",
+          "text"
+        ],
+        "title": "WhyLine",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "A trustworthy first advisor for first-time investors. Educational simulation.",
+    "title": "FirstStep API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/catalog": {
+      "get": {
+        "description": "Return the shelf, glossary, rules and personas the UI renders.",
+        "operationId": "catalog_api_catalog_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Catalog Api Catalog Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Catalog"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Return a liveness flag and the LLM provider in use.",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/sessions": {
+      "post": {
+        "description": "Start a session and greet the user with the first question.",
+        "operationId": "create_session_api_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewSession"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Session"
+      }
+    },
+    "/api/sessions/{session_id}": {
+      "get": {
+        "description": "Return a session so a refreshed page lands where it was.",
+        "operationId": "get_session_api_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Session"
+      }
+    },
+    "/api/sessions/{session_id}/audit": {
+      "get": {
+        "description": "Return the session's audit events and verify the chain.",
+        "operationId": "audit_api_sessions__session_id__audit_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Audit"
+      }
+    },
+    "/api/sessions/{session_id}/confirm/{proposal_id}": {
+      "post": {
+        "description": "The Confirm button: mint a one-time token and place the orders.\n\nThis is the only place a confirmation token is created, and it\nnever leaves the server, so neither the browser script nor the LLM\ncan produce one (CONF-01).",
+        "operationId": "confirm_api_sessions__session_id__confirm__proposal_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TurnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm"
+      }
+    },
+    "/api/sessions/{session_id}/turn": {
+      "post": {
+        "description": "Run one turn: typed text (LLM) or a chip or button (direct).",
+        "operationId": "turn_api_sessions__session_id__turn_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TurnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TurnOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Turn"
+      }
+    }
+  }
+}

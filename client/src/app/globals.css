@@ -1,11 +1,143 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* FirstStep design tokens. Import once in app/globals.css after `@import "tailwindcss";`.
+   Every value is explained in standards/ui-spec.md. Components use these semantic names
+   (bg-surface, text-ink, text-body-lg, p-4...), never raw hex or Tailwind's default palette.
+
+   Fonts (app/fonts.ts), all self-hosted by next/font at build time:
+     IBM_Plex_Sans({ weight: ["400","500","600"], subsets: ["latin"], variable: "--font-plex" })
+     Bricolage_Grotesque({ weight: "600", subsets: ["latin"], variable: "--font-bricolage" })
+     IBM_Plex_Mono({ weight: ["400","500"], subsets: ["latin"], variable: "--font-plex-mono" })
+*/
+
+@theme {
+  --font-sans: var(--font-plex), "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", var(--font-plex), "PingFang SC", system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Type scale: text-<token>. Size / line height / tracking / weight. */
+  --text-display-1: 2.5rem;     --text-display-1--line-height: 2.75rem; --text-display-1--letter-spacing: -0.02em; --text-display-1--font-weight: 600;
+  --text-display-2: 1.75rem;    --text-display-2--line-height: 2.25rem; --text-display-2--letter-spacing: -0.01em; --text-display-2--font-weight: 600;
+  --text-heading: 1.25rem;      --text-heading--line-height: 1.75rem;   --text-heading--font-weight: 600;
+  --text-title: 1.0625rem;      --text-title--line-height: 1.5rem;      --text-title--font-weight: 600;
+  --text-body-lg: 1.0625rem;    --text-body-lg--line-height: 1.75rem;
+  --text-body: 1rem;            --text-body--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;     --text-body-sm--line-height: 1.25rem;
+  --text-label: 0.875rem;       --text-label--line-height: 1.25rem;     --text-label--letter-spacing: 0.005em; --text-label--font-weight: 500;
+  --text-button: 1rem;          --text-button--line-height: 1.5rem;     --text-button--font-weight: 600;
+  --text-caption: 0.75rem;      --text-caption--line-height: 1rem;      --text-caption--letter-spacing: 0.01em;
+  --text-overline: 0.75rem;     --text-overline--line-height: 1rem;     --text-overline--letter-spacing: 0.08em; --text-overline--font-weight: 600;
+  --text-num-hero: 2.5rem;      --text-num-hero--line-height: 2.75rem;  --text-num-hero--letter-spacing: -0.02em; --text-num-hero--font-weight: 600;
+  --text-num-card: 1.5rem;      --text-num-card--line-height: 2rem;     --text-num-card--font-weight: 600;
+  --text-mono: 0.8125rem;       --text-mono--line-height: 1.25rem;      --text-mono--font-weight: 500;
+
+  /* Spacing: Tailwind multiplies this, so p-1 = 4px, p-4 = 16px, p-12 = 48px. */
+  --spacing: 0.25rem;
+
+  /* Radius, shadows, motion. */
+  --radius-sm: 6px;  --radius-md: 12px;  --radius-lg: 20px;
+  --shadow-popover: 0 4px 16px rgb(12 31 34 / 0.12);
+  --shadow-dialog: 0 12px 40px rgb(12 31 34 / 0.18);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 120ms; --duration-base: 200ms; --duration-slow: 300ms;
+
+  /* Semantic colours point at variables so dark mode switches in one place. */
+  --color-canvas: var(--fs-canvas);
+  --color-surface: var(--fs-surface);
+  --color-sunken: var(--fs-sunken);
+  --color-line: var(--fs-line);                 /* decorative only: card edges, dividers */
+  --color-border-strong: var(--fs-border-strong); /* anything you click or type into (3:1) */
+  --color-ink: var(--fs-ink);
+  --color-ink-2: var(--fs-ink-2);
+  --color-muted: var(--fs-muted);
+  --color-primary: var(--fs-primary);
+  --color-primary-hover: var(--fs-primary-hover);
+  --color-on-primary: var(--fs-on-primary);
+  --color-primary-soft: var(--fs-primary-soft);
+  --color-canopy: var(--fs-canopy);
+  --color-on-canopy: var(--fs-on-canopy);
+  --color-sun: var(--fs-sun);
+  --color-sun-soft: var(--fs-sun-soft);
+  --color-sun-ink: var(--fs-sun-ink);
+  --color-danger: var(--fs-danger);
+  --color-danger-soft: var(--fs-danger-soft);
+  --color-scrim: var(--fs-scrim);
+  /* Risk ladder C1..C5 / R1..R5: one hue, light to dark. More risk is "more", never "bad". */
+  --color-risk-1: var(--fs-risk-1);
+  --color-risk-2: var(--fs-risk-2);
+  --color-risk-3: var(--fs-risk-3);
+  --color-risk-4: var(--fs-risk-4);
+  --color-risk-5: var(--fs-risk-5);
+  /* Asset families in donut order; validated for colour-blind separation as a ring. */
+  --color-asset-cash: var(--fs-asset-cash);
+  --color-asset-bonds: var(--fs-asset-bonds);
+  --color-asset-stocks: var(--fs-asset-stocks);
+  --color-asset-gold: var(--fs-asset-gold);
 }
 
-body {
-  background: #ffffff;
-  color: #0f172a;
+:root {
+  --fs-canvas: #F6F8F7;  --fs-surface: #FFFFFF;  --fs-sunken: #EEF3F1;
+  --fs-line: #DDE5E3;    --fs-border-strong: #7A8B8A;
+  --fs-ink: #0C1F22;     --fs-ink-2: #3F5457;    --fs-muted: #5A6C6E;
+  --fs-primary: #0A7D55; --fs-primary-hover: #08643F; --fs-on-primary: #FFFFFF; --fs-primary-soft: #E7F5EE;
+  --fs-canopy: #0C2B2A;  --fs-on-canopy: #E8F0EE;
+  --fs-sun: #F2B233;     --fs-sun-soft: #FFF6E0; --fs-sun-ink: #8A5A00;
+  --fs-danger: #C2412D;  --fs-danger-soft: #FCEDEA;
+  --fs-scrim: rgb(12 31 34 / 0.45);
+  --fs-risk-1: #D3E7EC; --fs-risk-2: #9CCAD6; --fs-risk-3: #5FA7BC; --fs-risk-4: #2F7F9A; --fs-risk-5: #145A75;
+  --fs-asset-cash: #2A78D6; --fs-asset-bonds: #EB6834; --fs-asset-stocks: #1BAF7A; --fs-asset-gold: #EDA100;
 }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark;
+    --fs-canvas: #0B1416; --fs-surface: #121E20; --fs-sunken: #0E191B;
+    --fs-line: #24383A;   --fs-border-strong: #5E7270;
+    --fs-ink: #E8F0EE;    --fs-ink-2: #A9BAB8;  --fs-muted: #869896;
+    --fs-primary: #3CC48A; --fs-primary-hover: #5AD39E; --fs-on-primary: #04140D; --fs-primary-soft: #133227;
+    --fs-canopy: #071113; --fs-on-canopy: #E8F0EE;
+    --fs-sun: #F5C04F;    --fs-sun-soft: #2E2510; --fs-sun-ink: #F5C04F;
+    --fs-danger: #F07A66; --fs-danger-soft: #3A1C17;
+    --fs-scrim: rgb(0 0 0 / 0.6);
+    --fs-risk-1: #1C3A44; --fs-risk-2: #23596A; --fs-risk-3: #2F7F9A; --fs-risk-4: #5FA7BC; --fs-risk-5: #9CCAD6;
+    --fs-asset-cash: #3987E5; --fs-asset-bonds: #D95926; --fs-asset-stocks: #199E70; --fs-asset-gold: #C98500;
+  }
+}
+:root[data-theme="dark"] { color-scheme: dark;
+  --fs-canvas: #0B1416; --fs-surface: #121E20; --fs-sunken: #0E191B;
+  --fs-line: #24383A;   --fs-border-strong: #5E7270;
+  --fs-ink: #E8F0EE;    --fs-ink-2: #A9BAB8;  --fs-muted: #869896;
+  --fs-primary: #3CC48A; --fs-primary-hover: #5AD39E; --fs-on-primary: #04140D; --fs-primary-soft: #133227;
+  --fs-canopy: #071113; --fs-on-canopy: #E8F0EE;
+  --fs-sun: #F5C04F;    --fs-sun-soft: #2E2510; --fs-sun-ink: #F5C04F;
+  --fs-danger: #F07A66; --fs-danger-soft: #3A1C17;
+  --fs-scrim: rgb(0 0 0 / 0.6);
+  --fs-risk-1: #1C3A44; --fs-risk-2: #23596A; --fs-risk-3: #2F7F9A; --fs-risk-4: #5FA7BC; --fs-risk-5: #9CCAD6;
+  --fs-asset-cash: #3987E5; --fs-asset-bonds: #D95926; --fs-asset-stocks: #199E70; --fs-asset-gold: #C98500;
+}
+
+html { font-size: 100%; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--fs-canvas);
+  color: var(--fs-ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, .font-display { font-family: var(--font-display); text-wrap: balance; }
+p { max-width: 68ch; }
+input, select, textarea { font-size: max(16px, 1rem); } /* stops iOS Safari zooming on focus */
+.num, td.num, [data-num] { font-variant-numeric: tabular-nums lining-nums; text-align: right; }
+:focus-visible { outline: 2px solid var(--fs-primary); outline-offset: 2px; }
+@media (max-width: 767px) {
+  :root { --text-display-1: 2rem; --text-display-1--line-height: 2.25rem;
+          --text-display-2: 1.5rem; --text-display-2--line-height: 2rem;
+          --text-num-hero: 2rem; --text-num-hero--line-height: 2.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
+/* App-wide helpers built on the tokens. */
+.tnum { font-variant-numeric: tabular-nums lining-nums; }
+dialog::backdrop { background: var(--fs-scrim); }

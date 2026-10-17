@@ -1,29 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { bricolage, plexMono, plexSans } from "./fonts";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "WealthPilot AI",
-  description: "AI wealth advisor prototype",
+  title: "FirstStep",
+  description: "A trustworthy first advisor for first-time investors. Educational simulation.",
+  icons: { icon: "/brand/logo-mark.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${plexSans.variable} ${bricolage.variable} ${plexMono.variable}`}>
+      <body className="min-h-dvh bg-canvas text-ink antialiased">{children}</body>
     </html>
   );
 }

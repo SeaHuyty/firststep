@@ -47,9 +47,6 @@ _BY_TOOL_OK = {
 }
 
 
-_GENERIC = {Stage.READINESS: "Thanks. Next question.", Stage.PROFILE: "Thanks. Next one."}
-
-
 def _line(outcome: Outcome) -> str:
     line = _BY_TOOL_OK[outcome.tool]
     if outcome.tool == "set_goal" and outcome.output:
@@ -64,4 +61,5 @@ def reply_for(outcomes: list[Outcome], stage: Stage) -> str:
             return outcome.error.message
         if outcome.tool in _BY_TOOL_OK:
             return _line(outcome)
-    return _GENERIC.get(stage, "Thanks.")
+    # A plain answer needs no reply: the next question is the reply.
+    return "" if stage in {Stage.ONBOARD, Stage.READINESS, Stage.PROFILE} else "Thanks."

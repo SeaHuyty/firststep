@@ -100,6 +100,7 @@ def _history(services: Services, session_id: str) -> list[ModelMessage]:
         if m.role == "user"
         else ModelResponse(parts=[TextPart(content=m.text)])
         for m in rows
+        if m.text
     ]
 
 

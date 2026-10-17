@@ -10,7 +10,7 @@ from pydantic import Field
 
 from app.core.errors import ToolError
 from app.core.profile import Debt, Goal, Profile, RiskResult
-from app.core.reference import Question
+from app.core.reference import Question, Reference
 from app.core.types import IncomeStability, Stage, to_money
 from app.engine.readiness import DebtLine, assess_readiness
 from app.engine.savings import build_savings_plan
@@ -53,20 +53,32 @@ def stage_questions(ctx: ToolContext, stage: Stage) -> list[Question]:
     return [q for q in ctx.ref.questionnaire.questions if q.stage == stage]
 
 
+def question_card(questions: list[Question], i: int) -> QuestionCard:
+    """Return question ``i`` of a stage as a card with its chips."""
+    q = questions[i]
+    return QuestionCard(
+        question_id=q.id,
+        prompt=q.prompt,
+        why=q.why,
+        kind=q.kind,
+        chips=[Chip(label=o.label, value=o.value) for o in q.options],
+        step=i + 1,
+        of=len(questions),
+    )
+
+
+def first_question(ref: Reference) -> QuestionCard:
+    """Return the question every new session starts with."""
+    questions = [q for q in ref.questionnaire.questions if q.stage == Stage.ONBOARD]
+    return question_card(questions, 0)
+
+
 def next_question(ctx: ToolContext) -> QuestionCard | None:
     """Return the first unanswered question of the current stage."""
     questions = stage_questions(ctx, ctx.session.stage)
     for i, q in enumerate(questions):
         if not _answered(ctx.session.profile, q):
-            return QuestionCard(
-                question_id=q.id,
-                prompt=q.prompt,
-                why=q.why,
-                kind=q.kind,
-                chips=[Chip(label=o.label, value=o.value) for o in q.options],
-                step=i + 1,
-                of=len(questions),
-            )
+            return question_card(questions, i)
     return None
 
 

@@ -95,7 +95,7 @@ export function SessionScreen() {
     }
   };
 
-  const act = (action: Action, label?: string) => run(() => api.act(id, action), label);
+  const act = (action: Action, label?: string) => run(() => api.act(id, { ...action, label }), label);
   const say = (text: string) => run(() => api.say(id, text), text);
 
   const persona: PersonaHint | null | undefined = view?.persona;

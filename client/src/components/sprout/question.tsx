@@ -7,6 +7,11 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CardOf } from "@/lib/types";
 
+/** A tappable answer. Outlined pill in the brand colour: clearly a button, quieter than the
+ * one primary action. Shared with the welcome page. */
+export const CHIP =
+  "inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-primary bg-surface px-4 text-label text-primary transition-colors hover:bg-primary-soft active:translate-y-px disabled:opacity-40";
+
 type Answer = (questionId: string, value: unknown, label: string) => void;
 
 function same(a: unknown, b: unknown): boolean {
@@ -59,7 +64,7 @@ export function QuestionView({
                 type="button"
                 disabled={busy}
                 onClick={() => onAnswer(card.question_id, chip.value, chip.label)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-primary bg-surface px-4 text-label text-primary transition-colors hover:bg-primary-soft active:translate-y-px disabled:opacity-40"
+                className={CHIP}
               >
                 {chip.label}
                 {suggested && <span className="rounded-full bg-primary-soft px-2 text-caption">demo answer</span>}

@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Catalog
-         * @description Return the shelf, glossary, rules and personas the UI renders.
+         * @description Return the shelf, glossary, rules, personas and first question.
          */
         get: operations["catalog_api_catalog_get"];
         put?: never;
@@ -161,6 +161,8 @@ export interface components {
             args?: {
                 [key: string]: unknown;
             };
+            /** Label */
+            label?: string | null;
             /** Tool */
             tool: string;
         };

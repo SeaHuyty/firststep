@@ -28,6 +28,9 @@ class Action(Body):
 
     tool: str = Field(max_length=40)
     args: dict[str, Any] = Field(default_factory=dict)
+    # The words on the chip or button, kept as the person's message so
+    # the chat reads the same after a reload. Checked like typed text.
+    label: str | None = Field(default=None, min_length=1, max_length=80)
 
 
 class TurnIn(Body):

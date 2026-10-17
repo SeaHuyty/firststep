@@ -165,6 +165,20 @@ def _pending_confirmation(cards: list[Card]) -> str | None:
     return confirms[-1].proposal_id if confirms else None
 
 
+def _action_label(label: object) -> str | None:
+    """Return a chip's words to keep as the user's message, or None.
+
+    The label comes from the browser, and later turns send stored
+    messages to the LLM as history, so it gets the same check as typed
+    text. A label that looks like an injection is dropped: real chips
+    never do.
+    """
+    if not isinstance(label, str) or not label.strip():
+        return None
+    checked = guards.check_input(label.strip())
+    return None if checked.injection else checked.text
+
+
 async def take_turn(
     services: Services,
     model: Model,
@@ -180,12 +194,13 @@ async def take_turn(
     tokens = 0
     if action is not None:
         tool = str(action.get("tool", ""))
-        log.append("user_msg", "user", {"action": tool})
+        user_text = _action_label(action.get("label"))
+        said = {"label": user_text} if user_text else {}
+        log.append("user_msg", "user", {"action": tool, **said})
         first = executor.run(
             services, session_id, tool, dict(action.get("args") or {}), actor="user"
         )
         outcomes = [first, *flow.follow_up(services, session_id, first)]
-        user_text = None
         with services.store.tx() as con:
             row = sessions.get(con, session_id)
         reply = copy.reply_for(outcomes, row.stage if row else Stage.ONBOARD)

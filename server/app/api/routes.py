@@ -15,7 +15,7 @@ from app.core.types import Stage
 from app.store import account, sessions
 from app.tools.cards import Card
 from app.tools.context import SessionState, ToolContext
-from app.tools.profile import next_question
+from app.tools.profile import first_question, next_question
 
 router = APIRouter(prefix="/api")
 
@@ -71,7 +71,7 @@ def health(request: Request) -> schemas.Health:
 
 @router.get("/catalog")
 def catalog(services: ServicesDep) -> dict[str, Any]:
-    """Return the shelf, glossary, rules and personas the UI renders."""
+    """Return the shelf, glossary, rules, personas, first question."""
     ref = services.ref
     rules = ref.rules.model_dump(by_alias=True, mode="json")
     return {
@@ -86,6 +86,7 @@ def catalog(services: ServicesDep) -> dict[str, Any]:
         "personas": {
             k: {"name": p.name, "tagline": p.tagline} for k, p in ref.personas.personas.items()
         },
+        "first_question": first_question(ref).model_dump(mode="json"),
     }
 
 

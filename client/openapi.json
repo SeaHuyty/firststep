@@ -10,6 +10,19 @@
             "title": "Args",
             "type": "object"
           },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
           "tool": {
             "maxLength": 40,
             "title": "Tool",
@@ -1727,7 +1740,7 @@
   "paths": {
     "/api/catalog": {
       "get": {
-        "description": "Return the shelf, glossary, rules and personas the UI renders.",
+        "description": "Return the shelf, glossary, rules, personas and first question.",
         "operationId": "catalog_api_catalog_get",
         "responses": {
           "200": {

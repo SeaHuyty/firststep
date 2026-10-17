@@ -48,7 +48,8 @@ async function request<T>(path: string, body?: unknown, timeoutMs = TIMEOUT_MS):
   }
 }
 
-export type Action = { tool: string; args?: Record<string, unknown> };
+/** A chip or button. `label` is the words on it, kept as the person's message in the chat. */
+export type Action = { tool: string; args?: Record<string, unknown>; label?: string };
 
 export const api = {
   newSession: (persona?: string) => request<SessionView>("/sessions", { persona: persona ?? null }),
@@ -58,7 +59,7 @@ export const api = {
   act: (id: string, action: Action) =>
     request<TurnOut>(
       `/sessions/${encodeURIComponent(id)}/turn`,
-      { action: { tool: action.tool, args: action.args ?? {} } },
+      { action: { tool: action.tool, args: action.args ?? {}, label: action.label } },
       TURN_TIMEOUT_MS,
     ),
   confirm: (id: string, proposalId: string) =>

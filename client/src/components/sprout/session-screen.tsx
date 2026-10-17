@@ -104,6 +104,8 @@ export function SessionScreen() {
   const lastCards = messages.at(-1)?.cards ?? [];
   const driftAlert = lastCards.some((c) => c.type === "alert" && c.rule_id === "DRIFT-01");
   const hasPlan = allCards.some((c) => c.type === "projection");
+  // Sprout is waiting for an answer to a question (or the goal form): that is the next step.
+  const asking = !busy && (lastCards.some((c) => c.type === "question") || stage === "GOAL");
 
   if (loadError) {
     return (
@@ -174,7 +176,7 @@ export function SessionScreen() {
     <AppShell step={STEP_OF[stage]} fill>
       {persona && (
         <p className="mb-4 max-w-none text-body-sm text-ink-2 lg:mb-3">
-          Demo: you are <strong>{persona.name}</strong>, {persona.tagline}. Suggested answers are marked.
+          Demo as <strong>{persona.name}</strong>, {persona.tagline.split(",")[0]}. Tap the marked answers.
         </p>
       )}
       <div role="tablist" aria-label="View" className="mb-4 flex gap-1 rounded-md bg-sunken p-1 lg:hidden">
@@ -200,7 +202,12 @@ export function SessionScreen() {
             {chatBody}
           </div>
           <div className="sticky bottom-3 z-10 mt-2 lg:static lg:mt-3">
-            <Composer onSend={say} busy={busy} placeholder={PLACEHOLDER[stage] ?? "Ask Sprout, or tap an answer above"} />
+            <Composer
+              onSend={say}
+              busy={busy}
+              quiet={asking}
+              placeholder={asking ? "Or ask Sprout something" : (PLACEHOLDER[stage] ?? "Ask Sprout something")}
+            />
           </div>
         </section>
         <section

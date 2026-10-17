@@ -2,7 +2,7 @@
 
 // The plan builds up here as Sprout works (docs/standards/onboarding-ux.md section 2): the latest
 // card of each kind, in the order of the journey.
-import { ShieldCheck } from "lucide-react";
+import { Gauge, PieChart, ShieldCheck, Target, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
@@ -111,16 +111,7 @@ export function PlanPanel({
   // panel about now (progressive disclosure).
   const hide = new Set<string>(stage === "MONITOR" ? ["receipt", "readiness", "goal", "risk_badge", "projection", "products", "comparison"] : stage === "EXECUTED" ? ["readiness"] : []);
   const shown = ORDER.filter((t) => latest[t] && !hide.has(t));
-  if (shown.length === 0) {
-    return (
-      <Box overline="Your plan">
-        <p className="text-body text-ink-2">
-          Your plan builds here. As you answer, your money check, your risk level and then your
-          plan will appear, with a &quot;Why?&quot; next to every number.
-        </p>
-      </Box>
-    );
-  }
+  const coming = upcoming(latest, stage);
   return (
     <div ref={root} className="space-y-4">
       {shown.map((t) => {
@@ -133,7 +124,53 @@ export function PlanPanel({
           </div>
         ) : null;
       })}
+      {coming.length > 0 && <ComingUp items={coming} first={shown.length === 0} />}
     </div>
+  );
+}
+
+// What the plan will hold, shown as outlines before it exists: an empty state that says what
+// will appear and how it fills (NN/g, empty states), and progress you can see (endowed progress).
+const MILESTONES = [
+  { type: "readiness", icon: Wallet, title: "Money check", text: "Is now a good time? Savings and debts come first." },
+  { type: "risk_badge", icon: Gauge, title: "Your risk level", text: "How much up and down suits you." },
+  { type: "goal", icon: Target, title: "Your goal", text: "What you're investing for, and by when." },
+  { type: "projection", icon: PieChart, title: "Your plan", text: "Your funds, and a range of what could happen." },
+] as const;
+
+function upcoming(latest: Partial<Record<Card["type"], Card>>, stage: Stage) {
+  // A "not yet" turns the journey into a savings plan; nothing else is coming for now.
+  if (latest.savings_plan || stage === "SAVINGS_PLAN" || stage === "EXECUTED" || stage === "MONITOR") return [];
+  return MILESTONES.filter((m) => !latest[m.type]);
+}
+
+function ComingUp({ items, first }: { items: readonly (typeof MILESTONES)[number][]; first: boolean }) {
+  return (
+    <section aria-labelledby="coming-up">
+      <h3 id="coming-up" className="text-overline uppercase text-muted">
+        {first ? "Your plan builds here as you answer" : "Coming up"}
+      </h3>
+      {/* Dashed and unfilled: a placeholder, clearly not something to click. */}
+      <ol className="mt-3 space-y-2">
+        {items.map((m, i) => {
+          const Icon = m.icon;
+          const next = i === 0;
+          return (
+            <li
+              key={m.type}
+              className={`flex items-center gap-3 rounded-md border border-dashed px-4 py-3 ${next ? "border-primary" : "border-line"}`}
+            >
+              <Icon aria-hidden className={`size-5 shrink-0 ${next ? "text-primary" : "text-muted"}`} />
+              <p className="min-w-0 flex-1">
+                <span className={`block text-label ${next ? "text-ink" : "text-ink-2"}`}>{m.title}</span>
+                <span className="block text-body-sm text-muted">{m.text}</span>
+              </p>
+              {next && <span className="shrink-0 text-caption text-primary">Next</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 

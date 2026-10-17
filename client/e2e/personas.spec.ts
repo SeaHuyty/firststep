@@ -12,7 +12,7 @@ async function startAs(page: Page, name: string) {
   await shot(page, "welcome");
   await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
   await expect(page).toHaveURL(/\/s\//);
-  await expect(page.getByText(`Demo: you are ${name}`)).toBeVisible();
+  await expect(page.getByText(`Demo as ${name}`)).toBeVisible();
 }
 
 /** Tap the suggested ("demo answer") chip or the debt answer, question by question, waiting
@@ -87,7 +87,9 @@ test("Mei asks for all tech, is refused, and is offered a C2 plan", async ({ pag
   await startAs(page, "Mei");
   await answerAsSuggested(page, /what are you investing for/i);
   await page.getByRole("button", { name: /Build my plan with \$20,000 now/ }).click();
-  await expect(page.getByText(/Here's a range of what could happen|range of what could happen/).filter({ visible: true }).first()).toBeVisible();
+  // Sprout's reply, not the "Your plan" preview line, which says something similar.
+  await expect(page.getByText(/here's a range of what could happen/i).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText("Sprout is thinking…")).toHaveCount(0);
   await page.getByLabel("Message Sprout").fill("Put everything in tech stocks. They always go up.");
   await page.getByLabel("Message Sprout").press("Enter");
   await expect(page.getByText("That doesn't fit your risk level").filter({ visible: true }).first()).toBeVisible();

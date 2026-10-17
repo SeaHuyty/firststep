@@ -4,9 +4,10 @@
 import { useState } from "react";
 import { Card, DataTable, Notice, RiskBadge, RuleChip } from "@/components/ui/primitives";
 import { FAMILY_LABEL } from "@/lib/copy";
-import { chance, duration, fee, money, moneyCents, moneyChange, month, pctChange } from "@/lib/format";
+import { duration, money, moneyCents, month, pctChange } from "@/lib/format";
 import type { CardOf } from "@/lib/types";
 import { AllocationDonut, ProjectionFan } from "./charts";
+import { Term } from "./term";
 
 type WhyLine = { rule_id?: string | null; text: string };
 
@@ -94,21 +95,25 @@ export function SavingsPlanView({ card }: { card: CardOf<"savings_plan"> }) {
 export function RiskBadgeView({ card }: { card: CardOf<"risk_badge"> }) {
   return (
     <Card overline="Your risk level">
-      <div className="flex flex-wrap items-center gap-3">
-        <RiskBadge code={card.client_class} label={card.label} />
-      </div>
-      <p className="mt-2 text-body text-ink-2">{card.summary}</p>
+      <RiskBadge code={card.client_class} label={card.label} />
+      <p className="mt-2 text-body text-ink">{card.summary}</p>
+      <p className="mt-2 text-body text-ink-2">
+        In its worst 12 months since 2000, a plan at this level{" "}
+        {card.worst_12m_pct < 0 ? `fell about ${Math.abs(card.worst_12m_pct).toFixed(0)}%` : "still grew a little"}. In its best,
+        it grew about {card.best_12m_pct.toFixed(0)}%.
+      </p>
       <dl className="mt-3 grid grid-cols-2 gap-3 text-body-sm">
         <div className="rounded-sm bg-sunken p-3">
-          <dt className="text-muted">How much risk you want</dt>
+          <dt className="text-muted">Your comfort with ups and downs</dt>
           <dd className="text-num-card tnum">{card.tolerance} of 5</dd>
         </div>
         <div className="rounded-sm bg-sunken p-3">
-          <dt className="text-muted">How much loss you could afford</dt>
+          <dt className="text-muted">Room to absorb a loss</dt>
           <dd className="text-num-card tnum">{card.capacity} of 5</dd>
         </div>
       </dl>
-      <div className="mt-2">
+      <p className="mt-2 text-body-sm text-ink-2">Sprout uses the lower of the two, to be careful.</p>
+      <div className="mt-1">
         <Why lines={card.why} />
       </div>
     </Card>
@@ -131,52 +136,118 @@ export function GoalView({ card }: { card: CardOf<"goal"> }) {
   );
 }
 
+const FAMILY_MEANING: Record<string, { term: string; text: string }> = {
+  cash: { term: "emergency_fund", text: "holds steady, for money you might need soon" },
+  bonds: { term: "bond", text: "loans to governments that pay interest, with small ups and downs" },
+  stocks: { term: "index_fund", text: "small pieces of thousands of companies; grows most over years, but can drop" },
+  gold: { term: "diversification", text: "often moves differently from stocks" },
+};
+
 export function AllocationView({ card }: { card: CardOf<"allocation"> }) {
+  const parts = Object.entries(card.families).filter(([, w]) => w > 0);
   return (
-    <Card overline={`Proposed plan · ${card.client_class}`} title={card.label}>
+    <Card overline={`Your plan · ${card.client_class} ${card.label.split(" ").slice(1).join(" ")}`} title={`What your ${money(card.total_usd)} is made of`}>
       <AllocationDonut families={card.families} total={card.total_usd} />
-      <ul className="mt-4 divide-y divide-line">
-        {card.lines.map((l) => (
-          <li key={l.product_id} className="py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-body text-ink">{l.name}</p>
-                <p className="text-caption text-muted">
-                  {FAMILY_LABEL[l.family]} · <span className="font-mono">{l.risk_rating}</span>
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="tnum text-body">{money(l.amount_usd)}</p>
-                <p className="tnum text-caption text-muted">{l.weight_pct}%</p>
-              </div>
-            </div>
-            <Why lines={l.why} />
-          </li>
-        ))}
+      <ul className="mt-4 space-y-2">
+        {parts.map(([family, weight]) => {
+          const meaning = FAMILY_MEANING[family];
+          return (
+            <li key={family} className="text-body text-ink-2">
+              <strong className="text-ink">{Math.round(weight)}% in {meaning ? <Term id={meaning.term}>{FAMILY_LABEL[family]?.toLowerCase()}</Term> : FAMILY_LABEL[family]}</strong>
+              {meaning ? `: ${meaning.text}.` : "."}
+            </li>
+          );
+        })}
       </ul>
-      <p className="mt-3 text-body-sm text-ink-2">
-        Fees: {fee(card.fee_pct)}, about {moneyCents(card.fee_usd_a_year)} a year on{" "}
-        {money(card.total_usd)}.
+      <div className="mt-4 rounded-sm bg-sunken p-3 text-body text-ink-2">
+        <p>
+          <strong className="text-ink">The honest part:</strong> in its worst 12 months since 2000, a mix like this would
+          have turned your {money(card.total_usd)} into about {money(card.worst_12m_usd)}. In its best, about{" "}
+          {money(card.best_12m_usd)}. Nobody knows which comes next.
+        </p>
+      </div>
+      <p className="mt-3 text-body text-ink-2">
+        <Term id="fee">Fees</Term>: about {money(card.fee_usd_a_year)} a year for all {card.lines.length} funds together.
       </p>
+      <details className="mt-3">
+        <summary className="min-h-11 cursor-pointer py-2 text-label text-primary">See the {card.lines.length} funds</summary>
+        <ul className="divide-y divide-line">
+          {card.lines.map((l) => (
+            <li key={l.product_id} className="py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-body text-ink">{l.name}</p>
+                  <p className="text-caption text-muted">
+                    {FAMILY_LABEL[l.family]} · <Term id="risk_rating">risk {l.risk_rating}</Term>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="tnum text-body">{money(l.amount_usd)}</p>
+                  <p className="tnum text-caption text-muted">{l.weight_pct}%</p>
+                </div>
+              </div>
+              <Why lines={l.why} />
+            </li>
+          ))}
+        </ul>
+      </details>
     </Card>
+  );
+}
+
+/** 100 dots: how many of 100 replays of past markets ended year one below the money put in.
+ * Icon arrays and "X out of 100" help people with low numeracy understand risk (Galesic,
+ * Garcia-Retamero and Gigerenzer 2009); see docs/ux-psychology.md. */
+function IconArray({ below }: { below: number }) {
+  return (
+    <div className="grid w-40 shrink-0 grid-cols-10 gap-1" role="img" aria-label={`${below} out of 100 dots marked`}>
+      {Array.from({ length: 100 }, (_, i) => (
+        <span key={i} className={`size-3 rounded-full ${i < below ? "bg-sun" : "bg-primary/25"}`} />
+      ))}
+    </div>
   );
 }
 
 export function ProjectionView({ card }: { card: CardOf<"projection"> }) {
   const end = card.years.length - 1;
+  const p10 = card.p10[end] ?? 0;
+  const p50 = card.p50[end] ?? 0;
+  const p90 = card.p90[end] ?? 0;
+  const paid = card.paid_in[end] ?? 0;
+  const below = Math.round(card.prob_below_paid_in_year1 * 100);
+  const reach = card.prob_reach_goal === null ? null : Math.round(card.prob_reach_goal * 100);
   return (
-    <Card overline="What could happen" title="Range of outcomes">
-      <p className="mb-3 text-body text-ink-2">
-        After {card.years[end]} years: about {money(card.p10[end] ?? 0)} in a bad case,{" "}
-        {money(card.p50[end] ?? 0)} typically, {money(card.p90[end] ?? 0)} in a good case. You
-        would put in {money(card.paid_in[end] ?? 0)}.
-      </p>
-      <ProjectionFan years={card.years} p10={card.p10} p50={card.p50} p90={card.p90} paidIn={card.paid_in} />
-      <p className="mt-3 text-body-sm text-ink-2">
-        Chance of ending the first year below what you put in: {chance(card.prob_below_paid_in_year1)}.
-        {card.prob_reach_goal !== null && card.goal_usd !== null &&
-          ` Chance of reaching ${money(card.goal_usd)}: ${chance(card.prob_reach_goal)}.`}
-      </p>
+    <Card overline="What could happen" title={`In ${card.years[end]} years, if you stick with the plan`}>
+      <p className="text-body text-ink-2">You would put in {money(paid)} in total.</p>
+      <dl className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="rounded-sm bg-sunken p-3">
+          <dt className="text-body-sm text-muted">In a bad case</dt>
+          <dd className="text-num-card tnum text-ink">{money(p10)}</dd>
+          <dd className="text-caption text-ink-2">{p10 >= paid ? "still more than you put in" : `${money(paid - p10)} less than you put in`}</dd>
+        </div>
+        <div className="rounded-sm border-2 border-primary bg-primary-soft p-3">
+          <dt className="text-body-sm text-muted">Most likely</dt>
+          <dd className="text-num-card tnum text-ink">{money(p50)}</dd>
+          <dd className="text-caption text-ink-2">{p50 >= paid ? `${money(p50 - paid)} more than you put in` : "about what you put in"}</dd>
+        </div>
+        <div className="rounded-sm bg-sunken p-3">
+          <dt className="text-body-sm text-muted">In a good case</dt>
+          <dd className="text-num-card tnum text-ink">{money(p90)}</dd>
+          <dd className="text-caption text-ink-2">{money(p90 - paid)} more than you put in</dd>
+        </div>
+      </dl>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <IconArray below={below} />
+        <p className="text-body text-ink-2">
+          We replayed <Term id="outcome_range">past markets</Term> 5,000 times. Out of every 100 replays,{" "}
+          <strong className="text-ink">{below}</strong> ended the first year below what was put in (amber dots).
+          {reach !== null && card.goal_usd !== null && ` ${reach} out of 100 reached your ${money(card.goal_usd)} goal.`}
+        </p>
+      </div>
+      <details className="mt-3">
+        <summary className="min-h-11 cursor-pointer py-2 text-label text-primary">See it year by year</summary>
+        <ProjectionFan years={card.years} p10={card.p10} p50={card.p50} p90={card.p90} paidIn={card.paid_in} />
+      </details>
       <p className="mt-2 text-caption text-muted">{card.caption}</p>
     </Card>
   );
@@ -215,27 +286,40 @@ export function ComparisonView({ card }: { card: CardOf<"comparison"> }) {
 }
 
 export function ReceiptView({ card }: { card: CardOf<"receipt"> }) {
+  const total = card.fills.reduce((sum, f) => sum + Number(f.amount_usd), 0);
   return (
-    <Card overline={`Practice account · ${month(card.sim_month)}`} title="Your orders are filled">
-      <ul className="divide-y divide-line">
+    <Card overline={`Practice account · ${month(card.sim_month)}`} title={`Your ${money(total)} is invested`}>
+      <ul className="space-y-1 text-body text-ink-2">
         {card.fills.map((f) => (
-          <li key={f.product_id} className="flex justify-between gap-3 py-2 text-body-sm">
-            <span>
-              Bought {f.name}
-              <span className="block text-caption text-muted">
-                {f.units} units at {moneyCents(f.nav_usd ?? 0)}
-              </span>
-            </span>
-            <span className="tnum">{moneyCents(f.amount_usd)}</span>
+          <li key={f.product_id} className="flex justify-between gap-3">
+            <span>{f.name}</span>
+            <span className="tnum text-ink">{money(f.amount_usd)}</span>
           </li>
         ))}
       </ul>
       {card.monthly_usd && (
-        <p className="mt-3 text-body-sm text-ink-2">
-          Monthly plan: {money(card.monthly_usd)} goes in each month, split the same way.
+        <p className="mt-3 text-body text-ink-2">
+          From next month, {money(card.monthly_usd)} goes in automatically, split the same way.
         </p>
       )}
-      <p className="mt-2 break-all font-mono text-caption text-muted">Audit record {card.audit_head.slice(0, 16)}…</p>
+      <p className="mt-2 text-body-sm text-ink-2">This is practice money. Nothing real was bought.</p>
+      <details className="mt-2">
+        <summary className="min-h-11 cursor-pointer py-2 text-label text-primary">Details</summary>
+        <ul className="divide-y divide-line text-body-sm">
+          {card.fills.map((f) => (
+            <li key={f.product_id} className="flex justify-between gap-3 py-2">
+              <span>
+                {f.name}
+                <span className="block text-caption text-muted">
+                  {f.units} units at {moneyCents(f.nav_usd ?? 0)} each
+                </span>
+              </span>
+              <span className="tnum">{moneyCents(f.amount_usd)}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 break-all font-mono text-caption text-muted">Audit record {card.audit_head.slice(0, 16)}…</p>
+      </details>
     </Card>
   );
 }
@@ -244,13 +328,19 @@ export function PortfolioView({ card }: { card: CardOf<"portfolio"> }) {
   const gain = Number(card.gain_usd);
   return (
     <Card overline={`Practice account · ${month(card.sim_month)}`}>
-      <p className="font-display text-num-hero tnum text-ink">{moneyCents(card.value_usd)}</p>
+      <p className="font-display text-num-hero tnum text-ink">{money(card.value_usd)}</p>
       <p className="text-body text-ink-2">
-        You put in {money(card.paid_in_usd)} ·{" "}
-        <span className={gain >= 0 ? "text-primary" : "text-ink"}>{moneyChange(gain)} since you started</span>
+        You put in {money(card.paid_in_usd)}.{" "}
+        {gain >= 0 ? (
+          <span className="text-primary">That&apos;s {money(gain)} more.</span>
+        ) : (
+          <span>That&apos;s {money(-gain)} below for now. Drops like this usually pass with time.</span>
+        )}
       </p>
-      {card.max_drift_pts > 0 && (
-        <p className="mt-1 text-body-sm text-muted">Furthest from target mix: {card.max_drift_pts.toFixed(0)} points</p>
+      {card.max_drift_pts > 5 && (
+        <p className="mt-1 text-body-sm text-muted">
+          Your mix has drifted from its target, <Term id="rebalancing">rebalancing</Term> can fix that.
+        </p>
       )}
       <DataTable
         caption="Holdings"

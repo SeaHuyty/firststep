@@ -16,6 +16,12 @@ const FAMILY_COLOR: Record<string, string> = {
 
 /** Four families, not seven asset classes: a beginner reads the shape, the table has detail. */
 export function AllocationDonut({ families, total }: { families: Record<string, number>; total: string }) {
+  // Draws in once (600 ms, docs/standards/brand.md section 7); instant with reduced motion.
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setDrawn(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const r = 64;
   const c = 2 * Math.PI * r;
   const slices = FAMILY_ORDER.map((f) => ({ family: f, pct: families[f] ?? 0 })).filter((s) => s.pct > 0);
@@ -37,8 +43,9 @@ export function AllocationDonut({ families, total }: { families: Record<string, 
                   fill="none"
                   stroke={FAMILY_COLOR[s.family]}
                   strokeWidth="26"
-                  strokeDasharray={`${len} ${c - len}`}
+                  strokeDasharray={drawn ? `${len} ${c - len}` : `0 ${c}`}
                   strokeDashoffset={-(starts[i] ?? 0)}
+                  style={{ transition: "stroke-dasharray 600ms var(--ease-standard)" }}
                 />
               );
             })}
@@ -113,7 +120,7 @@ export function ProjectionFan({
             </text>
           </g>
         ))}
-        <path d={band} fill="var(--color-primary)" fillOpacity={0.18} />
+        <path d={band} fill="var(--color-primary)" fillOpacity={0.18} className="animate-fade" />
         <path d={line(paidIn)} fill="none" stroke="var(--color-ink-2)" strokeWidth={1.5} strokeDasharray="4 4" />
         <path d={line(p50)} fill="none" stroke="var(--color-primary)" strokeWidth={2} />
         {years.map((yr, i) =>

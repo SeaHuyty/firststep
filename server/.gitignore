@@ -9,3 +9,4 @@ __pycache__/
 .cache/
 sandbox.db
 sandbox.db-*
+evidence/

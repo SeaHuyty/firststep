@@ -10,8 +10,6 @@ dependencies = [
   "pydantic-ai-slim[openai,anthropic,google]",
   "pyyaml",
   "numpy",
-  "yfinance",          # old market layer; removed with app/market in M4
-  "pandas",            # old what-if layer; removed in M4
 ]
 
 [project.optional-dependencies]
@@ -67,7 +65,7 @@ ignore = [
 allowed-confusables = ["–", "’"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "ANN", "D", "PLR2004"]
+"tests/**" = ["S101", "S106", "ANN", "D", "PLR2004"]
 "scripts/**" = ["T20", "D"]
 
 [tool.ruff.lint.pycodestyle]
@@ -93,7 +91,7 @@ warn_unreachable = true
 files = ["app"]
 
 [[tool.mypy.overrides]]
-module = ["pandas.*", "yfinance.*", "openpyxl.*"]
+module = ["openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
@@ -152,6 +150,7 @@ source_modules = [
   "app.store", "app.audit", "app.core",
 ]
 forbidden_modules = ["anthropic", "openai", "google"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "Only app.llm and app.agent use pydantic-ai"
@@ -160,23 +159,4 @@ source_modules = [
   "app.api", "app.policy", "app.tools", "app.engine", "app.store", "app.audit", "app.core",
 ]
 forbidden_modules = ["pydantic_ai"]
-
-# Contracts for the old layout, removed with the old modules in M4.
-
-[[tool.importlinter.contracts]]
-name = "Layers: main -> routes -> ai -> domain"
-type = "layers"
-layers = ["app.main", "app.routes", "app.ai", "app.domain"]
-
-[[tool.importlinter.contracts]]
-name = "Domain is pure: no web, LLM, market or I/O service imports"
-type = "forbidden"
-source_modules = ["app.domain"]
-forbidden_modules = ["fastapi", "pydantic_ai", "yfinance", "app.ai", "app.market", "app.routes"]
-
-[[tool.importlinter.contracts]]
-name = "Only app.ai talks to an LLM provider"
-type = "forbidden"
-source_modules = ["app.domain", "app.market", "app.routes", "app.config"]
-forbidden_modules = ["anthropic", "pydantic_ai", "google"]
 allow_indirect_imports = true

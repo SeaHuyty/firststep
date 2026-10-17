@@ -82,6 +82,9 @@ class RiskBadgeCard(_Card):
     horizon_cap: str | None
     limited_by: str
     why: list[WhyLine]
+    # A plan at this level in its worst and best 12 months since 2000.
+    worst_12m_pct: float
+    best_12m_pct: float
 
 
 class GoalCard(_Card):
@@ -163,6 +166,12 @@ class AllocationCard(_Card):
     total_usd: str
     fee_pct: float
     fee_usd_a_year: float
+    # This mix in its worst and best 12 months since 2000, in percent
+    # and in the person's own money.
+    worst_12m_pct: float
+    best_12m_pct: float
+    worst_12m_usd: str
+    best_12m_usd: str
 
 
 class ProjectionCard(_Card):

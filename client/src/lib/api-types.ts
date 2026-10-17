@@ -193,6 +193,10 @@ export interface components {
          * @description A proposed plan: donut families plus the fund table.
          */
         AllocationCard: {
+            /** Best 12M Pct */
+            best_12m_pct: number;
+            /** Best 12M Usd */
+            best_12m_usd: string;
             /** Client Class */
             client_class: string;
             /** Families */
@@ -216,6 +220,10 @@ export interface components {
              * @enum {string}
              */
             type: "allocation";
+            /** Worst 12M Pct */
+            worst_12m_pct: number;
+            /** Worst 12M Usd */
+            worst_12m_usd: string;
         };
         /**
          * AllocationLine
@@ -679,6 +687,8 @@ export interface components {
          * @description The C1-C5 reveal.
          */
         RiskBadgeCard: {
+            /** Best 12M Pct */
+            best_12m_pct: number;
             /** Capacity */
             capacity: number;
             /** Client Class */
@@ -700,6 +710,8 @@ export interface components {
             type: "risk_badge";
             /** Why */
             why: components["schemas"]["WhyLine"][];
+            /** Worst 12M Pct */
+            worst_12m_pct: number;
         };
         /**
          * SavingsPlanCard

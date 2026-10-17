@@ -79,6 +79,14 @@
         "additionalProperties": false,
         "description": "A proposed plan: donut families plus the fund table.",
         "properties": {
+          "best_12m_pct": {
+            "title": "Best 12M Pct",
+            "type": "number"
+          },
+          "best_12m_usd": {
+            "title": "Best 12M Usd",
+            "type": "string"
+          },
           "client_class": {
             "title": "Client Class",
             "type": "string"
@@ -122,6 +130,14 @@
             "default": "allocation",
             "title": "Type",
             "type": "string"
+          },
+          "worst_12m_pct": {
+            "title": "Worst 12M Pct",
+            "type": "number"
+          },
+          "worst_12m_usd": {
+            "title": "Worst 12M Usd",
+            "type": "string"
           }
         },
         "required": [
@@ -132,7 +148,11 @@
           "lines",
           "total_usd",
           "fee_pct",
-          "fee_usd_a_year"
+          "fee_usd_a_year",
+          "worst_12m_pct",
+          "best_12m_pct",
+          "worst_12m_usd",
+          "best_12m_usd"
         ],
         "title": "AllocationCard",
         "type": "object"
@@ -1277,6 +1297,10 @@
         "additionalProperties": false,
         "description": "The C1-C5 reveal.",
         "properties": {
+          "best_12m_pct": {
+            "title": "Best 12M Pct",
+            "type": "number"
+          },
           "capacity": {
             "title": "Capacity",
             "type": "integer"
@@ -1324,6 +1348,10 @@
             },
             "title": "Why",
             "type": "array"
+          },
+          "worst_12m_pct": {
+            "title": "Worst 12M Pct",
+            "type": "number"
           }
         },
         "required": [
@@ -1334,7 +1362,9 @@
           "capacity",
           "horizon_cap",
           "limited_by",
-          "why"
+          "why",
+          "worst_12m_pct",
+          "best_12m_pct"
         ],
         "title": "RiskBadgeCard",
         "type": "object"

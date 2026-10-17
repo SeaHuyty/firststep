@@ -8,6 +8,7 @@ const shot = (page: Page, name: string) =>
 async function startAs(page: Page, name: string) {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Your first investing plan/ })).toBeVisible();
+  await expect(page.getByText("How old are you?")).toBeVisible();
   await shot(page, "welcome");
   await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
   await expect(page).toHaveURL(/\/s\//);
@@ -100,4 +101,16 @@ test("the audit log verifies its chain", async ({ page }) => {
   if (await tab.isVisible()) await tab.click();
   else await page.getByText("See the audit log").click();
   await expect(page.getByText("Chain verified").filter({ visible: true })).toBeVisible();
+});
+
+test("a visitor answers the first question on the welcome page and carries on in the chat", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("How old are you?")).toBeVisible();
+  await page.getByRole("button", { name: "25–34" }).click();
+  await expect(page).toHaveURL(/\/s\//);
+  // The answer is kept as the person's own message, and Sprout asks the next question.
+  await expect(page.getByText("25–34", { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText(/How much money comes in each month/).filter({ visible: true }).first()).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("25–34", { exact: true }).filter({ visible: true }).first()).toBeVisible();
 });

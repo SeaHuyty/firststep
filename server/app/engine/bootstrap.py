@@ -116,4 +116,4 @@ def rolling_extremes(monthly: FloatArray, window: int = 12) -> tuple[float, floa
     growth = np.cumprod(1 + monthly)
     start = np.concatenate(([1.0], growth[:-window]))
     returns = growth[window - 1 :] / start - 1
-    return float(returns.min()), float(returns.max())
+    return float(np.min(returns)), float(np.max(returns))

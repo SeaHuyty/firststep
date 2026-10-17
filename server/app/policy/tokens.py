@@ -16,11 +16,9 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from app.core.hashing import content_hash
 
-def content_hash(contents: object) -> str:
-    """Return the SHA-256 of a proposal's canonical JSON."""
-    raw = json.dumps(contents, sort_keys=True, separators=(",", ":"), default=str)
-    return hashlib.sha256(raw.encode()).hexdigest()
+__all__ = ["Claims", "TokenSigner", "content_hash"]
 
 
 def _b64(raw: bytes) -> str:

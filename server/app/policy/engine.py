@@ -188,8 +188,8 @@ class Policy:
         return Decision(
             False,
             "COOL-01",
-            f"Your portfolio is {drawdown_pct:.0f}% below its peak. Selling now locks in the "
-            f"drop, so big sales wait {rule.cooling_off_hours:g} hours. I'll ask you again then.",
+            f"This fund is {drawdown_pct:.0f}% below its high. Selling now locks in the drop, "
+            f"so big sales wait {rule.cooling_off_hours:g} hours. I'll ask you again then.",
         )
 
     def language(self, text: str) -> list[str]:

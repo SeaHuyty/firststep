@@ -77,8 +77,9 @@ CONF-01:
 COOL-01:
   title: Cooling-off before a panic sale
   description: >-
-    Selling more than sell_share_pct of the portfolio while it is down more than drawdown_pct
-    from its peak starts a simulated cooling-off period, then asks again.
+    Selling more than sell_share_pct of the portfolio in funds that are more than drawdown_pct
+    below their 12-month high starts a simulated cooling-off period, then asks again. Selling
+    right after a fall locks in the loss; a short pause separates the decision from the panic.
   drawdown_pct: 15
   sell_share_pct: 20
   cooling_off_hours: 24
@@ -115,14 +116,13 @@ STAGE-01:
       - project_outcomes
       - prepare_orders
       - explain
-    EXECUTED: [create_auto_invest, get_portfolio, advance_time, explain]
+    EXECUTED: [get_portfolio, advance_time, check_drift, request_sell, explain]
     MONITOR:
       - get_portfolio
       - advance_time
       - check_drift
       - propose_rebalance
       - place_order
-      - create_auto_invest
       - request_sell
       - project_outcomes
       - explain
@@ -131,7 +131,9 @@ TIERS:
   title: Permission tiers
   description: >-
     0 read, 1 propose (drafts only), 2 execute (user confirmation and limits), 3 sensitive
-    (cooling-off and a second ask). Tier 2 tools are never offered to the LLM.
+    (cooling-off and a second ask). Tier 2 tools are never offered to the LLM. A monthly
+    auto-invest plan is part of the order proposal, so one confirmation covers exactly what
+    the dialog showed.
   tier_of:
     answer_question: 0
     update_profile: 0
@@ -151,7 +153,6 @@ TIERS:
     prepare_orders: 1
     propose_rebalance: 1
     place_order: 2
-    create_auto_invest: 2
     request_sell: 3
 
 LANG:

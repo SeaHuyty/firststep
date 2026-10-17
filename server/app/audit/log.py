@@ -21,7 +21,9 @@ from pydantic import BaseModel, ConfigDict, JsonValue
 
 GENESIS = "0" * 64
 
-EventType = Literal["user_msg", "guard", "tool_call", "policy", "fill", "reply", "system"]
+EventType = Literal[
+    "user_msg", "guard", "tool_call", "policy", "tool_result", "fill", "reply", "system"
+]
 Actor = Literal["user", "llm", "system"]
 
 

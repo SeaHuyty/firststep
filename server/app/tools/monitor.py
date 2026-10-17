@@ -143,23 +143,28 @@ def _alerts(ctx: ToolContext, month: str, alerted: set[str]) -> list[str]:
     """Return new events this month and add their cards (once each)."""
     events = []
     rule = ctx.ref.rules.cool_01
-    for pid in account.positions(ctx.con, ctx.session.id):
-        dd = fund_drawdown(ctx, pid)
-        if dd > rule.drawdown_pct and f"drop:{pid}" not in alerted:
-            alerted.add(f"drop:{pid}")
-            name = ctx.ref.products[pid].name
-            events.append(f"drawdown:{pid}:{dd:.0f}")
-            ctx.cards.append(
-                AlertCard(
-                    tone="pause",
-                    title="Markets have dropped",
-                    text=f"{name} is {dd:.0f}% below its high. Drops like this have happened "
-                    "before, and selling after a fall locks in the loss. Your plan was built "
-                    "for years, not months.",
-                    rule_id="COOL-01",
-                    sim_month=month,
-                )
+    fallen = {
+        pid: dd
+        for pid in account.positions(ctx.con, ctx.session.id)
+        if (dd := fund_drawdown(ctx, pid)) > rule.drawdown_pct
+    }
+    if fallen and "drop" not in alerted:
+        alerted.add("drop")
+        worst = max(fallen, key=fallen.__getitem__)
+        others = len(fallen) - 1
+        also = f" ({others} other fund{'s' if others != 1 else ''} also fell)" if others else ""
+        events += [f"drawdown:{pid}:{dd:.0f}" for pid, dd in fallen.items()]
+        ctx.cards.append(
+            AlertCard(
+                tone="pause",
+                title="Markets have dropped",
+                text=f"{ctx.ref.products[worst].name} is {fallen[worst]:.0f}% below its high"
+                f"{also}. Drops like this have happened before, and selling after a fall locks "
+                "in the loss. Your plan was built for years, not months.",
+                rule_id="COOL-01",
+                sim_month=month,
             )
+        )
     target = target_weights(ctx)
     if target and "drift" not in alerted:
         d = drift(
@@ -172,7 +177,7 @@ def _alerts(ctx: ToolContext, month: str, alerted: set[str]) -> list[str]:
                 AlertCard(
                     tone="info",
                     title="Your mix has drifted",
-                    text=f"One part of your plan is {d.max_drift_pts:.0f} points away from its "
+                    text=f"One part of your plan is {d.max_drift_pts:.1f} points away from its "
                     "target. I can show you a rebalance to bring it back.",
                     rule_id="DRIFT-01",
                     sim_month=month,

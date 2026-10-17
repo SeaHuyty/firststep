@@ -36,6 +36,10 @@
 
   /* Radius, shadows, motion. */
   --radius-sm: 6px;  --radius-md: 12px;  --radius-lg: 20px;
+  /* One light source above the page; the higher the layer, the softer and wider the shadow.
+     Raised cards are clickable; flat content is not (docs/ux-psychology.md, "Welcome page"). */
+  --shadow-card: 0 1px 2px rgb(12 31 34 / 0.06), 0 2px 8px rgb(12 31 34 / 0.06);
+  --shadow-card-hover: 0 2px 4px rgb(12 31 34 / 0.08), 0 8px 24px rgb(12 31 34 / 0.10);
   --shadow-popover: 0 4px 16px rgb(12 31 34 / 0.12);
   --shadow-dialog: 0 12px 40px rgb(12 31 34 / 0.18);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -115,20 +119,25 @@
   --fs-asset-cash: #3987E5; --fs-asset-bonds: #D95926; --fs-asset-stocks: #199E70; --fs-asset-gold: #C98500;
 }
 
-html { font-size: 100%; -webkit-text-size-adjust: 100%; }
-body {
-  background: var(--fs-canvas);
-  color: var(--fs-ink);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.5;
-  text-rendering: optimizeLegibility;
+/* Element defaults live in the base layer so utilities can override them: unlayered CSS beats
+   every @layer, so a bare `p { max-width }` here would silently win over `max-w-none`
+   (https://tailwindcss.com/docs/adding-custom-styles#adding-base-styles). */
+@layer base {
+  html { font-size: 100%; -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--fs-canvas);
+    color: var(--fs-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, .font-display { font-family: var(--font-display); text-wrap: balance; }
+  p { max-width: 68ch; }
+  input, select, textarea { font-size: max(16px, 1rem); } /* stops iOS Safari zooming on focus */
+  .num, td.num, [data-num] { font-variant-numeric: tabular-nums lining-nums; text-align: right; }
+  :focus-visible { outline: 2px solid var(--fs-primary); outline-offset: 2px; }
 }
-h1, h2, .font-display { font-family: var(--font-display); text-wrap: balance; }
-p { max-width: 68ch; }
-input, select, textarea { font-size: max(16px, 1rem); } /* stops iOS Safari zooming on focus */
-.num, td.num, [data-num] { font-variant-numeric: tabular-nums lining-nums; text-align: right; }
-:focus-visible { outline: 2px solid var(--fs-primary); outline-offset: 2px; }
 @media (max-width: 767px) {
   :root { --text-display-1: 2rem; --text-display-1--line-height: 2.25rem;
           --text-display-2: 1.5rem; --text-display-2--line-height: 2rem;

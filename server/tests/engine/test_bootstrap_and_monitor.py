@@ -7,7 +7,12 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from app.core.types import AssetClass, RiskRating, Side
-from app.engine.bootstrap import block_paths, portfolio_returns, project_outcomes
+from app.engine.bootstrap import (
+    block_paths,
+    portfolio_returns,
+    project_outcomes,
+    rolling_extremes,
+)
 from app.engine.monitor import (
     drawdown_pct,
     drift,
@@ -161,3 +166,15 @@ def test_cool_01_ignores_an_empty_portfolio() -> None:
         drawdown_pct_limit=15,
         sell_share_pct_limit=20,
     )
+
+
+def test_rolling_extremes_find_the_worst_and_best_year() -> None:
+    monthly = np.array([0.0] * 12 + [-0.1] + [0.0] * 11 + [0.05] * 12)
+    worst, best = rolling_extremes(monthly)
+    assert worst == pytest.approx(-0.1)
+    assert best == pytest.approx(1.05**12 - 1)
+
+
+def test_rolling_extremes_need_a_full_window() -> None:
+    with pytest.raises(ValueError, match="shorter"):
+        rolling_extremes(np.zeros(5))

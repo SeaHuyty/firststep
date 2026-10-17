@@ -4,6 +4,8 @@ Voice rules from docs/standards/brand.md: calm, plain, honest about
 risk, impact before reasoning, buttons say what happens.
 """
 
+from typing import Any
+
 from app.agent.executor import Outcome
 from app.core.types import Stage
 
@@ -47,7 +49,35 @@ _BY_TOOL_OK = {
 }
 
 
+_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _advance_note(out: dict[str, Any]) -> str:
+    """Where the plan stands now, in the person's own money."""
+    value, paid = float(out["value_usd"]), float(out["paid_in_usd"])
+    y, m = str(out["new_month"]).split("-")
+    diff = value - paid
+    stand = (
+        f"that's ${diff:,.0f} more than you put in"
+        if diff >= 0
+        else f"that's ${-diff:,.0f} below what you put in for now"
+    )
+    dropped = any(str(e).startswith("drawdown") for e in out.get("events", []))
+    calm = (
+        " Markets have fallen, and drops like this have happened before. Your plan was built "
+        "for years, not months."
+        if dropped
+        else " Ups and downs along the way are normal."
+    )
+    return (
+        f"It's now {_MONTHS[int(m) - 1]} {y}. Your plan is worth ${value:,.0f}, and you've put "
+        f"in ${paid:,.0f}: {stand}.{calm}"
+    )
+
+
 def _line(outcome: Outcome) -> str:
+    if outcome.tool == "advance_time" and outcome.output:
+        return _advance_note(outcome.output)
     line = _BY_TOOL_OK[outcome.tool]
     if outcome.tool == "set_goal" and outcome.output:
         line = line.replace("AMOUNT", f"{outcome.output['deposited_usd']:,.0f}")

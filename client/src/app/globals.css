@@ -141,3 +141,22 @@ input, select, textarea { font-size: max(16px, 1rem); } /* stops iOS Safari zoom
 /* App-wide helpers built on the tokens. */
 .tnum { font-variant-numeric: tabular-nums lining-nums; }
 dialog::backdrop { background: var(--fs-scrim); }
+
+/* Motion. Calm, short and never bouncy (docs/standards/brand.md section 7); research and
+   durations in docs/ux-psychology.md. The reduced-motion rule above makes all of it instant. */
+@keyframes fs-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-rise { animation: fs-rise var(--duration-base) var(--ease-standard) both; }
+
+@keyframes fs-fade { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade { animation: fs-fade var(--duration-fast) linear both; }
+
+@keyframes fs-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+.typing-dot { animation: fs-dot 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }

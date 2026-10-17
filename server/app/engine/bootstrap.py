@@ -103,3 +103,17 @@ def project_outcomes(  # noqa: PLR0913 (inputs plus simulation settings)
         prob_loss_year1=float(np.mean(ends[1] < paid_in[1])),
         prob_reach_goal=None if goal_usd is None else float(np.mean(ends[-1] >= goal_usd)),
     )
+
+
+def rolling_extremes(monthly: FloatArray, window: int = 12) -> tuple[float, float]:
+    """Return the worst and best compounded return over any window.
+
+    Used to say, in the person's own money, what a plan like theirs
+    actually did in its worst and best 12 months of history.
+    """
+    if len(monthly) < window:
+        raise ValueError("history is shorter than the window")
+    growth = np.cumprod(1 + monthly)
+    start = np.concatenate(([1.0], growth[:-window]))
+    returns = growth[window - 1 :] / start - 1
+    return float(returns.min()), float(returns.max())

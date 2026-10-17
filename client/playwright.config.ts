@@ -4,6 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
 // personas at desktop and phone widths. No key and no network needed.
 const SERVER_DIR = "../server";
 const TMP = process.env.E2E_TMP ?? "/tmp/firststep-e2e";
+// E2E_BASE_URL=http://localhost:3000 runs against an app you already started (npm run dev):
+// Next.js allows only one dev server per project folder.
+const REUSE = process.env.E2E_BASE_URL;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -11,12 +14,12 @@ export default defineConfig({
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
-  use: { baseURL: "http://localhost:3100", trace: "retain-on-failure" },
+  use: { baseURL: REUSE ?? "http://localhost:3100", trace: "retain-on-failure" },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } } },
     { name: "phone", use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 } } },
   ],
-  webServer: [
+  webServer: REUSE ? [] : [
     {
       command: `rm -rf ${TMP} && mkdir -p ${TMP} && cd ${SERVER_DIR} && LLM_PROVIDER=fake DB_PATH=${TMP}/sandbox.db EVIDENCE_DIR=${TMP}/evidence .venv/bin/python -m uvicorn app.main:app --port 8100`,
       url: "http://127.0.0.1:8100/api/health",

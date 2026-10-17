@@ -2,22 +2,26 @@
 
 import { RotateCcw } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Notice, Skeleton } from "@/components/ui/primitives";
 import { AppShell } from "@/components/ui/shell";
 import { type Action, api } from "@/lib/api";
 import { STEP_OF } from "@/lib/copy";
+import { withTypingDelay } from "@/lib/motion";
 import type { CardOf, PersonaHint, SessionView, Stage, TurnOut } from "@/lib/types";
 import { type ChatMessage, Composer, MessageList } from "./chat";
 import { ConfirmDialog } from "./confirm-dialog";
 import { type Goal, GoalForm } from "./goal-form";
 import { AuditPanel, PlanPanel, WatchControls } from "./plan-panel";
+import { SPOTLIGHT_ORDER } from "./result-line";
+import { Safeguards } from "./safeguards";
+import { GlossaryProvider } from "./term";
 
 type Tab = "chat" | "plan" | "audit";
 
 const PLACEHOLDER: Partial<Record<Stage, string>> = {
-  PROPOSE: "Ask about your plan, e.g. \"What does diversification mean?\"",
+  PROPOSE: "Ask anything, e.g. \"What is a bond?\"",
   MONITOR: "Ask Sprout anything about your plan",
   SAVINGS_PLAN: "Ask about your savings plan",
 };
@@ -35,13 +39,19 @@ export function SessionScreen() {
   const [tab, setTab] = useState<Tab>("chat");
   const [auditKey, setAuditKey] = useState(0);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [spotlight, setSpotlight] = useState<{ type: string; n: number } | null>(null);
+  const showInPlan = (type: string) => setSpotlight((prev) => ({ type, n: (prev?.n ?? 0) + 1 }));
+  const nextId = useRef(1);
+  const newId = () => nextId.current++;
 
   const fetchSession = useCallback(
     () =>
       api.session(id).then(
         (v) => {
           setView(v);
-          setMessages(v.messages.map((m) => ({ role: m.role === "user" ? "user" : "sprout", text: m.text, cards: m.cards })));
+          setMessages(
+            v.messages.map((m, i) => ({ id: -1 - i, role: m.role === "user" ? "user" : "sprout", text: m.text, cards: m.cards })),
+          );
           setStage(v.stage as Stage);
           setSimMonth(v.sim_month);
         },
@@ -60,19 +70,24 @@ export function SessionScreen() {
   };
 
   const apply = (out: TurnOut) => {
-    setMessages((m) => [...m, { role: "sprout", text: out.reply, cards: out.cards, steps: out.steps }]);
+    setMessages((m) => [...m, { id: newId(), role: "sprout", text: out.reply, cards: out.cards, steps: out.steps, animate: true }]);
     setStage(out.stage as Stage);
     setSimMonth(out.sim_month);
     setAuditKey((k) => k + 1);
+    // Bring the turn's most important plan change into view (one change at a time).
+    const changed = SPOTLIGHT_ORDER.find((t) => out.cards.some((c) => c.type === t));
+    if (changed) showInPlan(changed);
   };
 
   const run = async (call: () => Promise<TurnOut>, userText?: string) => {
     if (busy) return;
     setTurnError(null);
-    if (userText) setMessages((m) => [...m, { role: "user", text: userText, cards: [] }]);
+    if (userText) setMessages((m) => [...m, { id: newId(), role: "user", text: userText, cards: [], animate: true }]);
     setBusy(true);
     try {
-      apply(await call());
+      // A short, length-scaled pause with the typing indicator (capped at 1 s; none when the
+      // request itself took longer). See docs/ux-psychology.md.
+      apply(await withTypingDelay(call));
     } catch (e) {
       setTurnError({ message: (e as Error).message, retry: () => void run(call) });
     } finally {
@@ -101,14 +116,15 @@ export function SessionScreen() {
   }
   if (!view) return <SessionSkeleton />;
 
-  const chat = (
-    <div className="flex flex-col gap-4">
+  const chatBody = (
+    <div className="flex flex-col gap-4 pb-2">
       <MessageList
         messages={messages}
         busy={busy}
         hints={hints}
         onAnswer={(qid, value, label) => act({ tool: "answer_question", args: { question_id: qid, value } }, label)}
         onReview={setReviewing}
+        onShow={showInPlan}
       />
       {turnError && (
         <Notice tone="error" title="That didn't go through" action={<Button onClick={turnError.retry}>Try again</Button>}>
@@ -116,20 +132,21 @@ export function SessionScreen() {
         </Notice>
       )}
       {stage === "GOAL" && !busy && (
-        <GoalForm
-          initial={(persona?.goal as Goal | null | undefined) ?? null}
-          busy={busy}
-          onSubmit={(g) => act({ tool: "set_goal", args: g }, `${g.name}: $${g.target_usd.toLocaleString("en-US")} in ${g.horizon_years} years`)}
-        />
+        <div className="animate-rise">
+          <GoalForm
+            initial={(persona?.goal as Goal | null | undefined) ?? null}
+            busy={busy}
+            onSubmit={(g) => act({ tool: "set_goal", args: g }, `${g.name}: $${g.target_usd.toLocaleString("en-US")} in ${g.horizon_years} years`)}
+          />
+        </div>
       )}
       {stage === "PROPOSE" && hasPlan && !busy && (
-        <Button variant="primary" onClick={() => act({ tool: "prepare_orders" }, "Review the orders")}>
-          Review the orders
-        </Button>
+        <div className="animate-rise">
+          <Button variant="primary" onClick={() => act({ tool: "prepare_orders" }, "Review the orders")}>
+            Review the orders
+          </Button>
+        </div>
       )}
-      <div className="sticky bottom-3 z-10 mt-2">
-        <Composer onSend={say} busy={busy} placeholder={PLACEHOLDER[stage] ?? "Ask Sprout, or tap an answer above"} />
-      </div>
     </div>
   );
 
@@ -144,14 +161,19 @@ export function SessionScreen() {
           onRebalance={() => act({ tool: "propose_rebalance" }, "Show me a rebalance")}
         />
       )}
-      <PlanPanel cards={allCards} stage={stage} />
+      <Safeguards cards={allCards} stage={stage} />
+      <PlanPanel cards={allCards} stage={stage} spotlight={spotlight} />
     </div>
   );
 
+  // Desktop is a workspace: chat and plan side by side, each scrolling on its own, with the
+  // message box pinned under the chat, so neither pushes the other off-screen (the split-pane
+  // pattern of Claude Artifacts and ChatGPT Canvas). Phones keep tabs and one scrolling page.
   return (
-    <AppShell step={STEP_OF[stage]}>
+    <GlossaryProvider>
+    <AppShell step={STEP_OF[stage]} fill>
       {persona && (
-        <p className="mb-4 text-body-sm text-ink-2">
+        <p className="mb-4 max-w-none text-body-sm text-ink-2 lg:mb-3">
           Demo: you are <strong>{persona.name}</strong>, {persona.tagline}. Suggested answers are marked.
         </p>
       )}
@@ -169,11 +191,22 @@ export function SessionScreen() {
           </button>
         ))}
       </div>
-      <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-        <section aria-label="Chat with Sprout" className={`lg:col-span-5 ${tab === "chat" ? "" : "hidden lg:block"}`}>
-          {chat}
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-12 lg:gap-8">
+        <section
+          aria-label="Chat with Sprout"
+          className={`lg:col-span-5 lg:flex lg:min-h-0 lg:flex-col ${tab === "chat" ? "" : "hidden lg:flex"}`}
+        >
+          <div data-scroll-root className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
+            {chatBody}
+          </div>
+          <div className="sticky bottom-3 z-10 mt-2 lg:static lg:mt-3">
+            <Composer onSend={say} busy={busy} placeholder={PLACEHOLDER[stage] ?? "Ask Sprout, or tap an answer above"} />
+          </div>
         </section>
-        <section aria-label="My plan" className={`lg:col-span-7 ${tab === "plan" ? "" : "hidden lg:block"}`}>
+        <section
+          aria-label="My plan"
+          className={`lg:col-span-7 lg:min-h-0 lg:overflow-y-auto lg:pr-2 ${tab === "plan" ? "" : "hidden lg:block"}`}
+        >
           {plan}
           <details className="mt-4 hidden lg:block" onToggle={(e) => setAuditOpen(e.currentTarget.open)}>
             <summary className="min-h-11 cursor-pointer py-2 text-label text-primary">See the audit log</summary>
@@ -199,6 +232,7 @@ export function SessionScreen() {
         />
       )}
     </AppShell>
+    </GlossaryProvider>
   );
 }
 

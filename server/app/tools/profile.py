@@ -24,6 +24,7 @@ from app.engine.scoring import (
     tolerance_score,
 )
 from app.store import account
+from app.tools.allocation import history_extremes
 from app.tools.base import Input, NoArgs, Output
 from app.tools.cards import (
     Chip,
@@ -358,6 +359,7 @@ def score_risk_profile(ctx: ToolContext, _: NoArgs) -> RiskOut | ToolError:
         }
     )
     portfolio = ctx.ref.portfolios[result.final_class]
+    worst, best = history_extremes(ctx, dict(portfolio.weights))
     ctx.cards.append(
         RiskBadgeCard(
             client_class=str(result.final_class),
@@ -377,6 +379,8 @@ def score_risk_profile(ctx: ToolContext, _: NoArgs) -> RiskOut | ToolError:
                     text=f"You'll only see funds rated R{int(result.final_class)} or lower.",
                 ),
             ],
+            worst_12m_pct=round(worst * 100, 1),
+            best_12m_pct=round(best * 100, 1),
         )
     )
     ctx.session.stage = Stage.GOAL

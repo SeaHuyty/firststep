@@ -9,7 +9,7 @@ from app.core.errors import ToolError
 from app.core.hashing import content_hash
 from app.core.types import FAMILY_OF, ClientClass, to_money
 from app.engine.allocation import family_split, split_amount
-from app.engine.bootstrap import portfolio_returns, project_outcomes
+from app.engine.bootstrap import portfolio_returns, project_outcomes, rolling_extremes
 from app.engine.suitability import weighted_fee_pct, weights_by_class
 from app.store import account
 from app.tools.base import Input, NoArgs, Output
@@ -33,6 +33,18 @@ def content_of(
         "monthly_usd": str(to_money(goal.monthly_usd if goal else 0)),
         "client_class": str(client),
     }
+
+
+def history_extremes(ctx: ToolContext, weights: dict[str, float]) -> tuple[float, float]:
+    """Return a mix's worst and best 12 months in history to date."""
+    end = ctx.prices.index(ctx.session.sim_month) + 1
+    series = {a: s[:end] for a, s in ctx.ref.returns.series.items()}
+    monthly = portfolio_returns(
+        weights_by_class(weights, ctx.ref.products),
+        series,
+        weighted_fee_pct(weights, ctx.ref.products),
+    )
+    return rolling_extremes(monthly)
 
 
 class ProposeOut(Output):
@@ -78,6 +90,7 @@ def _propose(ctx: ToolContext, weights: dict[str, float], label: str) -> Propose
         now=ctx.iso_now(),
     )
     fee_usd = float(total) * fee_pct / 100
+    worst, best = history_extremes(ctx, weights)
     ctx.cards.append(
         AllocationCard(
             proposal_id=proposal_id,
@@ -101,6 +114,10 @@ def _propose(ctx: ToolContext, weights: dict[str, float], label: str) -> Propose
             total_usd=str(total),
             fee_pct=round(fee_pct, 3),
             fee_usd_a_year=round(fee_usd, 2),
+            worst_12m_pct=round(worst * 100, 1),
+            best_12m_pct=round(best * 100, 1),
+            worst_12m_usd=str(to_money(total * Decimal(str(1 + worst)))),
+            best_12m_usd=str(to_money(total * Decimal(str(1 + best)))),
         )
     )
     return ProposeOut(

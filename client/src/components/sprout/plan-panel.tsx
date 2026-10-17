@@ -3,7 +3,8 @@
 // The plan builds up here as Sprout works (docs/standards/onboarding-ux.md section 2): the latest
 // card of each kind, in the order of the journey.
 import { ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { prefersReducedMotion } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Card as Box, Notice, Skeleton } from "@/components/ui/primitives";
 import { api } from "@/lib/api";
@@ -40,6 +41,13 @@ const ORDER = [
   "products",
 ] as const;
 
+function signature(card: Card): string {
+  const text = JSON.stringify(card);
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+  return h.toString(36);
+}
+
 function latestByType(cards: Card[]): Partial<Record<Card["type"], Card>> {
   const out: Partial<Record<Card["type"], Card>> = {};
   for (const c of cards) out[c.type] = c;
@@ -62,7 +70,42 @@ export function View({ card }: { card: Card }) {
   }
 }
 
-export function PlanPanel({ cards, stage }: { cards: Card[]; stage: Stage }) {
+/**
+ * A one-second spotlight on the card that just changed (37signals' "yellow fade"; the
+ * "One-Second Spotlight" pattern): scroll it into view in the plan pane, then a brief ring that
+ * fades, so the change is seen without a lasting distraction.
+ */
+function useSpotlight(root: React.RefObject<HTMLDivElement | null>, spotlight: { type: string; n: number } | null) {
+  useEffect(() => {
+    if (!spotlight) return;
+    const el = root.current?.querySelector<HTMLElement>(`[data-plan-type="${spotlight.type}"]`);
+    if (!el || el.offsetParent === null) return; // hidden (e.g. the plan tab on a phone)
+    const reduced = prefersReducedMotion();
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    if (reduced) return;
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--fs-primary").trim();
+    el.animate(
+      [
+        { boxShadow: `0 0 0 3px ${color}` },
+        { boxShadow: `0 0 0 3px ${color}`, offset: 0.35 },
+        { boxShadow: "0 0 0 3px transparent" },
+      ],
+      { duration: 1600, easing: "ease-out" },
+    );
+  }, [root, spotlight]);
+}
+
+export function PlanPanel({
+  cards,
+  stage,
+  spotlight = null,
+}: {
+  cards: Card[];
+  stage: Stage;
+  spotlight?: { type: string; n: number } | null;
+}) {
+  const root = useRef<HTMLDivElement>(null);
+  useSpotlight(root, spotlight);
   const latest = latestByType(cards);
   // Once there is a portfolio, the readiness check and old receipts are history: keep the plan
   // panel about now (progressive disclosure).
@@ -79,10 +122,16 @@ export function PlanPanel({ cards, stage }: { cards: Card[]; stage: Stage }) {
     );
   }
   return (
-    <div className="space-y-4">
+    <div ref={root} className="space-y-4">
       {shown.map((t) => {
         const c = latest[t];
-        return c ? <View key={t} card={c} /> : null;
+        // Keyed by content, so a card rises in when it first appears and again when it changes
+        // (a new plan, a new month), drawing the eye to what Sprout just did.
+        return c ? (
+          <div key={`${t}:${signature(c)}`} data-plan-type={t} className="animate-rise scroll-mt-2 rounded-md">
+            <View card={c} />
+          </div>
+        ) : null;
       })}
     </div>
   );

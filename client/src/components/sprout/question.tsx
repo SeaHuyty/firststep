@@ -18,18 +18,23 @@ export function QuestionView({
   onAnswer,
   busy,
   hint,
+  showPrompt = true,
 }: {
   card: CardOf<"question">;
   onAnswer: Answer;
   busy: boolean;
   hint?: unknown;
+  /** False when the chat already "spoke" the prompt as Sprout's message. */
+  showPrompt?: boolean;
 }) {
   const [showWhy, setShowWhy] = useState(false);
   return (
     <div className="space-y-3">
-      <p className="max-w-[60ch] rounded-md rounded-tl-sm border border-line bg-surface px-4 py-3 text-body-lg text-ink">
-        {card.prompt}
-      </p>
+      {showPrompt && (
+        <p className="max-w-[60ch] rounded-md rounded-tl-sm border border-line bg-surface px-4 py-3 text-body-lg text-ink">
+          {card.prompt}
+        </p>
+      )}
       <div className="flex items-center justify-between gap-3">
         <p className="text-caption text-muted">
           Question {card.step} of {card.of}

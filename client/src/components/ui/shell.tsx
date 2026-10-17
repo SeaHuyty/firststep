@@ -28,7 +28,7 @@ export function StepBar({ current }: { current: Step | null }) {
             <li key={step} className="flex flex-col items-center gap-1" aria-current={now ? "step" : undefined}>
               <span
                 aria-hidden
-                className={`block w-8 rounded-t-sm md:w-12 ${done || now ? "bg-primary" : "bg-on-canopy/20"}`}
+                className={`block w-8 rounded-t-sm transition-colors duration-300 ease-[var(--ease-standard)] md:w-12 ${done || now ? "bg-primary" : "bg-on-canopy/20"}`}
                 style={{ height: 6 + i * 3 }}
               />
               <span
@@ -56,14 +56,17 @@ export function StepBar({ current }: { current: Step | null }) {
 export function AppShell({
   step,
   actions,
+  fill = false,
   children,
 }: {
   step: Step | null;
   actions?: ReactNode;
+  /** On desktop, fill the viewport so the panes inside can scroll on their own. */
+  fill?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className={`flex min-h-dvh flex-col ${fill ? "lg:h-dvh lg:min-h-0" : ""}`}>
       <header className="bg-canopy">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 py-3 md:px-8">
           <Wordmark />
@@ -76,7 +79,11 @@ export function AppShell({
           {DISCLOSURE}
         </p>
       </header>
-      <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+      <main
+        className={`mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 md:px-8 md:py-8 ${fill ? "lg:flex lg:min-h-0 lg:flex-col lg:pb-4" : ""}`}
+      >
+        {children}
+      </main>
     </div>
   );
 }

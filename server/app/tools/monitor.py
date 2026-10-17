@@ -95,10 +95,12 @@ class AdvanceIn(Input):
 
 
 class AdvanceOut(Output):
-    """The new month and what happened on the way."""
+    """The new month, what happened, and where the plan stands."""
 
     new_month: str
     events: list[str]
+    value_usd: str
+    paid_in_usd: str
 
 
 def _auto_invest(ctx: ToolContext, month: str) -> str | None:
@@ -238,8 +240,13 @@ def advance_time(ctx: ToolContext, args: AdvanceIn) -> AdvanceOut | ToolError:
         events += _alerts(ctx, month, alerted)
     if ctx.session.stage == Stage.EXECUTED:
         ctx.session.stage = Stage.MONITOR
-    get_portfolio(ctx, NoArgs())
-    return AdvanceOut(new_month=ctx.session.sim_month, events=events)
+    now = get_portfolio(ctx, NoArgs())
+    return AdvanceOut(
+        new_month=ctx.session.sim_month,
+        events=events,
+        value_usd=now.value_usd,
+        paid_in_usd=now.paid_in_usd,
+    )
 
 
 def check_drift(ctx: ToolContext, _: NoArgs) -> PortfolioOut | ToolError:

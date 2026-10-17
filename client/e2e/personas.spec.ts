@@ -14,20 +14,22 @@ async function startAs(page: Page, name: string) {
   await expect(page.getByText(`Demo: you are ${name}`)).toBeVisible();
 }
 
-/** Tap the suggested ("demo answer") chip or fill the field, question by question. */
+/** Tap the suggested ("demo answer") chip or the debt answer, question by question, waiting
+ * for Sprout to finish typing each one, like a person would. */
 async function answerAsSuggested(page: Page, untilText: RegExp) {
-  for (let i = 0; i < 20; i++) {
-    if (await page.getByText(untilText).filter({ visible: true }).first().isVisible()) return;
+  const done = page.getByText(untilText).filter({ visible: true }).first();
+  for (let i = 0; i < 30; i++) {
     const suggested = page.getByRole("button").filter({ hasText: "demo answer" }).first();
-    const save = page.getByRole("button", { name: /^Save( this debt| these \d+ debts)?$/ }).first();
+    const saveDebts = page.getByRole("button", { name: /^Save( this debt| these \d+ debts)?$/ });
     const noDebts = page.getByRole("button", { name: "No debts" });
+    await suggested.or(saveDebts).or(noDebts).or(done).first().waitFor({ timeout: 10_000 });
+    if (await done.isVisible()) return;
     if (await suggested.isVisible()) await suggested.click();
-    else if ((await save.isVisible()) && (await save.isEnabled())) await save.click();
-    else if (await noDebts.isVisible()) await noDebts.click();
-    await page.waitForTimeout(150);
-    await expect(page.getByText("Sprout is thinking…")).toHaveCount(0);
+    else if (await saveDebts.isVisible()) await saveDebts.click();
+    else await noDebts.click();
+    await expect(page.getByText("Sprout is thinking…")).toHaveCount(0, { timeout: 10_000 });
   }
-  await expect(page.getByText(untilText).filter({ visible: true }).first()).toBeVisible();
+  await expect(done).toBeVisible();
 }
 
 function planOrChat(page: Page, which: "My plan" | "Chat") {
@@ -42,7 +44,7 @@ test("Leo confirms a plan, lives through March 2020 and a panic sale waits", asy
   await answerAsSuggested(page, /what are you investing for/i);
   await page.getByRole("button", { name: /Build my plan with \$6,000 now/ }).click();
   await planOrChat(page, "My plan")();
-  await expect(page.getByRole("heading", { name: "Range of outcomes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /if you stick with the plan/ })).toBeVisible();
   await expect(page.getByText("C3 Balanced").filter({ visible: true }).first()).toBeVisible();
   await shot(page, "leo-plan");
   await planOrChat(page, "Chat")();
@@ -60,7 +62,7 @@ test("Leo confirms a plan, lives through March 2020 and a panic sale waits", asy
   await expect(dialog).toBeHidden();
 
   await planOrChat(page, "My plan")();
-  await expect(page.getByRole("heading", { name: "Your orders are filled" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /is invested/ })).toBeVisible();
   await page.getByRole("button", { name: "Jump to March 2020" }).click();
   await expect(page.getByText("Simulated month: Mar 2020")).toBeVisible();
   await planOrChat(page, "Chat")();

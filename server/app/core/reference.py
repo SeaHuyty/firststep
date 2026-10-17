@@ -43,6 +43,7 @@ class EmergencyRule(RuleInfo):
     """READY-01."""
 
     min_emergency_months: float = Field(gt=0)
+    starter_buffer_usd: float = Field(ge=0)
 
 
 class DebtRule(RuleInfo):

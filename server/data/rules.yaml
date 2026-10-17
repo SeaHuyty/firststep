@@ -15,12 +15,16 @@ SUIT-01:
 
 READY-01:
   title: Emergency fund first
-  description: Savings must cover at least this many months of living costs before investing.
+  description: >-
+    Savings must cover at least this many months of living costs before investing. A savings
+    plan first keeps a small starter buffer, so a surprise bill does not go back on a card.
   min_emergency_months: 3
+  starter_buffer_usd: 1000
   cites:
     - Vanguard UK, Five steps to take before you start investing (3-6 months)
     - HSBC UK, Invest or repay your debts (at least 3 months)
     - CFPB, An essential guide to building an emergency fund
+    - Starter buffer of $1,000-2,000 before paying down debt (MoneyLion; Vanguard research cites $2,000)
 
 READY-02:
   title: Expensive debt first

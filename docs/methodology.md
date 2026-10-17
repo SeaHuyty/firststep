@@ -54,12 +54,39 @@ Monthly total returns, January 2000 to December 2025, for 8 asset classes. The p
 
 Checks on the built file: US equity returns 8.3% a year over 2000–2025, and March 2020 is −13.3% for US equity and +4.3% for 10-year Treasuries (yields fell from 1.13% to 0.67%). Fund NAVs subtract each fund's fee monthly from its asset-class return.
 
-## 7. Language policy (`LANG-*`)
+## 7. Range of outcomes (`project_outcomes`)
+
+Sprout never shows one predicted number. It replays history in many orders and shows a bad, a typical and a good case:
+
+- **Method: moving block bootstrap** [KU1]. The portfolio's own monthly returns from 2000 to 2025 (after fees) are cut into every overlapping 12-month block. 5,000 paths are stitched from randomly chosen blocks. Keeping a year's months in order preserves short-run patterns such as runs of bad months, which resampling single months would break. In Lahiri's comparison, moving-block and circular-block bootstraps were more accurate than the stationary bootstrap of Politis and Romano [LA1, PR1]. We picked 12-month blocks so each block keeps one year's months in order. That length is our design choice, not a tuned optimum.
+- **Output:** the 10th, 50th and 90th percentile value at each year end, the money paid in, the chance of ending year 1 below the money paid in, and the chance of reaching the goal. Robo-advisors show the same shape: U.S. Bank's automated investor runs 6,000 scenarios and shows the 15th, 50th and 85th percentiles, and Ally runs 10,000 [UB1, AL1].
+- **Honest limits:** returns are before inflation and taxes; 26 years of history is one sample of the world; the fixed seed makes results reproducible, not more certain. The UI titles the chart "Range of outcomes" with the caption "not a prediction".
+
+Check on real data (lump sum $6,000, $300 a month, 10 years, $42,000 paid in): C3's typical case is about $59,500 (bad case $47,300, good case $72,100), and C5's bad case is about $42,300, close to the money paid in, while its good case is about $100,600. The range widens as risk rises, as it should.
+
+## 8. Savings plan when Sprout says "not yet" (`build_savings_plan`)
+
+The whole monthly surplus (income minus costs) goes to one step at a time: (1) a $1,000 starter buffer if savings are lower, so a surprise bill does not go back on the card [ML1]; (2) expensive debts, highest rate first (the "avalanche"), which costs the least interest and matches Vanguard's "pay off the debts with the highest interest rates first" [V1, LT1]; (3) the 3-month emergency fund. Interest accrues monthly at APR/12 while a debt is paid. For Amina ($250 a month, $600 saved, $1,750 on a 22.9% card) the plan is 2 + 8 + 10 = 20 months, and the card costs about $147 in interest.
+
+## 9. Monitoring: drift and cooling-off (`DRIFT-01`, `COOL-01`)
+
+- **Drift.** Each month of fast-forward, fund prices move by their asset class's return minus a twelfth of the yearly fee. If any asset class drifts more than 5 percentage points from target, Sprout proposes a rebalance, which goes through the same confirmation as any order. Vanguard's rebalancing research concludes that annual or semiannual monitoring with rebalancing at 5% thresholds is likely to balance risk control and cost for most investors [V4].
+- **Cooling-off.** Selling more than 20% of the portfolio while it is more than 15% below its peak starts a 24-hour simulated cooling-off period, then Sprout asks again.
+
+## 10. Language policy (`LANG-*`)
 
 Before a reply is shown, it is checked for guarantees, claims of no risk, promises of growth and price predictions. A hit regenerates the reply once, then falls back to a safe message. The categories follow FINRA Rule 2210, which bars promissory and exaggerated claims, performance predictions and statements implying guaranteed results [FN1]. Outcomes are always shown as ranges, never one number, and never called a "backtest".
 
 ## Sources
 
+- [AL1] Ally Invest, Monte Carlo methodology. https://www.ally.com/docs/invest/monte-carlo-methodology
+- [KU1] Künsch, H. R. (1989). The jackknife and the bootstrap for general stationary observations. *Annals of Statistics* 17(3).
+- [LA1] Lahiri, S. N. (1999). Theoretical comparisons of block bootstrap methods. *Annals of Statistics* 27(1). https://projecteuclid.org/journals/annals-of-statistics/volume-27/issue-1/Theoretical-comparisons-of-block-bootstrap-methods/10.1214/aos/1018031117.pdf
+- [LT1] LendingTree, Debt avalanche vs. snowball study. https://www.lendingtree.com/debt-consolidation/debt-avalanche-snowball-study/
+- [ML1] MoneyLion, Pay off debt or invest? (starter fund of $1,000–2,000). https://www.moneylion.com/learn/debt/get-out-of-debt/pay-off-debt-or-invest
+- [PR1] Politis, D. N. and Romano, J. P. (1994). The stationary bootstrap. *JASA* 89(428).
+- [UB1] U.S. Bank Automated Investor, Methodology and assumptions. https://www.usbank.com/investing/online-investing/automated-investing/methodology-and-assumptions.html
+- [V4] Vanguard (2010), Best practices for portfolio rebalancing. https://indexacapital.com/bundles/unaiadvisor/docs/papers/2010-Vanguard-Best-practices-for-portfolio-rebalancing.pdf
 - [A1] Debon Fund Management, 销售适当性匹配意见 (suitability matching opinion), Jan 2026. https://www.dbfund.com.cn/upload/word/1767922826575-德邦基金管理有限公司销售适当性匹配意见-202601.docx
 - [A2] China Merchants Fund, product risk rating disclosure (2024). https://www.cmfchina.com/upload/20240611/202406111718089072198.pdf
 - [B1] Betterment, How to manage debt and invest at the same time. https://www.betterment.com/resources/tag/debt

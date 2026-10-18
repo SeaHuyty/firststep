@@ -1,0 +1,259 @@
+{
+  "llm": "google",
+  "passed": 25,
+  "total": 25,
+  "unanswered": [],
+  "results": [
+    {
+      "id": "TC-01",
+      "area": "profiling",
+      "prompt": "I'm 30.",
+      "passed": true,
+      "notes": [
+        "called update_profile({'age': 30}), answer_question({'question_id': 'age', 'value': 30})"
+      ],
+      "reply": "Thanks! I've noted that."
+    },
+    {
+      "id": "TC-02",
+      "area": "profiling",
+      "prompt": "I take home $3,200 a month after tax.",
+      "passed": true,
+      "notes": [
+        "called update_profile({'monthly_income_usd': 3200.0}), answer_question({'question_id': 'monthly_income', 'value': 3200})"
+      ],
+      "reply": "OK, I have recorded that."
+    },
+    {
+      "id": "TC-03",
+      "area": "profiling",
+      "prompt": "My salary is $4,000 a month before tax.",
+      "passed": true,
+      "notes": [
+        "no tool called"
+      ],
+      "reply": "I understand your salary is $4,000 before tax. To help you best, I need to know how much money you actually receive each month after tax."
+    },
+    {
+      "id": "TC-04",
+      "area": "profiling",
+      "prompt": "I owe $3,000 on a credit card at 24% interest.",
+      "passed": true,
+      "notes": [
+        "called answer_question({'question_id': 'debts', 'value': [{'apr_pct': 24, 'kind': 'credit card', 'balance_usd': 3000}]}), update_profile({'debts': [{'kind': 'credit card', 'balance_usd': 3000.0, 'apr_pct': 24.0}]})"
+      ],
+      "reply": "Thanks for sharing that. Since that credit card has a high interest rate, it's best to pay it off before you start investing."
+    },
+    {
+      "id": "TC-05",
+      "area": "profiling",
+      "prompt": "Good news: I paid off my credit card completely.",
+      "passed": true,
+      "notes": [
+        "called update_profile({'debts': []})"
+      ],
+      "reply": "That is great news! I have updated your profile to show that your credit card is paid off."
+    },
+    {
+      "id": "TC-06",
+      "area": "profiling",
+      "prompt": "What's my risk level?",
+      "passed": true,
+      "notes": [
+        "no tool called"
+      ],
+      "reply": "Your risk level is C3. This helps us pick the right funds for you."
+    },
+    {
+      "id": "TC-07",
+      "area": "planning",
+      "prompt": "I want $50,000 for a house in 5 years. I can put in $10,000 now and $500 a month.",
+      "passed": true,
+      "notes": [
+        "called set_goal({'name': 'house', 'target_usd': 50000.0, 'horizon_years': 5.0, 'lump_sum_usd': 10000.0, 'monthly_usd': 500.0})"
+      ],
+      "reply": "That sounds like a great goal. I have saved those details for you. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-08",
+      "area": "planning",
+      "prompt": "Which funds am I allowed to invest in?",
+      "passed": true,
+      "notes": [
+        "called list_suitable_products({})"
+      ],
+      "reply": "You can choose from these funds: MMF01, TBL01, STB01, GOV01, GOV02, USE01, USE02, INT01, INT02, and ACT01. These all fit your risk level."
+    },
+    {
+      "id": "TC-09",
+      "area": "planning",
+      "prompt": "Swap the US Total Market fund for the US Large Company fund and keep the rest the same.",
+      "passed": true,
+      "notes": [
+        "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 5.0}, {'product_id': 'STB01', 'weight_pct': 10.0}, {'product_id': 'GOV01', 'weight_pct': 25.0}, {'product_id': 'GOV02', 'weight_pct': 10.0}, {'product_id': 'USE02', 'weight_pct': 30.0}, {'product_id': 'INT01', 'weight_pct': 20.0}]})"
+      ],
+      "reply": "I've updated your plan to use the US Large Company Index Fund instead. Here is your new mix: MMF01 5%, STB01 10%, GOV01 25%, GOV02 10%, USE02 30%, and INT01 20%. In 10 years, your money could be around $46,633, $58,026, or $69,362. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-10",
+      "area": "planning",
+      "prompt": "Can I have more bonds and fewer stocks?",
+      "passed": true,
+      "notes": [
+        "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 5.0}, {'product_id': 'STB01', 'weight_pct': 15.0}, {'product_id': 'GOV01', 'weight_pct': 30.0}, {'product_id': 'GOV02', 'weight_pct': 15.0}, {'product_id': 'USE01', 'weight_pct': 20.0}, {'product_id': 'INT01', 'weight_pct': 15.0}]})"
+      ],
+      "reply": "I have updated your plan to include more bonds and fewer stocks. This new mix has a 60% share in bonds and a 35% share in stocks. Based on past market behavior, your $6,000 could grow to between $49,667 and $63,708 in 10 years. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-11",
+      "area": "planning",
+      "prompt": "What could happen to my money if markets go badly?",
+      "passed": true,
+      "notes": [
+        "called explain({'topic': 'risk'}), project_outcomes({})"
+      ],
+      "reply": "Markets go up and down, so your balance will change. The range of outcomes shows this. In a poor market, your money might grow less than you expect. For example, after 10 years, it could be worth about $46,625. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-12",
+      "area": "comparison",
+      "prompt": "Compare the US Total Market Index Fund with the Star Manager Growth Fund.",
+      "passed": true,
+      "notes": [
+        "called compare_products({'product_ids': ['USE01', 'ACT01']})"
+      ],
+      "reply": "The US Total Market Index Fund has much lower fees and higher average returns over the last five years. Both funds have a similar risk level and could have dropped by over 40% in a single year."
+    },
+    {
+      "id": "TC-13",
+      "area": "comparison",
+      "prompt": "Which is cheaper, the Treasury Bill Fund or the Sprout Money Market Fund?",
+      "passed": true,
+      "notes": [
+        "called compare_products({'product_ids': ['TBL01', 'MMF01']})"
+      ],
+      "reply": "The Treasury Bill Fund is cheaper. It costs $0.70 a year for every $1,000 you invest, while the Sprout Money Market Fund costs $1.00 a year for every $1,000."
+    },
+    {
+      "id": "TC-14",
+      "area": "comparison",
+      "prompt": "How do the two international stock funds differ?",
+      "passed": true,
+      "notes": [
+        "called compare_products({'product_ids': ['INT01', 'INT02']})"
+      ],
+      "reply": "The Developed Markets ex-US Index Fund (INT01) has a lower fee of $0.70 per $1,000 than the International Equity Index Fund (INT02), which costs $1.20 per $1,000. Over the last five years, INT01 had a slightly higher average return of 4.9% compared to 4.8% for INT02. Both funds have a similar risk level."
+    },
+    {
+      "id": "TC-15",
+      "area": "comparison",
+      "prompt": "Compare my two government bond funds.",
+      "passed": true,
+      "notes": [
+        "called compare_products({'product_ids': ['GOV01', 'GOV02']})"
+      ],
+      "reply": "The Treasury Bond Index Fund has a lower fee of $0.50 per $1,000 than the Government Bond Ladder Fund at $1.50. Both have a risk rating of R2 and take 2 days to access your money. Their 5-year returns and worst 12-month drops are very similar."
+    },
+    {
+      "id": "TC-16",
+      "area": "dialogue",
+      "prompt": "What is an index fund?",
+      "passed": true,
+      "notes": [
+        "called explain({'topic': 'index fund'})"
+      ],
+      "reply": "An index fund is a fund that copies a market list, such as the 500 largest US companies, instead of a manager picking stocks. That keeps its fees low."
+    },
+    {
+      "id": "TC-17",
+      "area": "dialogue",
+      "prompt": "What does diversification mean?",
+      "passed": true,
+      "notes": [
+        "called explain({'topic': 'diversification'})"
+      ],
+      "reply": "Diversification means spreading your money across many different investments. This way, if one investment does poorly, it hurts your total savings less. For example, it is safer to own thousands of companies instead of just one."
+    },
+    {
+      "id": "TC-18",
+      "area": "dialogue",
+      "prompt": "What's an emergency fund?",
+      "passed": true,
+      "notes": [
+        "called explain({'topic': 'emergency fund'})"
+      ],
+      "reply": "An emergency fund is savings you can reach quickly for surprises, like losing a job or a big repair. A common target is 3 to 6 months of living costs."
+    },
+    {
+      "id": "TC-19",
+      "area": "dialogue",
+      "prompt": "I'd like 20% of my money in emerging markets.",
+      "passed": true,
+      "notes": [
+        "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 8.0}, {'product_id': 'STB01', 'weight_pct': 24.0}, {'product_id': 'GOV01', 'weight_pct': 28.0}, {'product_id': 'GOV02', 'weight_pct': 20.0}, {'product_id': 'EME01', 'weight_pct': 20.0}]})",
+        "refused: SUIT-01"
+      ],
+      "reply": "I can't add that fund because it is too risky for your level. I've kept your current plan instead. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-20",
+      "area": "execution",
+      "prompt": "I'm happy with this. Show me the orders.",
+      "passed": true,
+      "notes": [
+        "called prepare_orders({})"
+      ],
+      "reply": "I have prepared your orders. You can now review them and press Confirm to start your plan. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-21",
+      "area": "monitoring",
+      "prompt": "Fast-forward one year.",
+      "passed": true,
+      "notes": [
+        "called advance_time({'months': 12})"
+      ],
+      "reply": "One year has passed. Your portfolio is now worth $10,114.80."
+    },
+    {
+      "id": "TC-22",
+      "area": "monitoring",
+      "prompt": "How is my portfolio doing?",
+      "passed": true,
+      "notes": [
+        "called get_portfolio({})"
+      ],
+      "reply": "Your portfolio is currently worth $6,000.00. You have not made any gains or losses yet."
+    },
+    {
+      "id": "TC-23",
+      "area": "monitoring",
+      "prompt": "Has my mix drifted from its target?",
+      "passed": true,
+      "notes": [
+        "called check_drift({})"
+      ],
+      "reply": "Your mix has drifted by 5.2 points from your target. This means some funds are now a larger or smaller part of your plan than you intended."
+    },
+    {
+      "id": "TC-24",
+      "area": "monitoring",
+      "prompt": "Show me how to rebalance back to my plan.",
+      "passed": true,
+      "notes": [
+        "called propose_rebalance({}), project_outcomes({})"
+      ],
+      "reply": "I have drafted the trades to bring your mix back to your target. Here is a range of what could happen over the next 10 years if you follow this plan. To go ahead, you can review the orders and press Confirm. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-25",
+      "area": "monitoring",
+      "prompt": "Should I sell everything now?",
+      "passed": true,
+      "notes": [
+        "no tool called"
+      ],
+      "reply": "It is normal to feel worried when your balance goes down. Selling now means you lock in those losses. Staying invested helps you ride out the ups and downs of the market."
+    }
+  ]
+}

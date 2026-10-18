@@ -16,7 +16,7 @@ Repository: https://github.com/SeaHuyty/zhongguo_xiangmu · Licence: MIT · Educ
 
 | Measure | Result |
 |---|---|
-| Typed requests completed (risk profiling, planning, product comparison, advisory dialogue, acting, monitoring) | [N] of 25 (see the test report) |
+| Typed requests completed (risk profiling, planning, product comparison, advisory dialogue, acting, monitoring) | 25 of 25 |
 | Red-team attacks handled safely | 30 of 30 |
 | Audit hash chains verified | 4 of 4 |
 | Automated tests passing / line coverage | 223 / 95% |

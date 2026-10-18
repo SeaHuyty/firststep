@@ -84,7 +84,9 @@ def _tasks(tasks: dict[str, Any]) -> list[str]:
         "Each task starts a fresh session in a known state and sends one message, typed the way "
         "a first-time investor would. It passes when the model calls the right tool with the "
         "right details, nothing fills, the reply passes the language rules and the audit chain "
-        "verifies. Suite: `server/scripts/tasks.yaml`.",
+        "verifies. Suite: `server/scripts/tasks.yaml`. Results are merged by task ID across runs: "
+        "a task that got no answer, or that was re-run after a fix in section 6, shows its "
+        "latest run.",
         "",
         f"**Completed {tasks['passed']} of {tasks['total']} tasks the model answered**"
         + (

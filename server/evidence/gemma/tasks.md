@@ -14,7 +14,7 @@ LLM: `google`. Completed **22 of 23** tasks the model answered (2 more got no an
 | ID | Area | Typed message | Result | Observed |
 |---|---|---|---|---|
 | TC-01 | Risk profiling and money check | I'm 30. | done | called update_profile({'age': 30}), answer_question({'question_id': 'age', 'value': 30}) |
-| TC-02 | Risk profiling and money check | I take home $3,200 a month after tax. | done | called update_profile({'monthly_income_usd': 3200.0}), answer_question({'question_id': 'monthly_income', 'value': 3200}) |
+| TC-02 | Risk profiling and money check | I take home $3,200 a month after tax. | done | called answer_question({'question_id': 'monthly_income', 'value': 3200}), update_profile({'monthly_income_usd': 3200.0}) |
 | TC-03 | Risk profiling and money check | My salary is $4,000 a month before tax. | done | no tool called |
 | TC-04 | Risk profiling and money check | I owe $3,000 on a credit card at 24% interest. | done | called answer_question({'question_id': 'debts', 'value': [{'kind': 'credit card', 'apr_pct': 24, 'balance_usd': 3000}]}), update_profile({'debts': [{'kind': 'credit card', 'balance_usd': 3000.0, 'apr_pct': 24.0}]}) |
 | TC-05 | Risk profiling and money check | Good news: I paid off my credit card completely. | done | called update_profile({}), update_profile({}), update_profile({}), update_profile({}) |

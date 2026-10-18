@@ -20,11 +20,11 @@
   "median_button_reply_ms": 3.0,
   "median_typed_reply_ms": 22387.0,
   "typed_replies": 4,
-  "median_suite_reply_ms": 13261.0,
+  "median_suite_reply_ms": 12969.5,
   "p90_suite_reply_ms": 55481.0,
   "suite_replies": 44,
   "llm_turns": 4,
   "tokens_per_llm_turn": 5808,
-  "tests_passed": 222,
+  "tests_passed": 223,
   "coverage_pct": 95.4
 }

@@ -24,10 +24,10 @@
       "prompt": "I take home $3,200 a month after tax.",
       "passed": true,
       "notes": [
-        "called update_profile({'monthly_income_usd': 3200.0}), answer_question({'question_id': 'monthly_income', 'value': 3200})"
+        "called answer_question({'question_id': 'monthly_income', 'value': 3200}), update_profile({'monthly_income_usd': 3200.0})"
       ],
       "reply": "Got it. Thanks for sharing that.",
-      "latency_ms": 13613
+      "latency_ms": 7060
     },
     {
       "id": "TC-03",

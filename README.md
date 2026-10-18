@@ -4,6 +4,17 @@
 
 > Educational simulation. Not financial advice. No real money moves.
 
+## Submission (FinTechathon 2026)
+
+| # | Item | Where |
+|---|---|---|
+| 01 | Technical documentation: architecture, core algorithms, security design | [`docs/technical-documentation.md`](docs/technical-documentation.md) · [PDF](docs/pdf/technical-documentation.pdf) |
+| 02 | Presentation deck (10 minutes) | [`docs/pdf/presentation.pdf`](docs/pdf/presentation.pdf) |
+| 03 | Demo video (5 minutes) | link in the submission form; script in [`docs/demo-script.md`](docs/demo-script.md) |
+| 04 | Source code, README, deployment instructions, test cases | this repository: [Run it](#run-it), [Deploy](#deploy), [Test cases](#test-cases) |
+| 05 | Security self-assessment: permission tiers and known risks | [`docs/security-self-assessment.md`](docs/security-self-assessment.md) · [PDF](docs/pdf/security-self-assessment.pdf) |
+| 06 | Execution evidence: sandbox operation logs | [`server/evidence/gemma/`](server/evidence/gemma/): hash-chained audit logs, task and red-team reports on a real model; test report in [`docs/test-report.md`](docs/test-report.md) |
+
 | One question at a time | Your plan at a glance | Sprout says "not yet" |
 |---|---|---|
 | ![A question page](docs/screenshots/desktop-leo-question.png) | ![Leo's home](docs/screenshots/desktop-leo-home.png) | ![Amina's savings plan](docs/screenshots/phone-amina-not-yet.png) |
@@ -45,6 +56,47 @@ npm run dev       # API on :8000, app on http://localhost:3000
 Open the app and answer the first question, or try a demo person: Amina (not ready), Leo (C3, lives through March 2020) or Mei (asks for all tech stocks). The questions come one per page; then Home, Plan, Funds and Activity sit in the sidebar, and Sprout is the **Ask Sprout** button in the corner.
 
 To use a real model, set `LLM_PROVIDER` and its key in `server/.env`. The evidence below ran on Gemma 4, an open-weight model, through Google AI Studio's free tier (`LLM_PROVIDER=google`, `GEMINI_MODEL=gemma-4-26b-a4b-it,gemma-4-31b-it`); OpenRouter and Anthropic also work. Model names are a comma-separated fallback chain. See [`server/.env.example`](server/.env.example), and run `python server/scripts/check_model.py` to test a key.
+
+## Deploy
+
+The same two processes as in development, built for production. Python 3.11+ and Node 20+.
+
+```bash
+# API (FastAPI on port 8000)
+cd server
+python3 -m venv .venv && .venv/bin/pip install -e .
+cp .env.example .env          # then edit, see below
+.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Web app (Next.js on port 3000); it forwards /api/* to API_URL, which is read at build time
+cd client
+npm ci
+API_URL=http://127.0.0.1:8000 npm run build
+npm run start
+```
+
+| Setting in `server/.env` | What it does |
+|---|---|
+| `LLM_PROVIDER` | `fake` (scripted, no key), `google`, `openrouter` or `anthropic` |
+| `GOOGLE_GENERATIVE_AI_API_KEY`, `GEMINI_MODEL` | Key and model chain for Google AI Studio, e.g. `gemma-4-26b-a4b-it,gemma-4-31b-it` |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODELS` / `ANTHROPIC_API_KEY` | The other providers |
+| `LLM_TURN_TIMEOUT_S` | Seconds a typed turn may take (default 45; keep it under 75) |
+| `CONFIRM_SECRET` | **Required outside development:** a long random value that signs confirmation tokens (`python -c "import secrets; print(secrets.token_urlsafe(32))"`) |
+| `DB_PATH`, `EVIDENCE_DIR` | Where the sandbox database and the audit logs are written |
+
+Check a model key with `server/.venv/bin/python server/scripts/check_model.py`. Without a key the app falls back to the scripted model, so a demo never breaks.
+
+## Test cases
+
+| Suite | What it covers | Where | Run |
+|---|---|---|---|
+| Unit and API tests (220+) | Every rule with an allow and a deny test, confirmation tokens (forged, expired, reused, changed plan), the audit chain (edited, deleted, reordered, rewritten), the finance engine (with property tests), every API route | [`server/tests/`](server/tests/) | `npm run test:server` |
+| Task completion (25) | Requests typed the way a first-time investor would, judged from the tools the model called and the guardian's decisions | [`server/scripts/tasks.yaml`](server/scripts/tasks.yaml) | `cd server && .venv/bin/python scripts/run_tasks.py --llm` |
+| Red team (30) | Prompt injection, unsuitable funds, acting without a click, readiness, promises, panic selling, personal data, limits, scope | [`server/scripts/redteam.yaml`](server/scripts/redteam.yaml) | `cd server && .venv/bin/python scripts/run_redteam.py --llm` |
+| Personas (3) | Amina, Leo and Mei end to end, with audit logs | [`server/scripts/run_personas.py`](server/scripts/run_personas.py) | `cd server && .venv/bin/python scripts/run_personas.py --llm` |
+| End to end (5) | The personas clicked through in a real browser at 1280px and 390px | [`client/e2e/`](client/e2e/) | `npm run test:e2e` |
+
+Without `--llm` the suites run on the scripted model (as CI does). Results are in [`docs/test-report.md`](docs/test-report.md).
 
 ## Check it
 

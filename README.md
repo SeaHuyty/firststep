@@ -21,7 +21,7 @@ Entry for the 2026 Shenzhen International FinTech Competition (FinTechathon), In
 | 01 | Technical documentation: architecture, core algorithms, security design | [`docs/technical-documentation.md`](docs/technical-documentation.md) · [PDF](docs/pdf/technical-documentation.pdf) |
 | 02 | Presentation deck (10 minutes) | [`docs/pdf/presentation.pdf`](docs/pdf/presentation.pdf) · speaker notes: [`docs/presentation-notes.md`](docs/presentation-notes.md) |
 | 03 | Demo video (5 minutes) | link in the submission form · script: [`docs/demo-script.md`](docs/demo-script.md) |
-| 04 | Source code, README, deployment instructions, test cases | this repository: [Quick start](#quick-start), [Deploy](#deploy), [Test cases](#test-cases) |
+| 04 | Source code, README, deployment instructions, test cases | this repository: [Quick start](#quick-start), [Deploy](#deploy-online), [Test cases](#test-cases) |
 | 05 | Security self-assessment: permission tiers and known risks | [`docs/security-self-assessment.md`](docs/security-self-assessment.md) · [PDF](docs/pdf/security-self-assessment.pdf) |
 | 06 | Execution evidence: sandbox operation logs and test results | [`server/evidence/gemma/`](server/evidence/gemma/) · [`docs/test-report.md`](docs/test-report.md) |
 
@@ -114,7 +114,17 @@ npm run evidence:llm   # every suite on the model in server/.env, into server/ev
 npm run docs:pdf       # rebuild the PDFs in docs/pdf/ from the Markdown (needs pandoc)
 ```
 
-## Deploy
+## Deploy online
+
+The API runs on **Render** (free) and the web app on **Vercel** (free). The web app forwards `/api/*` to the API, so there is no CORS to set up.
+
+1. **API on Render.** At https://render.com, sign in with GitHub, then **New → Blueprint** and pick this repository. Render reads [`render.yaml`](render.yaml) and asks for `GOOGLE_GENERATIVE_AI_API_KEY`; paste the key and click **Apply**. When the build finishes (about 5 minutes), open `https://<your-service>.onrender.com/api/health`: it should show `"ok":true`.
+2. **Web app on Vercel.** At https://vercel.com, **Add New → Project**, import this repository, set **Root Directory** to `client`, and add the environment variable `API_URL` = the Render address (no trailing slash, no `/api`). Click **Deploy**.
+3. Open the Vercel address and use the app.
+
+The free Render service sleeps after 15 minutes without visits, and the first request then takes about a minute. **Before recording, open the `/api/health` address and wait until it shows `"ok":true`.** The sandbox database resets whenever the service restarts, which is fine for demos. Anyone with the link uses your Google key's free quota, so share it only with the team.
+
+## Deploy (your own server)
 
 The same two processes as in development, built for production.
 

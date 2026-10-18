@@ -1,0 +1,28 @@
+# The FirstStep API on Render (free plan). Render reads this file when the repository is added as a
+# Blueprint: New > Blueprint > this repository. The web app runs on Vercel and forwards /api/* here
+# (client/next.config.ts, API_URL). See README, "Deploy online".
+services:
+  - type: web
+    name: firststep-api
+    runtime: python
+    plan: free
+    rootDir: server
+    buildCommand: pip install -e .
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: LLM_PROVIDER
+        value: google
+      - key: GEMINI_MODEL
+        value: gemma-4-26b-a4b-it,gemma-4-31b-it
+      # Under the browser's 60 s wait for a typed turn (client/src/lib/api.ts).
+      - key: LLM_TURN_TIMEOUT_S
+        value: "55"
+      # Asked for when the Blueprint is created; never stored in the repository.
+      - key: GOOGLE_GENERATIVE_AI_API_KEY
+        sync: false
+      # Signs confirmation tokens; Render makes a random value once.
+      - key: CONFIRM_SECRET
+        generateValue: true

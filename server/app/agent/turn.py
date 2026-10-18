@@ -7,6 +7,7 @@ executor (policy check and audit log) and the same deterministic
 follow-ups.
 """
 
+import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
@@ -36,7 +37,15 @@ logger = logging.getLogger(__name__)
 
 HISTORY_MESSAGES = 10
 MAX_TOOL_CALLS = 4
+# A whole LLM turn, fallbacks included, must finish well inside the web
+# proxy's limit (next.config.ts) so the person always gets an answer.
+LLM_TURN_TIMEOUT_S = 45
+REWRITE_TIMEOUT_S = 15
 TIMEOUT_REPLY = "Sorry, Sprout didn't answer in time. Your answers are saved. Try again."
+ERROR_REPLY = (
+    "Sorry, Sprout couldn't reach its model just now. Your answers are saved. Try again, or "
+    "use the buttons."
+)
 
 
 @dataclass
@@ -152,7 +161,8 @@ async def _filtered(
         model, model_settings=settings, instructions=prompts.REWRITE
     )
     try:
-        rewritten = (await rewriter.run(f"Rewrite without {', '.join(hits)}: {reply}")).output
+        run = rewriter.run(f"Rewrite without {', '.join(hits)}: {reply}")
+        rewritten = (await asyncio.wait_for(run, REWRITE_TIMEOUT_S)).output
     except Exception:  # any provider failure falls back to the safe text
         rewritten = ""
     if rewritten and not guards.check_output(services.policy, rewritten):
@@ -214,12 +224,18 @@ async def take_turn(
                 "guard", "system", {"injection": checked.injection, "masked": list(checked.masked)}
             )
         try:
-            reply, outcomes, tokens = await _ask_llm(
-                services, model, settings, session_id, checked.text, checked.injection
+            reply, outcomes, tokens = await asyncio.wait_for(
+                _ask_llm(services, model, settings, session_id, checked.text, checked.injection),
+                LLM_TURN_TIMEOUT_S,
             )
-        except Exception as e:  # provider failure: keep the session, say so plainly
-            logger.warning("LLM turn failed: %s: %s", type(e).__name__, str(e)[:200])
+        except TimeoutError:
+            logger.warning(
+                "LLM turn took over %ss; answered with the timeout reply", LLM_TURN_TIMEOUT_S
+            )
             reply, outcomes = TIMEOUT_REPLY, []
+        except Exception as e:  # provider failure: keep the session, say so plainly
+            logger.warning("LLM turn failed: %s: %s", type(e).__name__, str(e)[:300])
+            reply, outcomes = ERROR_REPLY, []
         reply, hits = await _filtered(
             services, model, settings, reply or copy.reply_for(outcomes, Stage.ONBOARD)
         )

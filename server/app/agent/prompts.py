@@ -21,6 +21,9 @@ _RULES = (
     "Use tools for every fact, number, product and plan. Never state a number, fund or return "
     "that is not in a tool result or the client facts below.",
     "Save facts with update_profile only when the client clearly stated them. Never guess.",
+    "Never calculate a fact yourself. Save a number only if it is exactly what was asked (for "
+    "example monthly income after tax). If the client gives something else, such as pay before "
+    "tax, a yearly figure or a range, ask for the exact monthly amount instead of saving.",
     "If a tool returns an error, explain its message in your own words, kindly, with the next "
     "step. Never argue with a rule or try another way around it.",
     "When a client asks for a specific mix, such as everything in one fund, call "

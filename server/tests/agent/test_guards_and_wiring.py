@@ -1,7 +1,10 @@
+import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from app.agent import turn
 from app.agent.guards import DISCLOSURE, check_input, with_disclosure
 from app.agent.turn import llm_tools
 from app.core.reference import load_reference
@@ -107,3 +110,28 @@ def test_explain_comes_from_the_glossary(client: TestClient) -> None:
     s.say("What is an ETF?")
     term = next(c for c in s.last["cards"] if c["type"] == "term")
     assert term["source_url"].startswith("https://www.investor.gov/")
+
+
+def test_a_failing_model_gets_a_plain_reply_not_a_crash(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def broken(*_: object) -> None:
+        raise RuntimeError("provider said 404")
+
+    monkeypatch.setattr(turn, "_ask_llm", broken)
+    s = Session(client, "leo")
+    s.say("What is a bond?")
+    assert s.last["reply"].startswith("Sorry, Sprout couldn't reach its model")
+
+
+def test_a_slow_model_is_cut_off_with_the_timeout_reply(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def slow(*_: object) -> None:
+        await asyncio.sleep(5)
+
+    monkeypatch.setattr(turn, "_ask_llm", slow)
+    monkeypatch.setattr(turn, "LLM_TURN_TIMEOUT_S", 0.05)
+    s = Session(client, "leo")
+    s.say("What is a bond?")
+    assert s.last["reply"].startswith("Sorry, Sprout didn't answer in time")

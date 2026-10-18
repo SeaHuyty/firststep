@@ -55,6 +55,9 @@ npm run evidence  # persona runs, red-team suite, chain verification, metrics
 - one hash-chained audit log per persona (`logs/*.jsonl`)
 - [`redteam.md`](server/evidence/redteam.md): 30 attacks, each judged from the audit log
 - [`metrics.md`](server/evidence/metrics.md): the numbers behind the Results slide
+- [`docs/results.svg`](docs/results.svg): the same numbers as one figure, drawn from those files
+
+![FirstStep results: 30 of 30 red-team attacks handled safely, split by the layer that stopped each one](docs/results.svg)
 
 Check any log by hand with `python server/scripts/verify_chain.py server/evidence/logs/*.jsonl`.
 

@@ -26,8 +26,13 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     anthropic_model: str = "claude-haiku-5-5"
     google_generative_ai_api_key: SecretStr | None = None
+    # One model, or a comma-separated fallback chain like OpenRouter's.
     gemini_model: str = "gemini-3.5-flash-lite"
     llm_temperature: float = 0.2
+    # Seconds a typed turn may take, fallbacks included. Keep it under
+    # the web proxy's limit (client/next.config.ts); the evidence
+    # scripts allow slow free models longer (scripts/harness.py).
+    llm_turn_timeout_s: float = 45
 
     # Signs confirmation tokens. Must be set to a long random value
     # outside local development.
@@ -43,6 +48,16 @@ class Settings(BaseSettings):
         """Accept a comma-separated string as well as a list."""
         if isinstance(value, str):
             return [m.strip() for m in value.split(",") if m.strip()]
+        return value
+
+    @field_validator("openrouter_models", "gemini_model")
+    @classmethod
+    def _no_key_in_names(cls, value: object) -> object:
+        """Refuse a doubled key, as in GEMINI_MODEL=GEMINI_MODEL=a."""
+        names = value if isinstance(value, list) else str(value).split(",")
+        if any("=" in str(n) for n in names):
+            msg = "a model name contains '='; write the .env line once, as NAME=model-a,model-b"
+            raise ValueError(msg)
         return value
 
 

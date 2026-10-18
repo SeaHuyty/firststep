@@ -7,12 +7,13 @@ executor (policy check and audit log) and the same deterministic
 follow-ups.
 """
 
+import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic_ai import Agent, RunContext, Tool
+from pydantic_ai import Agent, RunContext, Tool, UsageLimitExceeded
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
@@ -27,8 +28,8 @@ from pydantic_ai.usage import UsageLimits
 from app.agent import copy, executor, flow, guards, prompts
 from app.agent.executor import Outcome
 from app.agent.services import Services
-from app.core.types import Stage
-from app.store import sessions
+from app.core.types import FAMILY_OF, Stage
+from app.store import account, sessions
 from app.tools.cards import AllocationCard, Card, ConfirmCard, ProjectionCard, QuestionCard
 from app.tools.registry import TOOLS, ToolSpec
 
@@ -36,7 +37,15 @@ logger = logging.getLogger(__name__)
 
 HISTORY_MESSAGES = 10
 MAX_TOOL_CALLS = 4
+# A malformed call goes back to the model with the error; free models
+# often need a second or third try.
+TOOL_RETRIES = 3
+REWRITE_TIMEOUT_S = 15
 TIMEOUT_REPLY = "Sorry, Sprout didn't answer in time. Your answers are saved. Try again."
+ERROR_REPLY = (
+    "Sorry, Sprout couldn't reach its model just now. Your answers are saved. Try again, or "
+    "use the buttons."
+)
 
 
 @dataclass
@@ -82,7 +91,13 @@ def _llm_tool(spec: ToolSpec) -> Tool[TurnDeps]:
         "args": spec.input_model,
         "return": dict[str, Any],
     }
-    return Tool(call, name=spec.name, description=spec.description, takes_ctx=True)
+    return Tool(
+        call,
+        name=spec.name,
+        description=spec.description,
+        takes_ctx=True,
+        max_retries=TOOL_RETRIES,
+    )
 
 
 def llm_tools(services: Services, stage: Stage) -> list[Tool[TurnDeps]]:
@@ -104,6 +119,42 @@ def _history(services: Services, session_id: str) -> list[ModelMessage]:
     ]
 
 
+def _context(services: Services, session_id: str, row: sessions.SessionRow) -> list[str]:
+    """Return the funds, plan and question the model must name right."""
+    ref = services.ref
+    risk = row.profile.risk
+    cap = ref.rules.suit_01.max_rating_for_class[risk.final_class] if risk else None
+    funds = [
+        f"- {p.id}: {p.name} ({FAMILY_OF[p.asset_class].value}, {p.risk_rating}, "
+        f"${p.ter_pct * 10:.2f} a year per $1,000)"
+        + (" above the client's level" if cap is not None and p.risk_rating > cap else "")
+        for p in ref.products.values()
+    ]
+    lines = ["FUNDS:", *funds]
+    with services.store.tx() as con:
+        plan = account.latest_proposal(con, session_id, "allocation")
+    if plan is not None:
+        weights = plan.contents.get("weights", {})
+        mix = ", ".join(f"{pid} {w:g}%" for pid, w in weights.items())
+        lines.append(f"CURRENT PLAN: {mix}")
+    question = flow.pending_question(services, session_id)
+    if question is not None:
+        # Money buttons are rough ranges: the model saves the client's
+        # own figure, never a range's midpoint.
+        chips = (
+            ""
+            if question.kind == "money"
+            else "; ".join(f"{c.label} = {c.value!r}" for c in question.chips)
+        )
+        lines.append(
+            f"QUESTION NOW: question_id={question.question_id} ({question.kind}): "
+            f"{question.prompt}"
+            + (f" Answers: {chips}." if chips else "")
+            + (" Save the exact amount the client gives." if question.kind == "money" else "")
+        )
+    return lines
+
+
 async def _ask_llm(
     services: Services,
     model: Model,
@@ -120,19 +171,33 @@ async def _ask_llm(
     agent: Agent[TurnDeps, str] = Agent(
         model,
         deps_type=TurnDeps,
-        instructions=prompts.instructions(row.stage, row.profile, row.sim_month, injection),
+        instructions=prompts.instructions(
+            row.stage, row.profile, row.sim_month, injection, _context(services, session_id, row)
+        ),
         tools=llm_tools(services, row.stage),
         model_settings=settings,
     )
     history = _history(services, session_id)
-    result = await agent.run(
-        text,
-        message_history=history,
-        deps=deps,
-        usage_limits=UsageLimits(
-            request_limit=MAX_TOOL_CALLS + 2, tool_calls_limit=MAX_TOOL_CALLS
-        ),
-    )
+    try:
+        result = await agent.run(
+            text,
+            message_history=history,
+            deps=deps,
+            usage_limits=UsageLimits(
+                request_limit=MAX_TOOL_CALLS + TOOL_RETRIES + 2, tool_calls_limit=MAX_TOOL_CALLS
+            ),
+        )
+    except UsageLimitExceeded:
+        if not deps.outcomes:
+            raise
+        # The calls that ran are done and logged: say what they did.
+        logger.warning(
+            "LLM turn hit its usage limit; replying from %d tool calls", len(deps.outcomes)
+        )
+        with services.store.tx() as con:
+            now = sessions.get(con, session_id)
+        stage = now.stage if now else row.stage
+        return copy.reply_for(deps.outcomes, stage), deps.outcomes, 0
     usage = result.usage
     return (
         result.output.strip(),
@@ -152,7 +217,8 @@ async def _filtered(
         model, model_settings=settings, instructions=prompts.REWRITE
     )
     try:
-        rewritten = (await rewriter.run(f"Rewrite without {', '.join(hits)}: {reply}")).output
+        run = rewriter.run(f"Rewrite without {', '.join(hits)}: {reply}")
+        rewritten = (await asyncio.wait_for(run, REWRITE_TIMEOUT_S)).output
     except Exception:  # any provider failure falls back to the safe text
         rewritten = ""
     if rewritten and not guards.check_output(services.policy, rewritten):
@@ -213,13 +279,23 @@ async def take_turn(
             log.append(
                 "guard", "system", {"injection": checked.injection, "masked": list(checked.masked)}
             )
+        # The whole turn, fallbacks included, ends inside the web
+        # proxy's limit (next.config.ts): there is always an answer.
+        timeout_s = services.settings.llm_turn_timeout_s
         try:
-            reply, outcomes, tokens = await _ask_llm(
-                services, model, settings, session_id, checked.text, checked.injection
+            reply, outcomes, tokens = await asyncio.wait_for(
+                _ask_llm(services, model, settings, session_id, checked.text, checked.injection),
+                timeout_s,
             )
-        except Exception as e:  # provider failure: keep the session, say so plainly
-            logger.warning("LLM turn failed: %s: %s", type(e).__name__, str(e)[:200])
+        except TimeoutError:
+            logger.warning("LLM turn took over %ss; answered with the timeout reply", timeout_s)
             reply, outcomes = TIMEOUT_REPLY, []
+        except Exception as e:  # provider failure: keep the session, say so plainly
+            # A fallback chain fails as a group: log each reason.
+            parts = e.exceptions if isinstance(e, BaseExceptionGroup) else [e]
+            reasons = "; ".join(f"{type(x).__name__}: {str(x)[:160]}" for x in parts)
+            logger.warning("LLM turn failed: %s", reasons)
+            reply, outcomes = ERROR_REPLY, []
         reply, hits = await _filtered(
             services, model, settings, reply or copy.reply_for(outcomes, Stage.ONBOARD)
         )

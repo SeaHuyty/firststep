@@ -1,7 +1,7 @@
 "use client";
 
 // One question at a time, always with tappable answers, so nobody has to know what to type
-// (docs/standards/onboarding-ux.md principles 1-2; Hick's law in docs/ux-psychology.md).
+// (docs/standards/onboarding-ux.md principles 1-2; Hick's law in docs/research/ux-psychology.md).
 import { Check } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ export const CHIP =
 /** The question Sprout is asking now: Sprout's bubble, a step heavier than the conversation. */
 export const QUESTION = `${BUBBLE} font-semibold`;
 
-type Answer = (questionId: string, value: unknown, label: string) => void;
+export type Answer = (questionId: string, value: unknown, label: string) => void;
 
 function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -30,7 +30,7 @@ function DemoTag() {
 /**
  * The current question is the one thing to do on the screen: tappable answers directly under
  * it, one way to answer at a time (typing a number or adding debts opens from a chip), and the
- * progress and "Why do you ask?" below, quieter (docs/ux-psychology.md, "One focal point").
+ * progress and "Why do you ask?" below, quieter (docs/research/ux-psychology.md, "One focal point").
  */
 export function QuestionView({
   card,
@@ -107,7 +107,7 @@ export function QuestionView({
   );
 }
 
-function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
+export function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
   const id = useId();
   const preset = typeof hint === "number" ? String(hint) : "";
   const [value, setValue] = useState(preset);
@@ -156,7 +156,7 @@ const KINDS = [
   ["car_loan", "Car loan"],
 ] as const;
 
-function DebtsForm({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
+export function DebtsForm({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
   const preset = Array.isArray(hint) ? (hint as Debt[]) : [];
   const [debts, setDebts] = useState<Debt[]>(preset);
   const [kind, setKind] = useState<string>("credit_card");

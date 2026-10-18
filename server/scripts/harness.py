@@ -123,11 +123,30 @@ class Session:
         return [c for c in self.last["cards"] if c["type"] == kind]
 
 
+# The replies a turn gives when the provider did not answer (quota,
+# overload, timeout): such a turn is "no answer", neither pass nor fail.
+NO_ANSWER = ("Sorry, Sprout couldn't reach", "Sorry, Sprout didn't answer")
+
+# No browser waits on an evidence run, so a slow free model gets longer
+# than the web app allows before a turn counts as unanswered.
+EVIDENCE_TURN_TIMEOUT_S = 120.0
+
+
+def reply_ms(events: list[dict[str, Any]]) -> int | None:
+    """Return how long the last reply among events took, in ms."""
+    replies = [e for e in events if e["type"] == "reply"]
+    return replies[-1]["payload"]["latency_ms"] if replies else None
+
+
 def make_client(evidence_dir: Path, *, real_llm: bool) -> TestClient:
     """Return a client for an app writing its logs under evidence_dir."""
     base = Settings() if real_llm else Settings(_env_file=None, llm_provider="fake")
     settings = base.model_copy(
-        update={"evidence_dir": evidence_dir, "db_path": evidence_dir / "sandbox.db"}
+        update={
+            "evidence_dir": evidence_dir,
+            "db_path": evidence_dir / "sandbox.db",
+            "llm_turn_timeout_s": max(base.llm_turn_timeout_s, EVIDENCE_TURN_TIMEOUT_S),
+        }
     )
     return TestClient(create_app(settings))
 

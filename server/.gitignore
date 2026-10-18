@@ -10,3 +10,4 @@ __pycache__/
 sandbox.db
 sandbox.db-*
 evidence/run/
+evidence/*/run/

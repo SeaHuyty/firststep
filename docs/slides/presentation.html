@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>FirstStep: a trustworthy first advisor</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+@page { size: 1920px 1080px; margin: 0; }
+* { margin: 0; box-sizing: border-box; }
+body { background: #333; }
+section { width: 1920px; height: 1080px; position: relative; overflow: hidden; break-after: page; }
+aside { display: none; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid #DDE5E3; padding: 0.35em 0.6em; text-align: left; vertical-align: top; }
+th { font-weight: 600; }
+</style></head><body>
+<section id="cover" data-transition="fade" style="background:#0C1F22;color:#E8F0EE;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#5FD3A2">FinTechathon 2026 · International Track · Topic B: Wealth Advisory Agent</p>
+<div style="display:flex;flex-direction:column;gap:32px">
+<h1 style="font-size:160px;font-weight:700;line-height:1.0;color:#F4F8F6">FirstStep</h1>
+<p style="font-size:56px;line-height:1.25;color:#E8F0EE;width:1400px">A trustworthy first advisor for first-time investors.</p>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:end">
+<p style="font-size:32px;line-height:1.4;color:#A9C2BD">The LLM talks. The guardian decides.<br>You confirm every trade.</p>
+<p style="font-size:28px;color:#A9C2BD">[Team name] · [University]</p>
+</div>
+<aside>Hello, we are [team name] from [university]. FirstStep is our answer to Topic B, the wealth advisory agent. In one line: it’s an advisor built for people investing for the first time, where the language model does the talking and a deterministic rules engine, the guardian, makes every decision. Nothing is bought until the person clicks Confirm.</aside>
+</section>
+
+<section id="problem" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">The problem</p>
+<h2 style="font-size:72px;font-weight:600;line-height:1.1;width:1600px">First-time investors rarely fail by picking the wrong fund.</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:36px;font-weight:600;line-height:1.2">They invest money they’ll need</h3>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">No emergency fund, a 22% credit card, and a bill next month.</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:36px;font-weight:600;line-height:1.2">They take risk they can’t bear</h3>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">“Put it all in tech, it always goes up.”</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:16px">
+<h3 style="font-size:36px;font-weight:600;line-height:1.2">They sell in the first crash</h3>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">Selling right after a fall turns a dip into a real loss.</p>
+</div>
+</div>
+<p style="font-size:36px;line-height:1.35;color:#0C1F22;width:1600px">An LLM advisor makes it worse if it can be talked into anything: <b>promising returns, recommending what doesn’t fit, or buying without asking.</b></p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">2</p>
+<aside>Our starting point: first-time investors rarely lose because they picked the wrong fund. They lose because they invest money they’ll need soon, while paying 20 percent on a credit card; because they take more risk than they can bear; and because they sell in the first crash. A chatbot advisor can make all three worse. It can be talked into promising returns, into recommending something unsuitable, or into placing an order the person never really approved. So we asked: what would a trustworthy first advisor look like?</aside>
+</section>
+
+<section id="journey" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">The solution</p>
+<h2 style="font-size:72px;font-weight:600;line-height:1.1">A professional advisory workflow, as one closed loop</h2>
+</div>
+<table style="font-size:28px;color:#0C1F22">
+<tr><th style="width:6%">#</th><th style="width:30%">Step</th><th style="width:44%">What Sprout does</th><th style="width:20%">Rule</th></tr>
+<tr><td>1</td><td>Money check</td><td>Emergency fund? Expensive debt? If not: “not yet”, and a savings plan</td><td>READY-01, 02</td></tr>
+<tr><td>2</td><td>Risk profiling</td><td>Willingness and ability to bear loss, C1 to C5</td><td>HOR-01</td></tr>
+<tr><td>3</td><td>Product comparison</td><td>Fees in dollars, risk, past swings, in plain words</td><td>SUIT-01</td></tr>
+<tr><td>4</td><td>Allocation</td><td>Suitable, diversified funds; a range of outcomes, never one number</td><td>SUIT-01, CONC-01</td></tr>
+<tr><td>5</td><td>Execution</td><td>Orders in a sandbox account, only after the person’s Confirm</td><td>CONF-01, LIM-01</td></tr>
+<tr><td>6</td><td>Monitoring</td><td>Replay real markets 2000–2025: drift alerts, a pause before panic sales</td><td>DRIFT-01, COOL-01</td></tr>
+</table>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">3</p>
+<aside>FirstStep follows the workflow a professional adviser uses, as one closed loop. First a money check: an emergency fund and no expensive debt. If you fail, Sprout says “not yet” and gives you a savings plan. Then risk profiling, product comparison, an allocation with a range of outcomes, execution in a sandbox account, and monitoring through real market history. Every step is a tool call, and every step has a named rule behind it, shown in the last column.</aside>
+</section>
+
+<section id="idea" data-transition="fade" style="background:#0A7D55;color:#F4F8F6;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#D3F2E4">The core idea</p>
+<h1 style="font-size:120px;font-weight:700;line-height:1.05;color:#F4F8F6">The LLM talks.<br>The guardian decides.</h1>
+<p style="font-size:40px;line-height:1.35;color:#E6F6EF;width:1500px">The model picks a tool and writes the words. Tested code checks every call against named rules, and only the person’s click can buy.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#D3F2E4">4</p>
+<aside>This is the one idea the whole system is built on. The language model talks: it understands what the person typed, chooses a tool and explains the result in plain words. But it never decides. Every number comes from tested code, every tool call is checked by a deterministic guardian against rules with IDs, and buying needs a token that only the person’s Confirm click can create. The model never even sees that token.</aside>
+</section>
+
+<section id="architecture" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Three ways in, one gate, one record</h2>
+<img src="../images/architecture.png" alt="Architecture: taps, typed messages and the Confirm click all reach one executor, where the guardian checks every call before any tool runs; every step goes into a hash-chained audit log" style="width:1664px;height:720px;object-fit:contain;border-radius:12px">
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">5</p>
+<aside>Here is the architecture. There are three ways in: tapping an answer button, typing a message, and pressing Confirm. All three reach one executor. Typed text first passes an input guard that masks personal data and flags injection attempts. Then the model picks a tool, but the guardian checks every call against the rules: is this tool allowed at this step, is the fund suitable, is the mix diversified, is it within limits, and was it really confirmed. Only then does the tool run. Refusals come back as plain-words cards. And every message, call, decision and fill goes into a hash-chained audit log, so any later edit is detectable.</aside>
+</section>
+
+<section id="amina" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:row;gap:64px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Demo 1 · Readiness</p>
+<h2 style="font-size:72px;font-weight:600;line-height:1.1">Amina hears “not yet”</h2>
+<p style="font-size:32px;line-height:1.4;color:#3F5457">21, $600 saved, $1,750 on a credit card at 22.9%.</p>
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:32px;line-height:1.4"><b>READY-01</b> fails: less than 3 months of costs saved.</p>
+<p style="font-size:32px;line-height:1.4"><b>READY-02</b> fails: debt above 8% a year.</p>
+<p style="font-size:32px;line-height:1.4">No investment tool exists for her, whatever she types. Instead: a savings plan with a date, about 20 months, card first.</p>
+</div>
+<p style="font-size:36px;line-height:1.3;font-weight:600;color:#0A7D55">An advisor that can say “not yet” is the first safety feature.</p>
+</div>
+<img src="../images/screenshots/phone-amina-not-yet.png" alt="Amina’s phone screen: Not yet, and here’s why, with a step-by-step savings plan and a date" style="width:520px;height:824px;object-fit:cover;border-radius:24px;border:1px solid #DDE5E3">
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">6</p>
+<aside>Our first demo person is Amina: 21, 600 dollars saved and 1,750 on a credit card at almost 23 percent. She fails both money checks. At this stage, no investment tool exists for her: not for the buttons, not for the model, whatever she types. Instead Sprout gives her a step-by-step plan with a date: a small buffer, then the card, then the emergency fund, about 20 months. Most robo-advisers would happily sell her a portfolio. We think saying “not yet” is the first safety feature.</aside>
+</section>
+
+<section id="leo" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Demo 2 · Risk profiling and allocation</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Leo gets a C3 plan and a range, not a promise</h2>
+</div>
+<div style="display:flex;gap:32px">
+<img src="../images/screenshots/desktop-leo-question.png" alt="A question page: one question at a time, with answer buttons and why it is asked" style="width:736px;height:460px;object-fit:cover;border-radius:12px;border:1px solid #DDE5E3">
+<img src="../images/screenshots/desktop-leo-plan.png" alt="Leo’s plan: the mix by asset family and the range of outcomes by year" style="width:736px;height:460px;object-fit:cover;border-radius:12px;border:1px solid #DDE5E3">
+</div>
+<p style="font-size:30px;line-height:1.4;color:#3F5457">Class = the lower of <b>willingness</b> (5 situational questions) and <b>ability</b> to bear loss. Only funds rated at or below C3, none above 40%. 10 years, $42,000 paid in: about <b>$47,300 bad · $59,500 typical · $72,100 good</b>, from replaying 2000–2025.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">7</p>
+<aside>Leo is 27 with a stable job. The questions come one per page, each with a reason. Following regulators’ guidance, we measure two things: how much risk he’s willing to take, and how much loss he can actually bear. His class is the lower of the two, C3, Balanced. His plan uses only funds rated at or below C3, with no fund above 40 percent. And instead of one promised number, he sees a range from replaying 25 years of real markets: about 47 thousand in a bad case, 59 typical, 72 good, on 42 thousand paid in.</aside>
+</section>
+
+<section id="compare" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:row;gap:64px;align-items:start">
+<img src="../images/screenshots/desktop-leo-compare.png" alt="The fund library: a fund in Leo’s plan side by side with similar funds, with fees in dollars and a plain-words verdict" style="width:880px;height:550px;object-fit:cover;border-radius:12px;border:1px solid #DDE5E3">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Product comparison · dialogue</p>
+<h2 style="font-size:48px;font-weight:600;line-height:1.1">Typed in his own words, checked by the rules</h2>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">Funds side by side: fee in dollars per $1,000 a year, risk rating, worst year, and a verdict in plain words.</p>
+<p style="font-size:28px;line-height:1.4;color:#0C1F22;background:#FFFFFF;border:1px solid #DDE5E3;border-radius:12px;padding:24px">“Swap the US Total Market fund for the US Large Company fund and keep the rest the same.”</p>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">The model calls <b>propose_custom_allocation</b> with the new mix; the guardian re-checks SUIT-01 and CONC-01 before the plan changes.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">8</p>
+<aside>Product comparison is one of the three parts of Topic B. In the fund library, every fund can be compared with similar funds: what it costs in dollars per thousand a year, how risky it is, its worst year, and a plain-words verdict on why the cheaper index fund wins. And Leo can simply type what he wants. Here he asks to swap one fund for another. The model turns that into a tool call with the whole new mix, but it still doesn’t decide: the guardian re-checks suitability and concentration before anything changes.</aside>
+</section>
+
+<section id="confirm" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Execution and monitoring</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Only a person can buy. A panic sale waits a day.</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<img src="../images/screenshots/desktop-leo-confirm.png" alt="Check before you confirm: the Confirm button stays disabled until the risk statement is ticked" style="width:816px;height:440px;object-fit:cover;border-radius:12px;border:1px solid #DDE5E3">
+<p style="font-size:28px;line-height:1.4;color:#3F5457"><b>CONF-01:</b> one-time HMAC token, made only by the Confirm click, bound to the exact orders. The model never sees it. <b>LIM-01:</b> $10,000 per order.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<img src="../images/screenshots/desktop-leo-cooling-off.png" alt="March 2020 in the practice account: Sell everything now is paused for 24 hours" style="width:816px;height:440px;object-fit:cover;border-radius:12px;border:1px solid #DDE5E3">
+<p style="font-size:28px;line-height:1.4;color:#3F5457"><b>COOL-01:</b> in the March 2020 replay, “Sell everything now!” waits 24 hours, then Sprout asks again. A year on, $11,100 paid in is worth about $12,640.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">9</p>
+<aside>When Leo is happy, he reviews the orders. The Confirm button stays disabled until he ticks that the value can go down as well as up. That click, and only that click, creates a one-time signed token bound to these exact orders. The model never sees it, so no prompt can make it buy. Orders also have limits. Then we replay real history. In March 2020 his plan drops and he types “Sell everything now!”. Selling right after a fall locks in the loss, so a big sale after a drop waits 24 hours, and then Sprout asks again. A year later, the 11,100 dollars he paid in is worth about 12,640.</aside>
+</section>
+
+<section id="mei" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:row;gap:64px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Demo 3 · Suitability</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Mei is refused, in words she can read</h2>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">58, careful: class C2. She types “Put everything in tech stocks. They always go up.”</p>
+<p style="font-size:28px;line-height:1.4;color:#0C1F22"><b>SUIT-01</b> refuses: the Global Technology Fund is rated R4, above her level. Sprout offers a C2 plan instead.</p>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">The matrix follows China’s CSRC investor suitability Measures: C1 buys R1, C2 up to R2 … C5 all, checked fund by fund when listing, proposing and ordering.</p>
+</div>
+<img src="../images/screenshots/desktop-mei-refusal.png" alt="Mei’s refusal card: That doesn’t fit your risk level, naming the rule and the fund, and a C2 plan offered instead" style="width:960px;height:600px;object-fit:cover;border-radius:12px;border:1px solid #DDE5E3">
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">10</p>
+<aside>Our third person, Mei, is 58 and careful: class C2. She asks for everything in tech stocks. The guardian refuses with a rule she can read: the technology fund is rated R4, above her level. And Sprout doesn’t just say no; it offers a plan that fits her. The matching follows China’s investor suitability rules, checked fund by fund at every step: when listing, proposing and ordering.</aside>
+</section>
+
+<section id="tiers" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Security and compliance</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">Permission tiers: the model can draft, never execute</h2>
+</div>
+<table style="font-size:24px;color:#0C1F22">
+<tr><th style="width:16%">Tier</th><th style="width:32%">Tools</th><th style="width:24%">Who may call it</th><th style="width:28%">What must pass first</th></tr>
+<tr><td>0 Read</td><td>profile, readiness, risk score, goal, compare, explain, portfolio</td><td>Person or LLM</td><td>STAGE-01; SUIT-01 filters lists</td></tr>
+<tr><td>1 Propose</td><td>savings plan, allocation, outcomes, draft orders, rebalance</td><td>Person or LLM</td><td>SUIT-01, CONC-01, HOR-01, LIM-01</td></tr>
+<tr style="background:#E3F3EC"><td><b>2 Execute</b></td><td>place_order</td><td><b>Only the Confirm click.</b> Never offered to the LLM</td><td>CONF-01 token, SUIT-01, LIM-01</td></tr>
+<tr><td>3 Sensitive</td><td>request_sell</td><td>Person or LLM</td><td>COOL-01 pause; the sale is a draft</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.4;color:#3F5457">Input guard (injection, personal data) → stage-scoped tools → guardian on every call → one-time token → language filter (no guarantees or predictions) → hash-chained audit log. <b style="color:#0C1F22">No defence depends on the model behaving.</b></p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">11</p>
+<aside>Security is 30 percent of the score, so here is how it works. Every tool has a permission tier. Tiers 0 and 1 read and draft; the model may call them, but the guardian checks every call. Tier 2, placing orders, is never even offered to the model: only the Confirm click can call it, with a one-time token. Tier 3, selling, can start a cooling-off pause, and even then the sale is only a draft. Around that sit an input guard, a language filter that blocks guarantees and predictions, and a tamper-evident audit log. This follows the OWASP guidance for LLM apps on prompt injection and excessive agency. The key point: no defence depends on the model behaving.</aside>
+</section>
+
+<section id="results" data-transition="fade" style="background:#0C1F22;color:#E8F0EE;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#5FD3A2">Results on a real model</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.1;color:#F4F8F6">Gemma 4 26B, a free open-weight model, judged from the audit log</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:32px">
+<div style="background:#16302F;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:80px;font-weight:700;line-height:1.0;color:#5FD3A2">25/25</p>
+<p style="font-size:30px;line-height:1.3;color:#E8F0EE">typed requests completed</p>
+<p style="font-size:24px;line-height:1.35;color:#A9C2BD">right tool, right details</p>
+</div>
+<div style="background:#16302F;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:80px;font-weight:700;line-height:1.0;color:#5FD3A2">30/30</p>
+<p style="font-size:30px;line-height:1.3;color:#E8F0EE">red-team attacks handled</p>
+<p style="font-size:24px;line-height:1.35;color:#A9C2BD">nothing filled without a click</p>
+</div>
+<div style="background:#16302F;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:80px;font-weight:700;line-height:1.0;color:#F4F8F6">4/4</p>
+<p style="font-size:30px;line-height:1.3;color:#E8F0EE">audit chains verified</p>
+<p style="font-size:24px;line-height:1.35;color:#A9C2BD">every step on record</p>
+</div>
+<div style="background:#16302F;border-radius:16px;padding:40px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:80px;font-weight:700;line-height:1.0;color:#F4F8F6">223</p>
+<p style="font-size:30px;line-height:1.3;color:#E8F0EE">automated tests</p>
+<p style="font-size:24px;line-height:1.35;color:#A9C2BD">95% line coverage</p>
+</div>
+</div>
+<p style="font-size:30px;line-height:1.4;color:#BFD8D5">The 30 attacks: prompt injection, unsuitable funds, buying without a click, investing before ready, promises, panic selling, personal data, limits, out of scope. 10 stopped by the input guard, 13 by a guardian rule, 7 answered with no tool called.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#7F9C97">12</p>
+<aside>We tested on Gemma 4, a free, open-weight model, so a bank could run the same model on its own servers. 25 requests typed the way a first-time investor would, across profiling, planning, comparison, dialogue, acting and monitoring: it completed all 25, judged from the tools it actually called and their arguments, not from its wording. 30 red-team attacks, from prompt injection to panic selling: all 30 handled safely, and nothing ever filled without a click. All audit chains verify, and 223 automated tests pass.</aside>
+</section>
+
+<section id="honest" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">What testing taught us</p>
+<h2 style="font-size:48px;font-weight:600;line-height:1.1">Every miss was a missed action, never an unsafe one</h2>
+</div>
+<table style="font-size:24px;color:#0C1F22">
+<tr><th style="width:36%">Found in the real-model runs</th><th style="width:64%">Fixed by</th></tr>
+<tr><td>“$3,200 a month” saved as $3,750</td><td>Money questions no longer pass the answer buttons’ range values to the model</td></tr>
+<tr><td>“What could happen to my money?” got a definition</td><td>Tool descriptions now say when to use each tool</td></tr>
+<tr><td>A fifth tool call lost the whole turn</td><td>The turn now replies from the calls that already ran</td></tr>
+<tr><td>A blocked promise fell back to a vague reply</td><td>An honest answer: no one can promise what markets will do</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.4;color:#3F5457"><b style="color:#0C1F22">Known limits:</b> a free model takes about 13 s per typed reply (buttons answer at once); the questionnaire is simplified, with no real KYC; ranges come from 2000–2025 history. The full list of 13 known risks is in the security self-assessment.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">13</p>
+<aside>We want to be honest about what testing found. A real model does miss sometimes. It saved a range midpoint instead of the exact income someone typed; it gave a definition when asked what could happen to their money; one turn was lost when it made one tool call too many. Each one we traced and fixed in code. But notice: every miss was a missed action, never an unsafe one, because the guardian bounds what any mistake can do. Our known limits: a free model is slow, about 13 seconds a reply, though every step also works with buttons; and the questionnaire is a simplified one, with no real KYC.</aside>
+</section>
+
+<section id="why" data-transition="fade" style="background:#F6F8F7;color:#0C1F22;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:28px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#0A7D55">Innovation and interaction</p>
+<h2 style="font-size:56px;font-weight:600;line-height:1.1">What’s new, and why a bank could use it</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:34px;font-weight:600;line-height:1.2">Rules a compliance team can read</h3>
+<p style="font-size:26px;line-height:1.4;color:#3F5457">Every threshold lives in one rules file with its source. Rule IDs trace from code to log to the card the person sees.</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:34px;font-weight:600;line-height:1.2">An advisor that says “not yet”</h3>
+<p style="font-size:26px;line-height:1.4;color:#3F5457">Readiness before risk: no portfolio for someone who should pay off a card first, and a dated plan instead.</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:34px;font-weight:600;line-height:1.2">Practice through real crashes</h3>
+<p style="font-size:26px;line-height:1.4;color:#3F5457">A sandbox that replays 2000–2025, so the first crash is a lesson, with a pause before a panic sale.</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DDE5E3;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:34px;font-weight:600;line-height:1.2">Works with any model, or none</h3>
+<p style="font-size:26px;line-height:1.4;color:#3F5457">Every step works with buttons; typing adds the LLM. An open-weight model can run in-house, keeping data private.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:400px;font-size:24px;color:#5A6C6E">14</p>
+<aside>What’s new here? First, the rules are data a compliance team can read and change, and every rule ID traces from the code to the log to the card the person sees. Second, readiness comes before risk: an advisor that can say “not yet”. Third, a practice account that replays real crashes, so someone’s first crash is a lesson, not a loss. And fourth, it works with any model, or none: every step works with buttons, and an open-weight model can run on a bank’s own servers. Next steps would be real KYC, a classifier on top of the language filter, and an external anchor for the audit log.</aside>
+</section>
+
+<section id="close" data-transition="fade" style="background:#0C1F22;color:#E8F0EE;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#5FD3A2">FirstStep</p>
+<div style="display:flex;flex-direction:column;gap:32px">
+<h1 style="font-size:104px;font-weight:700;line-height:1.05;color:#F4F8F6">The LLM talks.<br>The guardian decides.<br>You confirm.</h1>
+<p style="font-size:40px;line-height:1.35;color:#BFD8D5;width:1500px">A trustworthy first step into investing.</p>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:end">
+<p style="font-size:28px;line-height:1.5;color:#A9C2BD">github.com/SeaHuyty/zhongguo_xiangmu<br>Code, technical documentation, security self-assessment, audit logs</p>
+<p style="font-size:28px;color:#A9C2BD">Thank you · Questions</p>
+</div>
+<aside>To sum up: the LLM talks, the guardian decides, and you confirm. It’s a wealth advisor that profiles risk, compares products and talks in plain words, but can never be talked into something unsafe. All the code, the documentation, the security self-assessment and the audit logs are in our repository. Thank you; we’re happy to take questions.</aside>
+</section>
+
+</body></html>

@@ -2,7 +2,7 @@
 
 // Welcome: understand in five seconds what this is, feel that it is safe, and start by doing
 // rather than reading (docs/standards/onboarding-ux.md screen 0; research in
-// docs/ux-psychology.md, "Welcome page").
+// docs/research/ux-psychology.md, "Welcome page").
 //  - Sprout asks the real first question right here, with tappable answers. Tapping one starts
 //    the session with that answer saved (gradual engagement, Wroblewski; Lemonade's one
 //    question at a time). There is no separate "Start" button to read past.

@@ -11,7 +11,7 @@ from app.agent.services import Services
 from app.agent.turn import TurnResult, take_turn
 from app.api import schemas
 from app.audit.verify import verify_lines
-from app.core.types import Stage
+from app.core.types import FAMILY_OF, Stage
 from app.store import account, sessions
 from app.tools.cards import Card
 from app.tools.context import SessionState, ToolContext
@@ -75,7 +75,14 @@ def catalog(services: ServicesDep) -> dict[str, Any]:
     ref = services.ref
     rules = ref.rules.model_dump(by_alias=True, mode="json")
     return {
-        "products": [p.model_dump(mode="json") for p in ref.products.values()],
+        # Each fund with its family, for the fund library.
+        "products": [
+            {**p.model_dump(mode="json"), "family": FAMILY_OF[p.asset_class].value}
+            for p in ref.products.values()
+        ],
+        # SUIT-01's matrix, so the library can label funds above a
+        # level. The guardian still decides every proposal.
+        "max_rating_for_class": rules["SUIT-01"]["max_rating_for_class"],
         "glossary": {k: t.model_dump() for k, t in ref.glossary.terms.items()},
         "sources": {k: s.model_dump() for k, s in ref.glossary.sources.items()},
         "rules": {

@@ -2,7 +2,8 @@
 
 Tolerance (willingness) is the mean of the situational answers;
 capacity (ability to bear losses) is its weakest component; the
-horizon caps both (HOR-01). Method and sources: docs/methodology.md.
+horizon caps both (HOR-01). Method and sources:
+docs/research/methodology.md.
 """
 
 import math

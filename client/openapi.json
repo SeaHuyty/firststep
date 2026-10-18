@@ -186,6 +186,14 @@
             "title": "Name",
             "type": "string"
           },
+          "peers": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Peers",
+            "type": "array"
+          },
           "product_id": {
             "title": "Product Id",
             "type": "string"
@@ -352,6 +360,11 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "in_plan": {
+            "default": false,
+            "title": "In Plan",
+            "type": "boolean"
           },
           "liquidity_days": {
             "title": "Liquidity Days",

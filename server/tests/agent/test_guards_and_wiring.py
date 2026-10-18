@@ -1,15 +1,25 @@
+import asyncio
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
+from app.agent import turn
 from app.agent.guards import DISCLOSURE, check_input, with_disclosure
 from app.agent.turn import llm_tools
+from app.api.app import create_app
 from app.core.reference import load_reference
 from app.core.settings import Settings
 from app.core.types import Stage
 from app.llm.adapter import build_model
+from app.store import sessions
+from app.tools.base import NoArgs
 from app.tools.registry import TOOLS
 from tests.conftest import Session
+from tests.conftest import test_settings as settings_in
 
 DATA = Settings(_env_file=None).data_dir
 
@@ -63,6 +73,18 @@ def test_missing_provider_key_falls_back_to_the_fake_model() -> None:
         assert used == "fake"
 
 
+def test_google_builds_a_fallback_chain() -> None:
+    settings = Settings(
+        _env_file=None,
+        llm_provider="google",
+        google_generative_ai_api_key=SecretStr("test-key"),
+        gemini_model="gemma-4-31b-it, gemma-4-26b-a4b-it",
+    )
+    model, used = build_model(settings)
+    assert used == "google"
+    assert "fallback" in type(model).__name__.lower()
+
+
 def test_openrouter_builds_a_fallback_chain() -> None:
     settings = Settings(
         _env_file=None,
@@ -74,6 +96,13 @@ def test_openrouter_builds_a_fallback_chain() -> None:
     assert used == "openrouter"
     assert settings.openrouter_models == ["a/one:free", "b/two:free"]
     assert "fallback" in type(model).__name__.lower()
+
+
+def test_a_doubled_env_key_in_the_model_line_is_refused_at_start() -> None:
+    with pytest.raises(ValueError, match="contains '='"):
+        Settings(_env_file=None, gemini_model="GEMINI_MODEL=gemma-4-26b-a4b-it,gemma-4-31b-it")
+    with pytest.raises(ValueError, match="contains '='"):
+        Settings(_env_file=None, openrouter_models="OPENROUTER_MODELS=a/one:free")  # type: ignore[arg-type]
 
 
 def test_injection_is_logged_and_refused(client: TestClient) -> None:
@@ -107,3 +136,63 @@ def test_explain_comes_from_the_glossary(client: TestClient) -> None:
     s.say("What is an ETF?")
     term = next(c for c in s.last["cards"] if c["type"] == "term")
     assert term["source_url"].startswith("https://www.investor.gov/")
+
+
+def test_a_failing_model_gets_a_plain_reply_not_a_crash(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def broken(*_: object) -> None:
+        raise RuntimeError("provider said 404")
+
+    monkeypatch.setattr(turn, "_ask_llm", broken)
+    s = Session(client, "leo")
+    s.say("What is a bond?")
+    assert s.last["reply"].startswith("Sorry, Sprout couldn't reach its model")
+
+
+def test_a_slow_model_is_cut_off_with_the_timeout_reply(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def slow(*_: object) -> None:
+        await asyncio.sleep(5)
+
+    monkeypatch.setattr(turn, "_ask_llm", slow)
+    settings = client.app.state.services.settings  # type: ignore[attr-defined]
+    monkeypatch.setattr(settings, "llm_turn_timeout_s", 0.05)
+    s = Session(client, "leo")
+    s.say("What is a bond?")
+    assert s.last["reply"].startswith("Sorry, Sprout didn't answer in time")
+
+
+def test_a_turn_over_the_tool_call_limit_keeps_what_was_done(tmp_path: Path) -> None:
+    def explain_forever(_: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        return ModelResponse(parts=[ToolCallPart("explain", {"topic": "bond"})])
+
+    app = create_app(settings_in(tmp_path), model=FunctionModel(explain_forever))
+    with TestClient(app) as client:
+        s = Session(client, "leo")
+        s.say("What is a bond? Tell me again and again.")
+        calls = [
+            e for e in s.audit()["events"] if e["type"] == "tool_call" and e["actor"] == "llm"
+        ]
+    assert len(calls) == turn.MAX_TOOL_CALLS
+    assert not s.last["reply"].startswith("Sorry")
+
+
+def test_llm_tools_get_retries_and_no_arg_tools_ignore_stray_keys() -> None:
+    assert NoArgs.model_validate({"client_class": "C3"}) == NoArgs()
+    tool = turn._llm_tool(TOOLS["propose_allocation"])
+    assert tool.max_retries == turn.TOOL_RETRIES
+
+
+def test_a_money_question_sends_no_range_values_to_the_model(client: TestClient) -> None:
+    s = Session(client, "leo")
+    s.act("answer_question", question_id="age", value=27)
+    services = client.app.state.services  # type: ignore[attr-defined]
+    with services.store.tx() as con:
+        row = sessions.get(con, s.id)
+    assert row is not None
+    question = next(line for line in turn._context(services, s.id, row) if "QUESTION NOW" in line)
+    assert "monthly_income" in question
+    assert "3750" not in question
+    assert "exact amount" in question

@@ -62,9 +62,10 @@ def _advance_note(out: dict[str, Any]) -> str:
         else f"that's ${-diff:,.0f} below what you put in for now"
     )
     dropped = any(str(e).startswith("drawdown") for e in out.get("events", []))
+    # The drop alert card says what fell and why to hold on;
+    # the note only points to it.
     calm = (
-        " Markets have fallen, and drops like this have happened before. Your plan was built "
-        "for years, not months."
+        " Part of your plan fell along the way; more on that below."
         if dropped
         else " Ups and downs along the way are normal."
     )
@@ -74,9 +75,31 @@ def _advance_note(out: dict[str, Any]) -> str:
     )
 
 
+def _not_yet_note(out: dict[str, Any]) -> str:
+    """Say why not yet in this person's terms; debt only if any."""
+    if out.get("months_to_ready") is None:
+        return (
+            "Not yet, and here's why. Nothing is left over each month right now, so the first "
+            "step is finding a little room in your budget. Then I'll turn it into a plan with a "
+            "date."
+        )
+    debt = any(step.get("action") == "pay_debt" for step in out.get("steps", []))
+    first = (
+        "Paying off expensive debt and building a safety cushion"
+        if debt
+        else "Building a safety cushion"
+    )
+    return (
+        f"Not yet, and here's why. {first} will do more for you right now than any fund. "
+        "Here's a plan; I'll check in when you're ready."
+    )
+
+
 def _line(outcome: Outcome) -> str:
     if outcome.tool == "advance_time" and outcome.output:
         return _advance_note(outcome.output)
+    if outcome.tool == "build_savings_plan" and outcome.output:
+        return _not_yet_note(outcome.output)
     line = _BY_TOOL_OK[outcome.tool]
     if outcome.tool == "set_goal" and outcome.output:
         line = line.replace("AMOUNT", f"{outcome.output['deposited_usd']:,.0f}")
@@ -85,6 +108,11 @@ def _line(outcome: Outcome) -> str:
 
 def reply_for(outcomes: list[Outcome], stage: Stage) -> str:
     """Return Sprout's line for a turn that used no LLM."""
+    if any(o.tool == "propose_custom_allocation" and o.ok for o in outcomes):
+        return (
+            "Done: your plan now uses that fund. The rules checked the new mix, and here's its "
+            "range of what could happen."
+        )
     for outcome in reversed(outcomes):
         if outcome.error is not None:
             return outcome.error.message

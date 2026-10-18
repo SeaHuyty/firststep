@@ -5,6 +5,7 @@ from decimal import Decimal
 
 import pytest
 
+from app.agent.guards import SAFE_FALLBACK
 from app.core.reference import Reference, load_reference
 from app.core.settings import Settings
 from app.core.types import ClientClass, Stage
@@ -248,3 +249,7 @@ def test_lang_rules_allow_honest_range_language(policy: Policy) -> None:
         "case. This is a range of outcomes from past markets, not a prediction."
     )
     assert policy.language(text) == []
+
+
+def test_the_safe_fallback_passes_the_lang_rules(policy: Policy) -> None:
+    assert policy.language(SAFE_FALLBACK) == []

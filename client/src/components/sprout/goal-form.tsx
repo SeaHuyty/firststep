@@ -1,6 +1,6 @@
 "use client";
 
-// The goal step. Pre-filled with a sensible default (defaults matter: docs/ux-psychology.md),
+// The goal step. Pre-filled with a sensible default (defaults matter: docs/research/ux-psychology.md),
 // and the horizon rule is shown as the slider moves so nothing about the cap is a surprise.
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";

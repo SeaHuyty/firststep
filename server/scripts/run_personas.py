@@ -91,6 +91,7 @@ def main() -> int:
     with make_client(run_dir, real_llm=args.llm) as client:
         provider = client.app.state.llm_provider  # type: ignore[attr-defined]
         for name, run in (("amina", amina), ("leo", leo), ("mei", mei)):
+            print(f"{name}: running…", flush=True)
             session, notes = run(client)
             check = session.audit()["check"]
             shutil.copy(run_dir / "logs" / f"{session.id}.jsonl", logs / f"{name}.jsonl")

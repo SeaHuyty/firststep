@@ -1,6 +1,7 @@
 // Small building blocks. Cards are bordered, never shadowed (docs/standards/brand.md section 7).
 import { CircleAlert, CircleCheck, Info, Pause } from "lucide-react";
 import type { ReactNode } from "react";
+import { RuleNote } from "./rule-note";
 
 export function Card({
   title,
@@ -81,11 +82,9 @@ export function Notice({
       <div className="flex items-start gap-3">
         <span className="mt-0.5">{TONE[tone].icon}</span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className={`text-title ${tone === "pause" ? "text-sun-ink" : "text-ink"}`}>{title}</p>
-            {ruleId && <RuleChip id={ruleId} />}
-          </div>
+          <p className={`text-title ${tone === "pause" ? "text-sun-ink" : "text-ink"}`}>{title}</p>
           {children && <div className="mt-1 text-body text-ink-2">{children}</div>}
+          {ruleId && <RuleNote ids={[ruleId]} />}
           {action && <div className="mt-3">{action}</div>}
         </div>
       </div>

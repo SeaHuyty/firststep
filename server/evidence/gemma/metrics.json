@@ -1,0 +1,30 @@
+{
+  "llm": "google",
+  "redteam_passed": 30,
+  "redteam_total": 30,
+  "redteam_llm": "google",
+  "tasks_passed": 25,
+  "tasks_total": 25,
+  "tasks_llm": "google",
+  "audit_logs": 4,
+  "audit_events": 336,
+  "chains_verified": 4,
+  "guardian_refusals": 5,
+  "rules_fired": [
+    "COOL-01",
+    "LIM-01",
+    "SUIT-01"
+  ],
+  "orders_filled": 6,
+  "fills_after_allowed_check": 1,
+  "median_button_reply_ms": 3.0,
+  "median_typed_reply_ms": 22387.0,
+  "typed_replies": 4,
+  "median_suite_reply_ms": 12969.5,
+  "p90_suite_reply_ms": 51493.0,
+  "suite_replies": 46,
+  "llm_turns": 4,
+  "tokens_per_llm_turn": 5808,
+  "tests_passed": 223,
+  "coverage_pct": 95.4
+}

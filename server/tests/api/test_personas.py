@@ -102,6 +102,34 @@ def test_leo_reaches_a_confirmed_sandbox_order(client: TestClient) -> None:
     assert tokens == ["[redacted]"]  # the token itself never reaches the log
 
 
+def test_each_planned_fund_can_be_compared_with_suitable_peers(client: TestClient) -> None:
+    s = Session(client, "leo")
+    answer_all(s, LEO)
+    s.act("set_goal", **LEO_GOAL)
+    lines = {line["product_id"]: line for line in s.cards("allocation")[0]["lines"]}
+    # Same kind, not in the plan, within C3 (SUIT-01), cheapest first.
+    assert lines["USE01"]["peers"] == ["USE02", "ACT01"]
+    assert all(peer not in lines for line in lines.values() for peer in line["peers"])
+
+    s.act("compare_products", product_ids=["USE01", *lines["USE01"]["peers"]])
+    assert s.last["stage"] == "PROPOSE"
+    rows = {r["id"]: r for r in s.cards("comparison")[0]["rows"]}
+    assert rows["USE01"]["in_plan"]
+    assert not rows["ACT01"]["in_plan"]
+    assert rows["ACT01"]["fee_per_year_on_1000_usd"] > rows["USE01"]["fee_per_year_on_1000_usd"]
+
+
+def test_peers_never_go_above_the_clients_level(client: TestClient) -> None:
+    s = Session(client, "mei")
+    answer_all(s, MEI)
+    s.act("set_goal", **MEI_GOAL)
+    peers = [p for line in s.cards("allocation")[0]["lines"] for p in line["peers"]]
+    assert peers  # Mei has something to compare
+    assert not {"USE01", "USE02", "ACT01", "INT01", "INT02", "EME01", "GLD01", "TEC01"} & set(
+        peers
+    )
+
+
 def test_a_second_confirm_click_places_nothing(client: TestClient) -> None:
     s = leo_to_confirm(client)
     proposal_id = s.cards("confirm")[0]["proposal_id"]
@@ -151,9 +179,32 @@ def test_amina_gets_not_yet_and_a_savings_plan(client: TestClient) -> None:
         "build_emergency_fund",
     ]
     assert plan["months_to_ready"] == 20
+    assert "expensive debt" in s.last["reply"]
     assert s.cards("allocation") == []
     s.act("prepare_orders")
     assert s.cards("refusal")[0]["rule_id"] == "STAGE-01"
+
+
+def test_with_nothing_left_over_the_first_step_is_finding_room(client: TestClient) -> None:
+    s = Session(client)
+    answer_all(
+        s,
+        {
+            "age": 24,
+            "monthly_income": 1500,
+            "monthly_expenses": 1500,
+            "liquid_savings": 900,
+            "debts": [],
+        },
+    )
+    assert s.last["stage"] == "SAVINGS_PLAN"
+    plan = s.cards("savings_plan")[0]
+    assert plan["steps"] == []
+    assert plan["months_to_ready"] is None
+    assert s.cards("pause")[0]["title"] == "Let's find some room first"
+    # No debt, so Sprout doesn't talk about paying one off.
+    assert "debt" not in s.last["reply"]
+    assert "finding a little room" in s.last["reply"]
 
 
 def test_mei_is_refused_all_tech_and_offered_c2(client: TestClient) -> None:
@@ -223,7 +274,20 @@ def test_health_and_catalog(client: TestClient) -> None:
     assert client.get("/api/health").json() == {"ok": True, "llm": "fake"}
     catalog = client.get("/api/catalog").json()
     assert len(catalog["products"]) == 13
+    families = {p["id"]: p["family"] for p in catalog["products"]}
+    assert families["STB01"] == "bonds"
+    assert families["TEC01"] == "stocks"
+    assert catalog["max_rating_for_class"]["C2"] == "R2"
     assert "SUIT-01" in catalog["rules"]
     first = catalog["first_question"]
     assert first["question_id"] == "age"
     assert first["chips"][0] == {"label": "18–24", "value": 21}
+
+
+def test_a_typed_money_answer_is_read_the_way_people_write_it(client: TestClient) -> None:
+    s = Session(client)
+    s.act("answer_question", question_id="age", value=30)
+    s.act("answer_question", question_id="monthly_income", value="$3,200")
+    assert s.last["steps"] == ["answer_question"]
+    assert not s.cards("refusal")
+    assert [c["question_id"] for c in s.cards("question")] == ["monthly_expenses"]

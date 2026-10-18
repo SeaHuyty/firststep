@@ -84,8 +84,12 @@ def get_portfolio(ctx: ToolContext, _: NoArgs) -> PortfolioOut:
 class AdvanceIn(Input):
     """How far to fast-forward: a number of months or a target month."""
 
-    months: int | None = Field(default=None, ge=1, le=24)
-    until: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}$")
+    months: int | None = Field(
+        default=None, ge=1, le=24, description="Months to move forward, e.g. 12 for a year"
+    )
+    until: str | None = Field(
+        default=None, pattern=r"^\d{4}-\d{2}$", description="A month to jump to, YYYY-MM"
+    )
 
     @model_validator(mode="after")
     def _one_of(self) -> "AdvanceIn":

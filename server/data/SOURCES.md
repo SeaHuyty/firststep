@@ -23,7 +23,7 @@ Known simplifications: bond returns assume a par bond at constant maturity and n
 
 ## products.csv, portfolios.yaml
 
-Written by the team. The funds are **fictional**; each tracks one asset class in `returns.csv`. Risk ratings follow how Chinese fund distributors rate products under the CSRC suitability Measures and the AMAC guidelines: money market and short-term bond funds R1, ordinary bond funds R2, equity index funds R3, commodity (gold), emerging-market and single-sector funds R4. See `docs/methodology.md`.
+Written by the team. The funds are **fictional**; each tracks one asset class in `returns.csv`. Risk ratings follow how Chinese fund distributors rate products under the CSRC suitability Measures and the AMAC guidelines: money market and short-term bond funds R1, ordinary bond funds R2, equity index funds R3, commodity (gold), emerging-market and single-sector funds R4. See `docs/research/methodology.md`.
 
 ## questionnaire.yaml, glossary.yaml, rules.yaml, personas.yaml
 

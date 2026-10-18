@@ -1,7 +1,7 @@
 "use client";
 
 // Charts draw only numbers the server sent. Each has a table alternative.
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { DataTable } from "@/components/ui/primitives";
 import { FAMILY_LABEL } from "@/lib/copy";
 import { money, pct } from "@/lib/format";
@@ -15,7 +15,16 @@ const FAMILY_COLOR: Record<string, string> = {
 };
 
 /** Four families, not seven asset classes: a beginner reads the shape, the table has detail. */
-export function AllocationDonut({ families, total }: { families: Record<string, number>; total: string }) {
+export function AllocationDonut({
+  families,
+  total,
+  children,
+}: {
+  families: Record<string, number>;
+  total: string;
+  /** A legend of your own beside the donut (e.g. what each part is for); defaults to labels. */
+  children?: ReactNode;
+}) {
   // Draws in once (600 ms, docs/standards/brand.md section 7); instant with reduced motion.
   const [drawn, setDrawn] = useState(false);
   useEffect(() => {
@@ -57,18 +66,22 @@ export function AllocationDonut({ families, total }: { families: Record<string, 
             {money(total)}
           </text>
         </svg>
-        <ul className="grid w-full grid-cols-2 gap-x-4 gap-y-2">
-          {FAMILY_ORDER.map((f) => (
+        {children ?? <ul className="grid w-full grid-cols-2 gap-x-4 gap-y-2">
+          {slices.map(({ family: f }) => (
             <li key={f} className="flex items-center gap-2">
               <span aria-hidden className="size-3 rounded-full" style={{ background: FAMILY_COLOR[f] }} />
               <span className="text-body-sm text-ink-2">{FAMILY_LABEL[f]}</span>
               <span className="tnum ml-auto text-label text-ink">{pct(families[f] ?? 0)}</span>
             </li>
           ))}
-        </ul>
+        </ul>}
       </div>
     </div>
   );
+}
+
+export function FamilyDot({ family }: { family: string }) {
+  return <span aria-hidden className="mt-1.5 size-3 shrink-0 rounded-full" style={{ background: FAMILY_COLOR[family] }} />;
 }
 
 /**

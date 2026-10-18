@@ -5,7 +5,7 @@ history (Künsch 1989) and stitch them into thousands of paths. Keeping
 a year's sequence intact preserves short-run patterns such as runs of
 bad months, which resampling single months would break. The result is
 a spread of what could happen, not a forecast; it is never called a
-backtest. Method and sources: docs/methodology.md.
+backtest. Method and sources: docs/research/methodology.md.
 """
 
 import math
@@ -116,4 +116,4 @@ def rolling_extremes(monthly: FloatArray, window: int = 12) -> tuple[float, floa
     growth = np.cumprod(1 + monthly)
     start = np.concatenate(([1.0], growth[:-window]))
     returns = growth[window - 1 :] / start - 1
-    return float(returns.min()), float(returns.max())
+    return float(np.min(returns)), float(np.max(returns))

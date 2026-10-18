@@ -20,4 +20,10 @@ class Output(BaseModel):
 
 
 class NoArgs(Input):
-    """This tool takes no arguments."""
+    """This tool takes no arguments.
+
+    Stray keys are ignored rather than rejected: the tool reads nothing,
+    so nothing can be smuggled, and smaller models often add one.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="ignore")

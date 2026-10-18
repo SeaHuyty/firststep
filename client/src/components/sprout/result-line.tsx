@@ -59,9 +59,12 @@ export function ResultLine({ card, onShow }: { card: Card; onShow: () => void })
         </Line>
       );
     case "savings_plan":
+      if (card.steps.length === 0) {
+        return <Line icon={PAUSE} tone="pause" onShow={onShow}>Your plan: first, find a little room each month.</Line>;
+      }
       return (
         <Line icon={OK} onShow={onShow}>
-          Your plan: {card.steps.length} steps
+          Your plan: {card.steps.length} {card.steps.length === 1 ? "step" : "steps"}
           {card.ready_month && card.months_to_ready !== null
             ? `, ready to invest by ${month(card.ready_month)} (${duration(card.months_to_ready)})`
             : ""}
@@ -110,24 +113,17 @@ export function ResultLine({ card, onShow }: { card: Card; onShow: () => void })
         </Line>
       );
     case "comparison":
-      return <Line onShow={onShow}>Compared {card.rows.length} funds side by side.</Line>;
+    {
+      const mine = card.rows.find((r) => r.in_plan);
+      return (
+        <Line onShow={onShow}>
+          {mine ? `Compared ${mine.name} with ${card.rows.length - 1} similar ${card.rows.length === 2 ? "fund" : "funds"}.` : `Compared ${card.rows.length} funds side by side.`}
+        </Line>
+      );
+    }
     case "products":
       return <Line onShow={onShow}>{card.products.length} funds fit your level.</Line>;
     default:
       return null;
   }
 }
-
-/** The plan card a turn most needs to show: one change at a time (NN/g). */
-export const SPOTLIGHT_ORDER = [
-  "receipt",
-  "portfolio",
-  "savings_plan",
-  "readiness",
-  "allocation",
-  "projection",
-  "risk_badge",
-  "goal",
-  "comparison",
-  "products",
-] as const;

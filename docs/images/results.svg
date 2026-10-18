@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" width="1200" height="650" role="img" aria-label="FirstStep results on Gemma 4 26B, an open-weight model on Google AI Studio&#x27;s free tier: 25 of 25 typed requests completed; 30 of 30 red-team attacks handled safely (10 by the input guard, 13 by a guardian rule, 7 answered with no tool called); 6 orders filled, each after a Confirm click; 4 of 4 audit chains verified; 223 tests passing." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif">
+  <rect width="1200" height="650" fill="#F6F8F7"/>
+  <text x="30" y="42" font-size="22" fill="#0C1F22" font-weight="600">Results: requests done, attacks stopped, every step on record</text>
+  <text x="30" y="66" font-size="13" fill="#3F5457">Typed requests, red-team attacks and the three demo people, run on Gemma 4 26B, an open-weight model on Google AI Studio&#x27;s free tier, judged from the audit log.</text>
+  <rect x="30" y="104" width="270" height="112" rx="12" fill="#FFFFFF" stroke="#DDE5E3"/>
+  <text x="50" y="158" font-size="40" fill="#0C1F22" font-weight="600">25 / 25</text>
+  <text x="50" y="184" font-size="14" fill="#0C1F22">typed requests completed</text>
+  <text x="50" y="203" font-size="12" fill="#5A6C6E">right tool, right details</text>
+  <rect x="320" y="104" width="270" height="112" rx="12" fill="#FFFFFF" stroke="#DDE5E3"/>
+  <text x="340" y="158" font-size="40" fill="#0C1F22" font-weight="600">30 / 30</text>
+  <text x="340" y="184" font-size="14" fill="#0C1F22">red-team attacks handled safely</text>
+  <text x="340" y="203" font-size="12" fill="#5A6C6E">nothing filled, chain intact</text>
+  <rect x="610" y="104" width="270" height="112" rx="12" fill="#FFFFFF" stroke="#DDE5E3"/>
+  <text x="630" y="158" font-size="40" fill="#0C1F22" font-weight="600">4 / 4</text>
+  <text x="630" y="184" font-size="14" fill="#0C1F22">audit chains verified</text>
+  <text x="630" y="203" font-size="12" fill="#5A6C6E">6 orders, each after a Confirm click</text>
+  <rect x="900" y="104" width="270" height="112" rx="12" fill="#FFFFFF" stroke="#DDE5E3"/>
+  <text x="920" y="158" font-size="40" fill="#0C1F22" font-weight="600">223</text>
+  <text x="920" y="184" font-size="14" fill="#0C1F22">automated tests passing</text>
+  <text x="920" y="203" font-size="12" fill="#5A6C6E">95.4% line coverage</text>
+  <text x="30" y="262" font-size="16" fill="#0C1F22" font-weight="600">How each attack was stopped</text>
+  <text x="30" y="282" font-size="12" fill="#5A6C6E">Attacks by category; each bar is split by the layer that stopped it.</text>
+  <text x="218" y="315" font-size="13" fill="#3F5457" text-anchor="end">Prompt injection</text>
+  <path d="M230 300 H826 Q830 300 830 304 V316 Q830 320 826 320 H230 Z" fill="#eb6834"/>
+  <text x="838" y="315" font-size="13" fill="#0C1F22" font-weight="600">6</text>
+  <text x="218" y="349" font-size="13" fill="#3F5457" text-anchor="end">Unsuitable funds</text>
+  <rect x="230" y="334" width="98" height="20" fill="#eb6834"/>
+  <path d="M330 334 H826 Q830 334 830 338 V350 Q830 354 826 354 H330 Z" fill="#0A7D55"/>
+  <text x="838" y="349" font-size="13" fill="#0C1F22" font-weight="600">6</text>
+  <text x="218" y="383" font-size="13" fill="#3F5457" text-anchor="end">Acting without a click</text>
+  <rect x="230" y="368" width="98" height="20" fill="#eb6834"/>
+  <rect x="330" y="368" width="198" height="20" fill="#2a78d6"/>
+  <path d="M530 368 H726 Q730 368 730 372 V384 Q730 388 726 388 H530 Z" fill="#0A7D55"/>
+  <text x="738" y="383" font-size="13" fill="#0C1F22" font-weight="600">5</text>
+  <text x="218" y="417" font-size="13" fill="#3F5457" text-anchor="end">Investing before ready</text>
+  <rect x="230" y="402" width="98" height="20" fill="#2a78d6"/>
+  <path d="M330 402 H626 Q630 402 630 406 V418 Q630 422 626 422 H330 Z" fill="#0A7D55"/>
+  <text x="638" y="417" font-size="13" fill="#0C1F22" font-weight="600">4</text>
+  <text x="218" y="451" font-size="13" fill="#3F5457" text-anchor="end">Promises, predictions</text>
+  <path d="M230 436 H526 Q530 436 530 440 V452 Q530 456 526 456 H230 Z" fill="#2a78d6"/>
+  <text x="538" y="451" font-size="13" fill="#0C1F22" font-weight="600">3</text>
+  <text x="218" y="485" font-size="13" fill="#3F5457" text-anchor="end">Panic selling</text>
+  <path d="M230 470 H426 Q430 470 430 474 V486 Q430 490 426 490 H230 Z" fill="#0A7D55"/>
+  <text x="438" y="485" font-size="13" fill="#0C1F22" font-weight="600">2</text>
+  <text x="218" y="519" font-size="13" fill="#3F5457" text-anchor="end">Personal data</text>
+  <path d="M230 504 H426 Q430 504 430 508 V520 Q430 524 426 524 H230 Z" fill="#eb6834"/>
+  <text x="438" y="519" font-size="13" fill="#0C1F22" font-weight="600">2</text>
+  <text x="218" y="553" font-size="13" fill="#3F5457" text-anchor="end">Order limits</text>
+  <path d="M230 538 H326 Q330 538 330 542 V554 Q330 558 326 558 H230 Z" fill="#0A7D55"/>
+  <text x="338" y="553" font-size="13" fill="#0C1F22" font-weight="600">1</text>
+  <text x="218" y="587" font-size="13" fill="#3F5457" text-anchor="end">Out of scope</text>
+  <path d="M230 572 H326 Q330 572 330 576 V588 Q330 592 326 592 H230 Z" fill="#2a78d6"/>
+  <text x="338" y="587" font-size="13" fill="#0C1F22" font-weight="600">1</text>
+  <line x1="230" y1="292" x2="230" y2="600" stroke="#5A6C6E" stroke-width="1"/>
+  <text x="900" y="298" font-size="12" fill="#5A6C6E" font-weight="600" letter-spacing="1">Stopped by</text>
+  <rect x="900" y="310" width="14" height="14" rx="3" fill="#eb6834"/>
+  <text x="924" y="322" font-size="15" fill="#0C1F22" font-weight="600">Input guard: 10</text>
+  <text x="924" y="342" font-size="12" fill="#3F5457">flagged or masked before the LLM</text>
+  <rect x="900" y="374" width="14" height="14" rx="3" fill="#2a78d6"/>
+  <text x="924" y="386" font-size="15" fill="#0C1F22" font-weight="600">No tool called: 7</text>
+  <text x="924" y="406" font-size="12" fill="#3F5457">Sprout answered, nothing ran</text>
+  <rect x="900" y="438" width="14" height="14" rx="3" fill="#0A7D55"/>
+  <text x="924" y="450" font-size="15" fill="#0C1F22" font-weight="600">Guardian rule: 13</text>
+  <text x="924" y="470" font-size="12" fill="#3F5457">refused with a rule ID</text>
+  <text x="900" y="514" font-size="12" fill="#5A6C6E">Every case also checks: no fill, no</text>
+  <text x="900" y="532" font-size="12" fill="#5A6C6E">token logged, chain verified.</text>
+</svg>

@@ -67,6 +67,18 @@ def test_missing_provider_key_falls_back_to_the_fake_model() -> None:
         assert used == "fake"
 
 
+def test_google_builds_a_fallback_chain() -> None:
+    settings = Settings(
+        _env_file=None,
+        llm_provider="google",
+        google_generative_ai_api_key=SecretStr("test-key"),
+        gemini_model="gemma-4-31b-it, gemma-4-26b-a4b-it",
+    )
+    model, used = build_model(settings)
+    assert used == "google"
+    assert "fallback" in type(model).__name__.lower()
+
+
 def test_openrouter_builds_a_fallback_chain() -> None:
     settings = Settings(
         _env_file=None,

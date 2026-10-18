@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     anthropic_model: str = "claude-haiku-5-5"
     google_generative_ai_api_key: SecretStr | None = None
+    # One model, or a comma-separated fallback chain like OpenRouter's.
     gemini_model: str = "gemini-3.5-flash-lite"
     llm_temperature: float = 0.2
 

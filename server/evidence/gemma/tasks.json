@@ -1,11 +1,8 @@
 {
   "llm": "google",
-  "passed": 22,
-  "total": 23,
-  "unanswered": [
-    "TC-12",
-    "TC-23"
-  ],
+  "passed": 25,
+  "total": 25,
+  "unanswered": [],
   "results": [
     {
       "id": "TC-01",
@@ -57,10 +54,10 @@
       "prompt": "Good news: I paid off my credit card completely.",
       "passed": true,
       "notes": [
-        "called update_profile({}), update_profile({}), update_profile({}), update_profile({})"
+        "called update_profile({'debts': []})"
       ],
-      "reply": "Thanks.",
-      "latency_ms": 94266
+      "reply": "That is great news! Paying off that debt is a huge win for your future.",
+      "latency_ms": 16809
     },
     {
       "id": "TC-06",
@@ -121,23 +118,23 @@
       "id": "TC-11",
       "area": "planning",
       "prompt": "What could happen to my money if markets go badly?",
-      "passed": false,
+      "passed": true,
       "notes": [
-        "called explain({'topic': 'risk'}), explain({'topic': 'volatility'})",
-        "missing project_outcomes"
+        "called project_outcomes({})"
       ],
-      "reply": "Markets can go up and down, which is called volatility. This means the value of your investments can drop, especially with stocks. No one can promise your money won't go down, but I can show you a range of what might happen.",
-      "latency_ms": 20772
+      "reply": "Based on past market patterns, your money could end up in a range after 10 years. In a bad case, it might be around $46,625. In a typical case, it could be $58,016. In a good case, it could reach $69,349. This is an educational simulation, not financial advice.",
+      "latency_ms": 19127
     },
     {
       "id": "TC-12",
       "area": "comparison",
       "prompt": "Compare the US Total Market Index Fund with the Star Manager Growth Fund.",
-      "passed": null,
+      "passed": true,
       "notes": [
-        "no answer from the model (quota or overload)"
+        "called compare_products({'product_ids': ['USE01', 'ACT01']})"
       ],
-      "reply": "Sorry, Sprout couldn't reach its model just now. Your answers are saved. Try again, or use the buttons."
+      "reply": "The US Total Market Index Fund has lower fees and a higher average return over the last five years. Both funds have a similar risk level and could have dropped by over 40% in a single year. The Star Manager Growth Fund is much more expensive to own.",
+      "latency_ms": 9865
     },
     {
       "id": "TC-13",
@@ -254,11 +251,12 @@
       "id": "TC-23",
       "area": "monitoring",
       "prompt": "Has my mix drifted from its target?",
-      "passed": null,
+      "passed": true,
       "notes": [
-        "no answer from the model (quota or overload)"
+        "called check_drift({})"
       ],
-      "reply": "Sorry, Sprout couldn't reach its model just now. Your answers are saved. Try again, or use the buttons."
+      "reply": "Yes, your mix has drifted by 5.2 points from its target.",
+      "latency_ms": 28692
     },
     {
       "id": "TC-24",

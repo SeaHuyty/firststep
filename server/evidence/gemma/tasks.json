@@ -1,8 +1,11 @@
 {
   "llm": "google",
-  "passed": 25,
-  "total": 25,
-  "unanswered": [],
+  "passed": 22,
+  "total": 23,
+  "unanswered": [
+    "TC-12",
+    "TC-23"
+  ],
   "results": [
     {
       "id": "TC-01",
@@ -12,7 +15,8 @@
       "notes": [
         "called update_profile({'age': 30}), answer_question({'question_id': 'age', 'value': 30})"
       ],
-      "reply": "Thanks! I've noted that."
+      "reply": "Thanks for sharing that.",
+      "latency_ms": 11278
     },
     {
       "id": "TC-02",
@@ -22,7 +26,8 @@
       "notes": [
         "called update_profile({'monthly_income_usd': 3200.0}), answer_question({'question_id': 'monthly_income', 'value': 3200})"
       ],
-      "reply": "OK, I have recorded that."
+      "reply": "Got it. Thanks for sharing that.",
+      "latency_ms": 13613
     },
     {
       "id": "TC-03",
@@ -32,7 +37,8 @@
       "notes": [
         "no tool called"
       ],
-      "reply": "I understand your salary is $4,000 before tax. To help you best, I need to know how much money you actually receive each month after tax."
+      "reply": "I understand. To help me get an accurate picture, could you tell me how much you take home each month after tax?",
+      "latency_ms": 9988
     },
     {
       "id": "TC-04",
@@ -40,9 +46,10 @@
       "prompt": "I owe $3,000 on a credit card at 24% interest.",
       "passed": true,
       "notes": [
-        "called answer_question({'question_id': 'debts', 'value': [{'apr_pct': 24, 'kind': 'credit card', 'balance_usd': 3000}]}), update_profile({'debts': [{'kind': 'credit card', 'balance_usd': 3000.0, 'apr_pct': 24.0}]})"
+        "called answer_question({'question_id': 'debts', 'value': [{'kind': 'credit card', 'apr_pct': 24, 'balance_usd': 3000}]}), update_profile({'debts': [{'kind': 'credit card', 'balance_usd': 3000.0, 'apr_pct': 24.0}]})"
       ],
-      "reply": "Thanks for sharing that. Since that credit card has a high interest rate, it's best to pay it off before you start investing."
+      "reply": "Thanks for sharing that. I've noted your credit card debt.",
+      "latency_ms": 16351
     },
     {
       "id": "TC-05",
@@ -50,9 +57,10 @@
       "prompt": "Good news: I paid off my credit card completely.",
       "passed": true,
       "notes": [
-        "called update_profile({'debts': []})"
+        "called update_profile({}), update_profile({}), update_profile({}), update_profile({})"
       ],
-      "reply": "That is great news! I have updated your profile to show that your credit card is paid off."
+      "reply": "Thanks.",
+      "latency_ms": 94266
     },
     {
       "id": "TC-06",
@@ -60,9 +68,10 @@
       "prompt": "What's my risk level?",
       "passed": true,
       "notes": [
-        "no tool called"
+        "called explain({'topic': 'risk level'})"
       ],
-      "reply": "Your risk level is C3. This helps us pick the right funds for you."
+      "reply": "Your risk level is C3.",
+      "latency_ms": 51166
     },
     {
       "id": "TC-07",
@@ -72,7 +81,8 @@
       "notes": [
         "called set_goal({'name': 'house', 'target_usd': 50000.0, 'horizon_years': 5.0, 'lump_sum_usd': 10000.0, 'monthly_usd': 500.0})"
       ],
-      "reply": "That sounds like a great goal. I have saved those details for you. This is an educational simulation, not financial advice."
+      "reply": "That sounds like a great plan. I have put together a simple mix of funds for you. Based on this, in 5 years your money could be worth between $40,505 and $53,899. This is an educational simulation, not financial advice.",
+      "latency_ms": 12773
     },
     {
       "id": "TC-08",
@@ -82,7 +92,8 @@
       "notes": [
         "called list_suitable_products({})"
       ],
-      "reply": "You can choose from these funds: MMF01, TBL01, STB01, GOV01, GOV02, USE01, USE02, INT01, INT02, and ACT01. These all fit your risk level."
+      "reply": "You can choose from these funds: Sprout Money Market Fund, Treasury Bill Fund, Short-Term Treasury Fund, Treasury Bond Index Fund, Government Bond Ladder Fund, US Total Market Index Fund, US Large Company Index Fund, Developed Markets ex-US Index Fund, International Equity Index Fund, and Star Manager Growth Fund.",
+      "latency_ms": 14116
     },
     {
       "id": "TC-09",
@@ -92,7 +103,8 @@
       "notes": [
         "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 5.0}, {'product_id': 'STB01', 'weight_pct': 10.0}, {'product_id': 'GOV01', 'weight_pct': 25.0}, {'product_id': 'GOV02', 'weight_pct': 10.0}, {'product_id': 'USE02', 'weight_pct': 30.0}, {'product_id': 'INT01', 'weight_pct': 20.0}]})"
       ],
-      "reply": "I've updated your plan to use the US Large Company Index Fund instead. Here is your new mix: MMF01 5%, STB01 10%, GOV01 25%, GOV02 10%, USE02 30%, and INT01 20%. In 10 years, your money could be around $46,633, $58,026, or $69,362. This is an educational simulation, not financial advice."
+      "reply": "I have updated your plan to use the US Large Company Index Fund. In ten years, your money could be worth between $46,633.71 and $69,362.84. This range is based on how markets have worked in the past. This is an educational simulation, not financial advice.",
+      "latency_ms": 32098
     },
     {
       "id": "TC-10",
@@ -100,29 +112,32 @@
       "prompt": "Can I have more bonds and fewer stocks?",
       "passed": true,
       "notes": [
-        "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 5.0}, {'product_id': 'STB01', 'weight_pct': 15.0}, {'product_id': 'GOV01', 'weight_pct': 30.0}, {'product_id': 'GOV02', 'weight_pct': 15.0}, {'product_id': 'USE01', 'weight_pct': 20.0}, {'product_id': 'INT01', 'weight_pct': 15.0}]})"
+        "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 5.0}, {'product_id': 'STB01', 'weight_pct': 15.0}, {'product_id': 'GOV01', 'weight_pct': 30.0}, {'product_id': 'GOV02', 'weight_pct': 10.0}, {'product_id': 'USE01', 'weight_pct': 25.0}, {'product_id': 'INT01', 'weight_pct': 15.0}]})"
       ],
-      "reply": "I have updated your plan to include more bonds and fewer stocks. This new mix has a 60% share in bonds and a 35% share in stocks. Based on past market behavior, your $6,000 could grow to between $49,667 and $63,708 in 10 years. This is an educational simulation, not financial advice."
+      "reply": "I have adjusted your plan to include more bonds and fewer stocks. This new mix includes the Sprout Money Market Fund, Short-Term Treasury Fund, Treasury Bond Index Fund, Government Bond Ladder Fund, US Total Market Index Fund, and Developed Markets ex-US Index Fund. In 10 years, your money could be worth between $48,673 and $65,295. This is an educational simulation, not financial advice.",
+      "latency_ms": 34282
     },
     {
       "id": "TC-11",
       "area": "planning",
       "prompt": "What could happen to my money if markets go badly?",
-      "passed": true,
+      "passed": false,
       "notes": [
-        "called explain({'topic': 'risk'}), project_outcomes({})"
+        "called explain({'topic': 'risk'}), explain({'topic': 'volatility'})",
+        "missing project_outcomes"
       ],
-      "reply": "Markets go up and down, so your balance will change. The range of outcomes shows this. In a poor market, your money might grow less than you expect. For example, after 10 years, it could be worth about $46,625. This is an educational simulation, not financial advice."
+      "reply": "Markets can go up and down, which is called volatility. This means the value of your investments can drop, especially with stocks. No one can promise your money won't go down, but I can show you a range of what might happen.",
+      "latency_ms": 20772
     },
     {
       "id": "TC-12",
       "area": "comparison",
       "prompt": "Compare the US Total Market Index Fund with the Star Manager Growth Fund.",
-      "passed": true,
+      "passed": null,
       "notes": [
-        "called compare_products({'product_ids': ['USE01', 'ACT01']})"
+        "no answer from the model (quota or overload)"
       ],
-      "reply": "The US Total Market Index Fund has much lower fees and higher average returns over the last five years. Both funds have a similar risk level and could have dropped by over 40% in a single year."
+      "reply": "Sorry, Sprout couldn't reach its model just now. Your answers are saved. Try again, or use the buttons."
     },
     {
       "id": "TC-13",
@@ -132,7 +147,8 @@
       "notes": [
         "called compare_products({'product_ids': ['TBL01', 'MMF01']})"
       ],
-      "reply": "The Treasury Bill Fund is cheaper. It costs $0.70 a year for every $1,000 you invest, while the Sprout Money Market Fund costs $1.00 a year for every $1,000."
+      "reply": "The Treasury Bill Fund is cheaper. It costs $0.70 a year for every $1,000 you invest, while the Sprout Money Market Fund costs $1.00.",
+      "latency_ms": 39210
     },
     {
       "id": "TC-14",
@@ -142,7 +158,8 @@
       "notes": [
         "called compare_products({'product_ids': ['INT01', 'INT02']})"
       ],
-      "reply": "The Developed Markets ex-US Index Fund (INT01) has a lower fee of $0.70 per $1,000 than the International Equity Index Fund (INT02), which costs $1.20 per $1,000. Over the last five years, INT01 had a slightly higher average return of 4.9% compared to 4.8% for INT02. Both funds have a similar risk level."
+      "reply": "The Developed Markets ex-US Index Fund has a lower fee than the International Equity Index Fund. It also had a slightly higher average return over the last five years.",
+      "latency_ms": 12523
     },
     {
       "id": "TC-15",
@@ -152,7 +169,8 @@
       "notes": [
         "called compare_products({'product_ids': ['GOV01', 'GOV02']})"
       ],
-      "reply": "The Treasury Bond Index Fund has a lower fee of $0.50 per $1,000 than the Government Bond Ladder Fund at $1.50. Both have a risk rating of R2 and take 2 days to access your money. Their 5-year returns and worst 12-month drops are very similar."
+      "reply": "The Treasury Bond Index Fund has a lower fee of 50 cents per 1,000 dollars and a 5-year average return of 3.6 percent. The Government Bond Ladder Fund costs 1.50 dollars per 1,000 dollars and had a 5-year average return of 3.5 percent. Both funds have the same risk rating and let you access your money in 2 days.",
+      "latency_ms": 10758
     },
     {
       "id": "TC-16",
@@ -162,7 +180,8 @@
       "notes": [
         "called explain({'topic': 'index fund'})"
       ],
-      "reply": "An index fund is a fund that copies a market list, such as the 500 largest US companies, instead of a manager picking stocks. That keeps its fees low."
+      "reply": "An index fund is a fund that copies a market list, such as the 500 largest US companies, instead of a manager picking stocks. That keeps its fees low.",
+      "latency_ms": 21768
     },
     {
       "id": "TC-17",
@@ -172,7 +191,8 @@
       "notes": [
         "called explain({'topic': 'diversification'})"
       ],
-      "reply": "Diversification means spreading your money across many different investments. This way, if one investment does poorly, it hurts your total savings less. For example, it is safer to own thousands of companies instead of just one."
+      "reply": "Diversification means spreading your money across many different investments. This way, one bad result hurts you less. For example, it is like owning thousands of companies instead of just one.",
+      "latency_ms": 6191
     },
     {
       "id": "TC-18",
@@ -182,7 +202,8 @@
       "notes": [
         "called explain({'topic': 'emergency fund'})"
       ],
-      "reply": "An emergency fund is savings you can reach quickly for surprises, like losing a job or a big repair. A common target is 3 to 6 months of living costs."
+      "reply": "An emergency fund is savings you can reach quickly for surprises like losing a job or a big repair. A common target is 3 to 6 months of living costs.",
+      "latency_ms": 7208
     },
     {
       "id": "TC-19",
@@ -193,7 +214,8 @@
         "called propose_custom_allocation({'lines': [{'product_id': 'MMF01', 'weight_pct': 8.0}, {'product_id': 'STB01', 'weight_pct': 24.0}, {'product_id': 'GOV01', 'weight_pct': 28.0}, {'product_id': 'GOV02', 'weight_pct': 20.0}, {'product_id': 'EME01', 'weight_pct': 20.0}]})",
         "refused: SUIT-01"
       ],
-      "reply": "I can't add that fund because it is too risky for your level. I've kept your current plan instead. This is an educational simulation, not financial advice."
+      "reply": "I can't add that fund because it's a bit too risky for your current level. We can look at other funds that fit your profile instead. This is an educational simulation, not financial advice.",
+      "latency_ms": 25004
     },
     {
       "id": "TC-20",
@@ -203,7 +225,8 @@
       "notes": [
         "called prepare_orders({})"
       ],
-      "reply": "I have prepared your orders. You can now review them and press Confirm to start your plan. This is an educational simulation, not financial advice."
+      "reply": "Here are your orders to invest $6,000. You will buy Sprout Money Market Fund, Short-Term Treasury Fund, Treasury Bond Index Fund, Government Bond Ladder Fund, US Total Market Index Fund, and Developed Markets ex-US Index Fund. To finish, please press the Confirm button. This is an educational simulation, not financial advice.",
+      "latency_ms": 58706
     },
     {
       "id": "TC-21",
@@ -213,7 +236,8 @@
       "notes": [
         "called advance_time({'months': 12})"
       ],
-      "reply": "One year has passed. Your portfolio is now worth $10,114.80."
+      "reply": "One year has passed. Your portfolio is now worth $10,114.80.",
+      "latency_ms": 7321
     },
     {
       "id": "TC-22",
@@ -223,17 +247,18 @@
       "notes": [
         "called get_portfolio({})"
       ],
-      "reply": "Your portfolio is currently worth $6,000.00. You have not made any gains or losses yet."
+      "reply": "Your portfolio is worth $6,000.00. You have not made or lost any money yet.",
+      "latency_ms": 9995
     },
     {
       "id": "TC-23",
       "area": "monitoring",
       "prompt": "Has my mix drifted from its target?",
-      "passed": true,
+      "passed": null,
       "notes": [
-        "called check_drift({})"
+        "no answer from the model (quota or overload)"
       ],
-      "reply": "Your mix has drifted by 5.2 points from your target. This means some funds are now a larger or smaller part of your plan than you intended."
+      "reply": "Sorry, Sprout couldn't reach its model just now. Your answers are saved. Try again, or use the buttons."
     },
     {
       "id": "TC-24",
@@ -243,7 +268,8 @@
       "notes": [
         "called propose_rebalance({}), project_outcomes({})"
       ],
-      "reply": "I have drafted the trades to bring your mix back to your target. Here is a range of what could happen over the next 10 years if you follow this plan. To go ahead, you can review the orders and press Confirm. This is an educational simulation, not financial advice."
+      "reply": "I have drafted the trades to bring your mix back to your plan. In 10 years, your portfolio could be worth between $47,081 and $70,079. You can review the orders and press Confirm to go ahead. This is an educational simulation, not financial advice.",
+      "latency_ms": 52256
     },
     {
       "id": "TC-25",
@@ -253,7 +279,8 @@
       "notes": [
         "no tool called"
       ],
-      "reply": "It is normal to feel worried when your balance goes down. Selling now means you lock in those losses. Staying invested helps you ride out the ups and downs of the market."
+      "reply": "It is normal to feel worried when your balance goes down. Selling now would lock in those losses instead of giving your plan a chance to recover. Most people stay the course during these times.",
+      "latency_ms": 7849
     }
   ]
 }

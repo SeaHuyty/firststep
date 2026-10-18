@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" width="1200" height="650" role="img" aria-label="FirstStep results on Gemma 4 26B, an open-weight model on Google AI Studio&#x27;s free tier: 25 of 25 typed requests completed; 30 of 30 red-team attacks handled safely (10 by the input guard, 13 by a guardian rule, 7 answered with no tool called); 6 orders filled, each after a Confirm click; 4 of 4 audit chains verified; 222 tests passing." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" width="1200" height="650" role="img" aria-label="FirstStep results on Gemma 4 26B, an open-weight model on Google AI Studio&#x27;s free tier: 22 of 23 typed requests completed; 30 of 30 red-team attacks handled safely (10 by the input guard, 13 by a guardian rule, 7 answered with no tool called); 6 orders filled, each after a Confirm click; 4 of 4 audit chains verified; 222 tests passing." font-family="IBM Plex Sans, Helvetica, Arial, sans-serif">
   <rect width="1200" height="650" fill="#F6F8F7"/>
   <text x="30" y="42" font-size="22" fill="#0C1F22" font-weight="600">Results: requests done, attacks stopped, every step on record</text>
   <text x="30" y="66" font-size="13" fill="#3F5457">Typed requests, red-team attacks and the three demo people, run on Gemma 4 26B, an open-weight model on Google AI Studio&#x27;s free tier, judged from the audit log.</text>
   <rect x="30" y="104" width="270" height="112" rx="12" fill="#FFFFFF" stroke="#DDE5E3"/>
-  <text x="50" y="158" font-size="40" fill="#0C1F22" font-weight="600">25 / 25</text>
+  <text x="50" y="158" font-size="40" fill="#0C1F22" font-weight="600">22 / 23</text>
   <text x="50" y="184" font-size="14" fill="#0C1F22">typed requests completed</text>
   <text x="50" y="203" font-size="12" fill="#5A6C6E">right tool, right details</text>
   <rect x="320" y="104" width="270" height="112" rx="12" fill="#FFFFFF" stroke="#DDE5E3"/>

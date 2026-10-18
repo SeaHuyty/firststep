@@ -149,14 +149,18 @@ def propose_allocation(ctx: ToolContext, _: NoArgs) -> ProposeOut | ToolError:
 class CustomLine(Input):
     """One fund and its share of a requested mix."""
 
-    product_id: str = Field(max_length=10)
-    weight_pct: float = Field(gt=0, le=100)
+    product_id: str = Field(max_length=10, description="A fund ID from FUNDS")
+    weight_pct: float = Field(gt=0, le=100, description="Share of the whole plan, in percent")
 
 
 class ProposeCustomIn(Input):
     """A specific mix the client asked for, e.g. "all in tech"."""
 
-    lines: list[CustomLine] = Field(min_length=1, max_length=10)
+    lines: list[CustomLine] = Field(
+        min_length=1,
+        max_length=10,
+        description="The whole new mix, every fund to hold; weights add up to 100",
+    )
 
 
 def propose_custom_allocation(ctx: ToolContext, args: ProposeCustomIn) -> ProposeOut | ToolError:

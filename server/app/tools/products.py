@@ -59,7 +59,9 @@ def list_suitable_products(ctx: ToolContext, args: ListProductsIn) -> ListProduc
 class CompareIn(Input):
     """Two to four funds to compare."""
 
-    product_ids: list[str] = Field(min_length=2, max_length=4)
+    product_ids: list[str] = Field(
+        min_length=2, max_length=4, description="2 to 4 fund IDs from FUNDS, e.g. USE01"
+    )
 
 
 class CompareOut(Output):

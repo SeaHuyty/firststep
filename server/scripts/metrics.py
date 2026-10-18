@@ -98,6 +98,11 @@ def main() -> int:
         if (args.out / "redteam.json").exists()
         else None
     )
+    tasks = (
+        json.loads((args.out / "tasks.json").read_text())
+        if (args.out / "tasks.json").exists()
+        else None
+    )
     personas = (
         json.loads((args.out / "personas.json").read_text())
         if (args.out / "personas.json").exists()
@@ -110,6 +115,9 @@ def main() -> int:
         "redteam_passed": redteam["passed"] if redteam else None,
         "redteam_total": redteam["total"] if redteam else None,
         "redteam_llm": redteam["llm"] if redteam else None,
+        "tasks_passed": tasks["passed"] if tasks else None,
+        "tasks_total": tasks["total"] if tasks else None,
+        "tasks_llm": tasks["llm"] if tasks else None,
         "audit_logs": len(logs),
         "audit_events": len(all_events),
         "chains_verified": sum(chains.values()),
@@ -131,6 +139,11 @@ def main() -> int:
         if redteam
         else "not run"
     )
+    tk = (
+        f"{data['tasks_passed']} of {data['tasks_total']} ({data['tasks_llm']})"
+        if tasks
+        else "not run"
+    )
     lines = [
         "# Results",
         "",
@@ -138,6 +151,7 @@ def main() -> int:
         "",
         "| Measure | Result |",
         "|---|---|",
+        f"| Tasks completed from a typed request | {tk} |",
         f"| Red-team attacks handled safely | {rt} |",
         f"| Persona audit logs with a verified hash chain | {data['chains_verified']} of {data['audit_logs']} ({data['audit_events']} events) |",
         f"| Guardian refusals in the persona runs | {data['guardian_refusals']} ({', '.join(data['rules_fired'])}) |",

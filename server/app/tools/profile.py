@@ -134,7 +134,7 @@ def _with_answer(profile: Profile, q: Question, value: Any) -> Profile:  # noqa:
 class AnswerQuestionIn(Input):
     """A tapped chip or a typed answer to one question."""
 
-    question_id: str = Field(max_length=40)
+    question_id: str = Field(max_length=40, description="The question_id from QUESTION NOW")
     value: Any = Field(description="The chip value, a number, or a list of debts")
 
 
@@ -168,7 +168,9 @@ class UpdateProfileIn(Input):
     """Facts the client stated themselves; omit anything unsaid."""
 
     age: int | None = Field(default=None, ge=18, le=100)
-    monthly_income_usd: float | None = Field(default=None, ge=0, le=10_000_000)
+    monthly_income_usd: float | None = Field(
+        default=None, ge=0, le=10_000_000, description="Take-home pay a month, after tax"
+    )
     monthly_expenses_usd: float | None = Field(default=None, ge=0, le=10_000_000)
     liquid_savings_usd: float | None = Field(default=None, ge=0, le=100_000_000)
     debts: list[Debt] | None = Field(default=None, max_length=10)

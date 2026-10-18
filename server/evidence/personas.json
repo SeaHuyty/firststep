@@ -8,7 +8,7 @@
       ],
       "events": 34,
       "chain_ok": true,
-      "head": "d58f6df0ee63bcdaeeb57fbe497e73febb87c5628327b6278686cbc8772d5fd4"
+      "head": "1ba9de7d96454551496bacfa5cab83d6d7400da620362f362dca8b5e5f989841"
     },
     "leo": {
       "notes": [
@@ -19,7 +19,7 @@
       ],
       "events": 114,
       "chain_ok": true,
-      "head": "4455fb9ee8f3802ccf5270fd7c65b08891eaf3049a9d46339452c6d883be0ba4"
+      "head": "35ded269628f1dfaf3c61fd6a48206f2f0cc102d43b98152ef5c730114cff3af"
     },
     "mei": {
       "notes": [
@@ -28,7 +28,7 @@
       ],
       "events": 94,
       "chain_ok": true,
-      "head": "e597e927ae4382f73fdd43d58a15ebe9fad385cd2309e9ac81419d7695708eac"
+      "head": "a198b5be77db91693b378d1399b681ebf17e363100f6648c5ee7d1e31540632e"
     }
   }
 }

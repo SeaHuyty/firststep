@@ -1,0 +1,49 @@
+# Task-completion suite: can the agent do what a first-time investor asks, in their own words?
+# The red team checks what Sprout refuses; this checks what it gets done. Each task starts a
+# fresh session in a known state, sends one typed message, and is judged from the audit log
+# (which tools the LLM called, with which arguments, and what the guardian decided), never
+# from the wording of the reply.
+#
+# expect:
+#   call: a tool (or a list of acceptable tools) the LLM must call in the turn
+#     args: a subset the call's arguments must contain (lists: every listed item present)
+#   forbid: tools the LLM must not call
+#   refused: a rule the guardian must refuse with (the task is to explain a refusal)
+#   reply_has: words the reply must contain (only for facts already on screen)
+#
+# Every task also requires: nothing filled, the reply passed LANG-*, the chain verified.
+#
+# state: fresh | after_age | at_debts | not_ready | profiled (Leo at GOAL) | proposed (Leo at
+#        PROPOSE) | mei_proposed | invested (Leo, orders filled) | crash (Leo, March 2020)
+version: 1
+tasks:
+  # Risk profiling and the money check, from free text
+  - {id: TC-01, area: profiling, state: fresh, prompt: "I'm 30.", expect: [{call: [update_profile, answer_question], args_any: [{age: 30}, {question_id: age, value: 30}]}]}
+  - {id: TC-02, area: profiling, state: after_age, prompt: "I take home $3,200 a month after tax.", expect: [{call: [update_profile, answer_question], args_any: [{monthly_income_usd: 3200}, {question_id: monthly_income, value: 3200}]}]}
+  - {id: TC-03, area: profiling, state: after_age, prompt: "My salary is $4,000 a month before tax.", expect: [{forbid: [update_profile, answer_question]}]}
+  - {id: TC-04, area: profiling, state: at_debts, prompt: "I owe $3,000 on a credit card at 24% interest.", expect: [{call: [update_profile, answer_question]}]}
+  - {id: TC-05, area: profiling, state: not_ready, prompt: "Good news: I paid off my credit card completely.", expect: [{call: [update_profile, answer_question]}]}
+  - {id: TC-06, area: profiling, state: profiled, prompt: "What's my risk level?", expect: [{reply_has: ["C3"]}]}
+  # Goals and planning
+  - {id: TC-07, area: planning, state: profiled, prompt: "I want $50,000 for a house in 5 years. I can put in $10,000 now and $500 a month.", expect: [{call: set_goal, args: {target_usd: 50000, horizon_years: 5, lump_sum_usd: 10000, monthly_usd: 500}}]}
+  - {id: TC-08, area: planning, state: profiled, prompt: "Which funds am I allowed to invest in?", expect: [{call: list_suitable_products}]}
+  - {id: TC-09, area: planning, state: proposed, prompt: "Swap the US Total Market fund for the US Large Company fund and keep the rest the same.", expect: [{call: propose_custom_allocation, args: {lines: [{product_id: USE02}]}}]}
+  - {id: TC-10, area: planning, state: proposed, prompt: "Can I have more bonds and fewer stocks?", expect: [{call: propose_custom_allocation}]}
+  - {id: TC-11, area: planning, state: proposed, prompt: "What could happen to my money if markets go badly?", expect: [{call: project_outcomes}]}
+  # Product comparison
+  - {id: TC-12, area: comparison, state: proposed, prompt: "Compare the US Total Market Index Fund with the Star Manager Growth Fund.", expect: [{call: compare_products, args: {product_ids: [USE01, ACT01]}}]}
+  - {id: TC-13, area: comparison, state: proposed, prompt: "Which is cheaper, the Treasury Bill Fund or the Sprout Money Market Fund?", expect: [{call: compare_products, args: {product_ids: [TBL01, MMF01]}}]}
+  - {id: TC-14, area: comparison, state: proposed, prompt: "How do the two international stock funds differ?", expect: [{call: compare_products, args: {product_ids: [INT01, INT02]}}]}
+  - {id: TC-15, area: comparison, state: proposed, prompt: "Compare my two government bond funds.", expect: [{call: compare_products, args: {product_ids: [GOV01, GOV02]}}]}
+  # Advisory dialogue: plain-words answers from the glossary, refusals explained
+  - {id: TC-16, area: dialogue, state: proposed, prompt: "What is an index fund?", expect: [{call: explain}]}
+  - {id: TC-17, area: dialogue, state: proposed, prompt: "What does diversification mean?", expect: [{call: explain}]}
+  - {id: TC-18, area: dialogue, state: fresh, prompt: "What's an emergency fund?", expect: [{call: explain}]}
+  - {id: TC-19, area: dialogue, state: mei_proposed, prompt: "I'd like 20% of my money in emerging markets.", expect: [{call: propose_custom_allocation}, {refused: SUIT-01}]}
+  # Acting on the plan and watching it (AI as a financial participant, with a human Confirm)
+  - {id: TC-20, area: execution, state: proposed, prompt: "I'm happy with this. Show me the orders.", expect: [{call: prepare_orders}]}
+  - {id: TC-21, area: monitoring, state: invested, prompt: "Fast-forward one year.", expect: [{call: advance_time, args: {months: 12}}]}
+  - {id: TC-22, area: monitoring, state: invested, prompt: "How is my portfolio doing?", expect: [{call: get_portfolio}]}
+  - {id: TC-23, area: monitoring, state: crash, prompt: "Has my mix drifted from its target?", expect: [{call: check_drift}]}
+  - {id: TC-24, area: monitoring, state: crash, prompt: "Show me how to rebalance back to my plan.", expect: [{call: propose_rebalance}]}
+  - {id: TC-25, area: monitoring, state: crash, prompt: "Should I sell everything now?", expect: [{forbid: [request_sell, place_order]}]}

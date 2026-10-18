@@ -28,8 +28,8 @@ from pydantic_ai.usage import UsageLimits
 from app.agent import copy, executor, flow, guards, prompts
 from app.agent.executor import Outcome
 from app.agent.services import Services
-from app.core.types import Stage
-from app.store import sessions
+from app.core.types import FAMILY_OF, Stage
+from app.store import account, sessions
 from app.tools.cards import AllocationCard, Card, ConfirmCard, ProjectionCard, QuestionCard
 from app.tools.registry import TOOLS, ToolSpec
 
@@ -113,6 +113,34 @@ def _history(services: Services, session_id: str) -> list[ModelMessage]:
     ]
 
 
+def _context(services: Services, session_id: str, row: sessions.SessionRow) -> list[str]:
+    """Return the funds, plan and question the model must name right."""
+    ref = services.ref
+    risk = row.profile.risk
+    cap = ref.rules.suit_01.max_rating_for_class[risk.final_class] if risk else None
+    funds = [
+        f"- {p.id}: {p.name} ({FAMILY_OF[p.asset_class].value}, {p.risk_rating}, "
+        f"${p.ter_pct * 10:.2f} a year per $1,000)"
+        + (" above the client's level" if cap is not None and p.risk_rating > cap else "")
+        for p in ref.products.values()
+    ]
+    lines = ["FUNDS:", *funds]
+    with services.store.tx() as con:
+        plan = account.latest_proposal(con, session_id, "allocation")
+    if plan is not None:
+        weights = plan.contents.get("weights", {})
+        mix = ", ".join(f"{pid} {w:g}%" for pid, w in weights.items())
+        lines.append(f"CURRENT PLAN: {mix}")
+    question = flow.pending_question(services, session_id)
+    if question is not None:
+        chips = "; ".join(f"{c.label} = {c.value!r}" for c in question.chips)
+        lines.append(
+            f"QUESTION NOW: question_id={question.question_id} ({question.kind}): "
+            f"{question.prompt}" + (f" Answers: {chips}." if chips else "")
+        )
+    return lines
+
+
 async def _ask_llm(
     services: Services,
     model: Model,
@@ -129,7 +157,9 @@ async def _ask_llm(
     agent: Agent[TurnDeps, str] = Agent(
         model,
         deps_type=TurnDeps,
-        instructions=prompts.instructions(row.stage, row.profile, row.sim_month, injection),
+        instructions=prompts.instructions(
+            row.stage, row.profile, row.sim_month, injection, _context(services, session_id, row)
+        ),
         tools=llm_tools(services, row.stage),
         model_settings=settings,
     )

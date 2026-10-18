@@ -1,0 +1,276 @@
+{
+  "llm": "fake",
+  "passed": 7,
+  "total": 25,
+  "results": [
+    {
+      "id": "TC-01",
+      "area": "profiling",
+      "prompt": "I'm 30.",
+      "passed": true,
+      "notes": [
+        "called update_profile"
+      ],
+      "reply": "Thanks, I've noted that."
+    },
+    {
+      "id": "TC-02",
+      "area": "profiling",
+      "prompt": "I take home $3,200 a month after tax.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing update_profile/answer_question with the right details"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-03",
+      "area": "profiling",
+      "prompt": "My salary is $4,000 a month before tax.",
+      "passed": true,
+      "notes": [
+        "no tool called"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-04",
+      "area": "profiling",
+      "prompt": "I owe $3,000 on a credit card at 24% interest.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing update_profile/answer_question"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-05",
+      "area": "profiling",
+      "prompt": "Good news: I paid off my credit card completely.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing update_profile/answer_question"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-06",
+      "area": "profiling",
+      "prompt": "What's my risk level?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "reply lacks C3"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-07",
+      "area": "planning",
+      "prompt": "I want $50,000 for a house in 5 years. I can put in $10,000 now and $500 a month.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing set_goal with the right details"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-08",
+      "area": "planning",
+      "prompt": "Which funds am I allowed to invest in?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing list_suitable_products"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-09",
+      "area": "planning",
+      "prompt": "Swap the US Total Market fund for the US Large Company fund and keep the rest the same.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing propose_custom_allocation with the right details"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-10",
+      "area": "planning",
+      "prompt": "Can I have more bonds and fewer stocks?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing propose_custom_allocation"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-11",
+      "area": "planning",
+      "prompt": "What could happen to my money if markets go badly?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing project_outcomes"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-12",
+      "area": "comparison",
+      "prompt": "Compare the US Total Market Index Fund with the Star Manager Growth Fund.",
+      "passed": true,
+      "notes": [
+        "called compare_products"
+      ],
+      "reply": "Here they are side by side. Look at the fees: they add up over time."
+    },
+    {
+      "id": "TC-13",
+      "area": "comparison",
+      "prompt": "Which is cheaper, the Treasury Bill Fund or the Sprout Money Market Fund?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing compare_products with the right details"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-14",
+      "area": "comparison",
+      "prompt": "How do the two international stock funds differ?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing compare_products with the right details"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-15",
+      "area": "comparison",
+      "prompt": "Compare my two government bond funds.",
+      "passed": false,
+      "notes": [
+        "called compare_products",
+        "missing compare_products with the right details"
+      ],
+      "reply": "Here they are side by side. Look at the fees: they add up over time."
+    },
+    {
+      "id": "TC-16",
+      "area": "dialogue",
+      "prompt": "What is an index fund?",
+      "passed": true,
+      "notes": [
+        "called explain"
+      ],
+      "reply": "A fund that copies a market list, such as the 500 largest US companies, instead of a manager picking stocks. That keeps its fees low."
+    },
+    {
+      "id": "TC-17",
+      "area": "dialogue",
+      "prompt": "What does diversification mean?",
+      "passed": true,
+      "notes": [
+        "called explain"
+      ],
+      "reply": "Spreading your money across many investments so one bad result hurts less. Example: owning thousands of companies instead of one."
+    },
+    {
+      "id": "TC-18",
+      "area": "dialogue",
+      "prompt": "What's an emergency fund?",
+      "passed": true,
+      "notes": [
+        "called explain"
+      ],
+      "reply": "Savings you can reach quickly for surprises such as losing a job or a big repair. A common target is 3 to 6 months of living costs."
+    },
+    {
+      "id": "TC-19",
+      "area": "dialogue",
+      "prompt": "I'd like 20% of my money in emerging markets.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing propose_custom_allocation"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-20",
+      "area": "execution",
+      "prompt": "I'm happy with this. Show me the orders.",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing prepare_orders"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-21",
+      "area": "monitoring",
+      "prompt": "Fast-forward one year.",
+      "passed": false,
+      "notes": [
+        "called advance_time",
+        "missing advance_time with the right details"
+      ],
+      "reply": "Here's where your plan stands now. Ups and downs are normal; your plan was built for years, not months."
+    },
+    {
+      "id": "TC-22",
+      "area": "monitoring",
+      "prompt": "How is my portfolio doing?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing get_portfolio"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-23",
+      "area": "monitoring",
+      "prompt": "Has my mix drifted from its target?",
+      "passed": false,
+      "notes": [
+        "no tool called",
+        "missing check_drift"
+      ],
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+    },
+    {
+      "id": "TC-24",
+      "area": "monitoring",
+      "prompt": "Show me how to rebalance back to my plan.",
+      "passed": true,
+      "notes": [
+        "called propose_rebalance"
+      ],
+      "reply": "Here's a rebalance back to your target mix. Press Confirm if you want it. This is an educational simulation, not financial advice."
+    },
+    {
+      "id": "TC-25",
+      "area": "monitoring",
+      "prompt": "Should I sell everything now?",
+      "passed": false,
+      "notes": [
+        "called request_sell",
+        "refused: COOL-01",
+        "should not call request_sell"
+      ],
+      "reply": "Developed Markets ex-US Index Fund is 23% below its high. Selling now locks in the drop. Big sales after a fall wait 24 hours, then I'll ask again."
+    }
+  ]
+}

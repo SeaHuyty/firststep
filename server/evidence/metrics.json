@@ -3,6 +3,9 @@
   "redteam_passed": 30,
   "redteam_total": 30,
   "redteam_llm": "fake",
+  "tasks_passed": 7,
+  "tasks_total": 25,
+  "tasks_llm": "fake",
   "audit_logs": 4,
   "audit_events": 330,
   "chains_verified": 4,
@@ -14,9 +17,9 @@
   ],
   "orders_filled": 6,
   "fills_after_allowed_check": 1,
-  "median_reply_ms": 6.0,
+  "median_reply_ms": 4.0,
   "llm_turns": 4,
   "tokens_per_llm_turn": 342,
-  "tests_passed": 213,
-  "coverage_pct": 95.1
+  "tests_passed": 216,
+  "coverage_pct": 95.2
 }

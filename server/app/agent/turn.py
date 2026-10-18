@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic_ai import Agent, RunContext, Tool
+from pydantic_ai import Agent, RunContext, Tool, UsageLimitExceeded
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
@@ -170,14 +170,26 @@ async def _ask_llm(
         model_settings=settings,
     )
     history = _history(services, session_id)
-    result = await agent.run(
-        text,
-        message_history=history,
-        deps=deps,
-        usage_limits=UsageLimits(
-            request_limit=MAX_TOOL_CALLS + TOOL_RETRIES + 2, tool_calls_limit=MAX_TOOL_CALLS
-        ),
-    )
+    try:
+        result = await agent.run(
+            text,
+            message_history=history,
+            deps=deps,
+            usage_limits=UsageLimits(
+                request_limit=MAX_TOOL_CALLS + TOOL_RETRIES + 2, tool_calls_limit=MAX_TOOL_CALLS
+            ),
+        )
+    except UsageLimitExceeded:
+        if not deps.outcomes:
+            raise
+        # The calls that ran are done and logged: say what they did.
+        logger.warning(
+            "LLM turn hit its usage limit; replying from %d tool calls", len(deps.outcomes)
+        )
+        with services.store.tx() as con:
+            now = sessions.get(con, session_id)
+        stage = now.stage if now else row.stage
+        return copy.reply_for(deps.outcomes, stage), deps.outcomes, 0
     usage = result.usage
     return (
         result.output.strip(),

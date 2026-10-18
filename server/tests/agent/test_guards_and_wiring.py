@@ -1,12 +1,16 @@
 import asyncio
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+from pydantic_ai.models.function import AgentInfo, FunctionModel
 
 from app.agent import turn
 from app.agent.guards import DISCLOSURE, check_input, with_disclosure
 from app.agent.turn import llm_tools
+from app.api.app import create_app
 from app.core.reference import load_reference
 from app.core.settings import Settings
 from app.core.types import Stage
@@ -14,6 +18,7 @@ from app.llm.adapter import build_model
 from app.tools.base import NoArgs
 from app.tools.registry import TOOLS
 from tests.conftest import Session
+from tests.conftest import test_settings as settings_in
 
 DATA = Settings(_env_file=None).data_dir
 
@@ -156,6 +161,21 @@ def test_a_slow_model_is_cut_off_with_the_timeout_reply(
     s = Session(client, "leo")
     s.say("What is a bond?")
     assert s.last["reply"].startswith("Sorry, Sprout didn't answer in time")
+
+
+def test_a_turn_over_the_tool_call_limit_keeps_what_was_done(tmp_path: Path) -> None:
+    def explain_forever(_: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        return ModelResponse(parts=[ToolCallPart("explain", {"topic": "bond"})])
+
+    app = create_app(settings_in(tmp_path), model=FunctionModel(explain_forever))
+    with TestClient(app) as client:
+        s = Session(client, "leo")
+        s.say("What is a bond? Tell me again and again.")
+        calls = [
+            e for e in s.audit()["events"] if e["type"] == "tool_call" and e["actor"] == "llm"
+        ]
+    assert len(calls) == turn.MAX_TOOL_CALLS
+    assert not s.last["reply"].startswith("Sorry")
 
 
 def test_llm_tools_get_retries_and_no_arg_tools_ignore_stray_keys() -> None:

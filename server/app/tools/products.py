@@ -124,7 +124,11 @@ class ExplainOut(Output):
 
 
 def explain(ctx: ToolContext, args: ExplainIn) -> ExplainOut | ToolError:
-    """Return a fixed, cited definition; Sprout never makes these up."""
+    """Return a fixed, cited definition; Sprout never makes these up.
+
+    For what a word means (index fund, diversification). A question
+    about the client's own money goes to the plan's tools instead.
+    """
     key = args.topic.strip().lower().replace(" ", "_").replace("-", "_")
     glossary = ctx.ref.glossary
     term = glossary.terms.get(key) or next(

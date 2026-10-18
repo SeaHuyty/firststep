@@ -186,7 +186,12 @@ class ProjectOut(Output):
 
 
 def project_outcomes_tool(ctx: ToolContext, _: NoArgs) -> ProjectOut | ToolError:
-    """Show the range of outcomes of the latest proposal."""
+    """Show the range of outcomes of the latest proposal.
+
+    Bad, typical and good cases from replaying past markets. Use it
+    when the client asks what could happen to their money: how bad it
+    could get, or what they might end up with.
+    """
     proposal = account.latest_proposal(ctx.con, ctx.session.id, "allocation")
     goal = ctx.session.profile.goal
     if proposal is None or goal is None:

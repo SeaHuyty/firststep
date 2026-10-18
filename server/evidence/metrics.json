@@ -14,9 +14,9 @@
   ],
   "orders_filled": 6,
   "fills_after_allowed_check": 1,
-  "median_reply_ms": 7.0,
+  "median_reply_ms": 6.0,
   "llm_turns": 4,
   "tokens_per_llm_turn": 342,
-  "tests_passed": 211,
-  "coverage_pct": 94.6
+  "tests_passed": 213,
+  "coverage_pct": 95.1
 }

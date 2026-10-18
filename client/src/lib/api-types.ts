@@ -238,6 +238,11 @@ export interface components {
             family: string;
             /** Name */
             name: string;
+            /**
+             * Peers
+             * @default []
+             */
+            peers: string[];
             /** Product Id */
             product_id: string;
             /** Risk Rating */
@@ -310,6 +315,11 @@ export interface components {
             fee_per_year_on_1000_usd: number;
             /** Id */
             id: string;
+            /**
+             * In Plan
+             * @default false
+             */
+            in_plan: boolean;
             /** Liquidity Days */
             liquidity_days: number;
             /** Name */

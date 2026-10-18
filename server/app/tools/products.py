@@ -6,6 +6,7 @@ from app.core.errors import ToolError
 from app.core.reference import Product
 from app.core.types import AssetClass
 from app.engine.suitability import suitable_funds
+from app.store import account
 from app.tools.base import Input, Output
 from app.tools.cards import ComparisonCard, ComparisonRow, ProductsCard, ProductView, TermCard
 from app.tools.context import ToolContext
@@ -83,6 +84,8 @@ def compare_products(ctx: ToolContext, args: CompareIn) -> CompareOut | ToolErro
     unknown = [pid for pid in args.product_ids if pid not in ctx.ref.products]
     if unknown:
         return ToolError(code="unknown_product", message=f"I don't have {', '.join(unknown)}.")
+    plan = account.latest_proposal(ctx.con, ctx.session.id, "allocation")
+    in_plan = set(plan.contents.get("weights", {})) if plan else set()
     rows = []
     for pid in args.product_ids:
         p = ctx.ref.products[pid]
@@ -97,6 +100,7 @@ def compare_products(ctx: ToolContext, args: CompareIn) -> CompareOut | ToolErro
                 return_5y_pct_a_year=five,
                 worst_12m_pct=worst,
                 liquidity_days=p.liquidity_days,
+                in_plan=pid in in_plan,
             )
         )
     ctx.cards.append(ComparisonCard(rows=rows, as_of=ctx.session.sim_month))

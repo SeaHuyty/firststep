@@ -10,7 +10,7 @@ from app.core.hashing import content_hash
 from app.core.types import FAMILY_OF, ClientClass, to_money
 from app.engine.allocation import family_split, split_amount
 from app.engine.bootstrap import portfolio_returns, project_outcomes, rolling_extremes
-from app.engine.suitability import weighted_fee_pct, weights_by_class
+from app.engine.suitability import suitable_funds, weighted_fee_pct, weights_by_class
 from app.store import account
 from app.tools.base import Input, NoArgs, Output
 from app.tools.cards import AllocationCard, AllocationLine, ProjectionCard, WhyLine
@@ -70,6 +70,14 @@ def _why(ctx: ToolContext, pid: str, weight: float, client: ClientClass) -> list
     ]
 
 
+def _peers(ctx: ToolContext, pid: str, client: ClientClass, plan: dict[str, float]) -> list[str]:
+    """Return up to 3 similar funds within the client's level."""
+    kind = ctx.ref.products[pid].asset_class
+    alike = [p for p in ctx.ref.products.values() if p.asset_class == kind and p.id not in plan]
+    keep, _ = suitable_funds(alike, client, ctx.ref.rules.suit_01.max_rating_for_class)
+    return [p.id for p in sorted(keep, key=lambda p: (p.ter_pct, p.id))[:3]]
+
+
 def _propose(ctx: ToolContext, weights: dict[str, float], label: str) -> ProposeOut | ToolError:
     client, goal = ctx.client_class, ctx.session.profile.goal
     if client is None or goal is None:
@@ -108,6 +116,7 @@ def _propose(ctx: ToolContext, weights: dict[str, float], label: str) -> Propose
                     weight_pct=w,
                     amount_usd=str(amounts.get(pid, Decimal(0))),
                     why=_why(ctx, pid, w, client),
+                    peers=_peers(ctx, pid, client, weights),
                 )
                 for pid, w in weights.items()
             ],

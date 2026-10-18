@@ -13,6 +13,7 @@ import type { CardOf, PersonaHint, SessionView, Stage, TurnOut } from "@/lib/typ
 import { type ChatMessage, Composer, MessageList } from "./chat";
 import { ConfirmDialog } from "./confirm-dialog";
 import { type Goal, GoalForm } from "./goal-form";
+import { PlanActionsContext } from "./plan-actions";
 import { AuditPanel, PlanPanel, WatchControls } from "./plan-panel";
 import { SPOTLIGHT_ORDER } from "./result-line";
 import { Safeguards } from "./safeguards";
@@ -106,6 +107,10 @@ export function SessionScreen() {
   };
 
   const act = (action: Action, label?: string) => run(() => api.act(id, { ...action, label }), label);
+  const planActions = {
+    compare: (ids: string[], label: string) => act({ tool: "compare_products", args: { product_ids: ids } }, label),
+    busy,
+  };
   const say = (text: string) => run(() => api.say(id, text), text);
 
   const persona: PersonaHint | null | undefined = view?.persona;
@@ -187,6 +192,7 @@ export function SessionScreen() {
   // pattern of Claude Artifacts and ChatGPT Canvas). Phones keep tabs and one scrolling page.
   return (
     <GlossaryProvider>
+    <PlanActionsContext.Provider value={planActions}>
     <AppShell step={STEP_OF[stage]} fill>
       {persona && (
         <p className="mb-4 max-w-none text-body-sm text-ink-2 lg:mb-3">
@@ -254,6 +260,7 @@ export function SessionScreen() {
         />
       )}
     </AppShell>
+    </PlanActionsContext.Provider>
     </GlossaryProvider>
   );
 }

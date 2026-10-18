@@ -110,7 +110,14 @@ export function ResultLine({ card, onShow }: { card: Card; onShow: () => void })
         </Line>
       );
     case "comparison":
-      return <Line onShow={onShow}>Compared {card.rows.length} funds side by side.</Line>;
+    {
+      const mine = card.rows.find((r) => r.in_plan);
+      return (
+        <Line onShow={onShow}>
+          {mine ? `Compared ${mine.name} with ${card.rows.length - 1} similar funds.` : `Compared ${card.rows.length} funds side by side.`}
+        </Line>
+      );
+    }
     case "products":
       return <Line onShow={onShow}>{card.products.length} funds fit your level.</Line>;
     default:

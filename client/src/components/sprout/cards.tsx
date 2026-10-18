@@ -7,7 +7,9 @@ import { RuleNote } from "@/components/ui/rule-note";
 import { FAMILY_LABEL } from "@/lib/copy";
 import { duration, money, moneyCents, month, pctChange } from "@/lib/format";
 import type { CardOf } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 import { AllocationDonut, FamilyDot, ProjectionFan } from "./charts";
+import { usePlanActions } from "./plan-actions";
 import { Term } from "./term";
 
 type WhyLine = { rule_id?: string | null; text: string };
@@ -143,8 +145,27 @@ const FAMILY_MEANING: Record<string, { term: string; text: string }> = {
   gold: { term: "diversification", text: "often moves differently from stocks" },
 };
 
+/** Product comparison, one tap from the plan: the fund put side by side with its peers. */
+function CompareButton({ line, children }: { line: CardOf<"allocation">["lines"][number]; children: React.ReactNode }) {
+  const actions = usePlanActions();
+  if (!actions || line.peers.length === 0) return null;
+  return (
+    <Button
+      variant="secondary"
+      disabled={actions.busy}
+      onClick={() => actions.compare([line.product_id, ...line.peers], `Compare ${line.name} with similar funds`)}
+    >
+      {children}
+    </Button>
+  );
+}
+
 export function AllocationView({ card }: { card: CardOf<"allocation"> }) {
   const parts = Object.entries(card.families).filter(([, w]) => w > 0);
+  // The biggest fund with alternatives: the comparison most worth seeing.
+  const focus = card.lines
+    .filter((l) => l.peers.length > 0)
+    .sort((a, b) => Number(b.amount_usd) - Number(a.amount_usd))[0];
   return (
     <Card overline={`Your plan · ${card.client_class} ${card.label.split(" ").slice(1).join(" ")}`} title={`What your ${money(card.total_usd)} is made of`}>
       {/* The words are the legend: each part says what it is for, next to its colour. */}
@@ -174,6 +195,15 @@ export function AllocationView({ card }: { card: CardOf<"allocation"> }) {
       <p className="mt-3 text-body text-ink-2">
         <Term id="fee">Fees</Term>: about {money(card.fee_usd_a_year)} a year for all {card.lines.length} funds together.
       </p>
+      {focus && (
+        <div className="mt-3 flex flex-col gap-2 rounded-sm border border-line p-3 sm:flex-row sm:items-center">
+          <p className="flex-1 text-body-sm text-ink-2">
+            Why these funds? See {focus.name} next to {focus.peers.length} similar{" "}
+            {focus.peers.length === 1 ? "fund" : "funds"}: cost, ups and downs, past results.
+          </p>
+          <CompareButton line={focus}>Compare funds</CompareButton>
+        </div>
+      )}
       <details className="mt-3">
         <summary className="min-h-11 cursor-pointer py-2 text-label text-primary">See the {card.lines.length} funds</summary>
         <ul className="divide-y divide-line">
@@ -191,12 +221,32 @@ export function AllocationView({ card }: { card: CardOf<"allocation"> }) {
                   <p className="tnum text-caption text-muted">{l.weight_pct}%</p>
                 </div>
               </div>
-              <Why lines={l.why} />
+              <div className="flex flex-wrap items-center gap-x-4">
+                <Why lines={l.why} />
+                {l.peers.length > 0 && l !== focus && (
+                  <CompareLink line={l} />
+                )}
+              </div>
             </li>
           ))}
         </ul>
       </details>
     </Card>
+  );
+}
+
+function CompareLink({ line }: { line: CardOf<"allocation">["lines"][number] }) {
+  const actions = usePlanActions();
+  if (!actions) return null;
+  return (
+    <button
+      type="button"
+      disabled={actions.busy}
+      onClick={() => actions.compare([line.product_id, ...line.peers], `Compare ${line.name} with similar funds`)}
+      className="min-h-11 rounded-sm text-label text-primary underline decoration-dotted underline-offset-4 disabled:opacity-50"
+    >
+      Compare
+    </button>
   );
 }
 
@@ -258,34 +308,92 @@ export function ProjectionView({ card }: { card: CardOf<"projection"> }) {
   );
 }
 
+/** Words first: what the fund in the plan costs next to the others, then the table. */
 export function ComparisonView({ card }: { card: CardOf<"comparison"> }) {
+  const mine = card.rows.find((r) => r.in_plan);
+  const others = card.rows.filter((r) => r !== mine);
+  const byFee = [...others].sort((a, b) => a.fee_per_year_on_1000_usd - b.fee_per_year_on_1000_usd);
+  const priciest = byFee.at(-1);
+  // Say so when a peer is cheaper: honest advice names the alternative, too.
+  const cheaper = mine ? byFee.find((r) => r.fee_per_year_on_1000_usd < mine.fee_per_year_on_1000_usd) : undefined;
+  const times = mine && priciest && mine.fee_per_year_on_1000_usd > 0
+    ? Math.round(priciest.fee_per_year_on_1000_usd / mine.fee_per_year_on_1000_usd)
+    : null;
   return (
-    <Card overline={`As of ${month(card.as_of)}`} title="Side by side">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[420px] border-collapse text-body-sm">
+    <Card overline={`Compare funds · as of ${month(card.as_of)}`} title={mine ? `${mine.name} next to similar funds` : "Side by side"}>
+      {mine && priciest && (
+        <p className="text-body text-ink-2">
+          On every $1,000, {mine.name} costs <strong className="text-ink">{moneyCents(mine.fee_per_year_on_1000_usd)} a year</strong>.{" "}
+          {priciest.fee_per_year_on_1000_usd > mine.fee_per_year_on_1000_usd ? (
+            <>
+              {priciest.name} costs {moneyCents(priciest.fee_per_year_on_1000_usd)}
+              {times && times >= 2 ? `, about ${times} times as much,` : ""} for the same kind of investment. Costs are
+              certain; extra returns are not.
+            </>
+          ) : (
+            "It's the cheapest of these."
+          )}
+          {cheaper && (
+            <>
+              {" "}
+              {cheaper.name} costs a little less ({moneyCents(cheaper.fee_per_year_on_1000_usd)}); either is a sensible,
+              low-cost choice.
+            </>
+          )}
+        </p>
+      )}
+      {/* Phones: one fund per block, so no column is cut off. */}
+      <ul className="mt-3 divide-y divide-line sm:hidden">
+        {card.rows.map((r) => (
+          <li key={r.id} className={`py-3 ${r.in_plan ? "-mx-2 rounded-sm bg-primary-soft px-2" : ""}`}>
+            <p className={`text-body ${r.in_plan ? "font-semibold text-ink" : "text-ink"}`}>
+              {r.name} <span className="font-mono text-caption font-normal text-muted">{r.risk_rating}</span>
+            </p>
+            {r.in_plan && <p className="text-caption text-primary">In your plan</p>}
+            <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-body-sm">
+              <dt className="text-muted">Cost on $1,000</dt>
+              <dd className="tnum text-right">{moneyCents(r.fee_per_year_on_1000_usd)} a year</dd>
+              <dt className="text-muted">Past 5 years, a year</dt>
+              <dd className="tnum text-right">{r.return_5y_pct_a_year === null ? "–" : pctChange(r.return_5y_pct_a_year)}</dd>
+              <dt className="text-muted">Worst 12 months</dt>
+              <dd className="tnum text-right">{r.worst_12m_pct === null ? "–" : pctChange(r.worst_12m_pct)}</dd>
+              <dt className="text-muted">Money back in</dt>
+              <dd className="tnum text-right">{r.liquidity_days} {r.liquidity_days === 1 ? "day" : "days"}</dd>
+            </dl>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 hidden overflow-x-auto sm:block">
+        <table className="w-full min-w-[520px] border-collapse text-body-sm">
           <thead>
             <tr className="border-b border-line text-left text-muted">
               <th scope="col" className="py-2 font-medium">Fund</th>
-              <th scope="col" className="py-2 text-right font-medium">Fee on $1,000</th>
-              <th scope="col" className="py-2 text-right font-medium">5 years, a year</th>
+              <th scope="col" className="py-2 text-right font-medium"><Term id="fee">Cost</Term> on $1,000</th>
+              <th scope="col" className="py-2 text-right font-medium">Past 5 years, a year</th>
               <th scope="col" className="py-2 text-right font-medium">Worst 12 months</th>
+              <th scope="col" className="py-2 text-right font-medium">Money back in</th>
             </tr>
           </thead>
           <tbody>
             {card.rows.map((r) => (
-              <tr key={r.id} className="border-b border-line last:border-0">
-                <th scope="row" className="py-2 text-left font-normal">
-                  {r.name} <span className="font-mono text-caption text-muted">{r.risk_rating}</span>
+              <tr key={r.id} className={`border-b border-line last:border-0 ${r.in_plan ? "bg-primary-soft" : ""}`}>
+                <th scope="row" className="py-2 pl-1 text-left font-normal">
+                  <span className={r.in_plan ? "text-ink font-semibold" : ""}>{r.name}</span>{" "}
+                  <span className="font-mono text-caption text-muted">{r.risk_rating}</span>
+                  {r.in_plan && <span className="block text-caption text-primary">In your plan</span>}
                 </th>
                 <td className="tnum py-2 text-right">{moneyCents(r.fee_per_year_on_1000_usd)} a year</td>
                 <td className="tnum py-2 text-right">{r.return_5y_pct_a_year === null ? "–" : pctChange(r.return_5y_pct_a_year)}</td>
                 <td className="tnum py-2 text-right">{r.worst_12m_pct === null ? "–" : pctChange(r.worst_12m_pct)}</td>
+                <td className="tnum py-2 pr-1 text-right">{r.liquidity_days} {r.liquidity_days === 1 ? "day" : "days"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-caption text-muted">Past results don&apos;t tell you what will happen next.</p>
+      <p className="mt-2 text-caption text-muted">
+        Past results don&apos;t tell you what will happen next.
+      </p>
     </Card>
   );
 }

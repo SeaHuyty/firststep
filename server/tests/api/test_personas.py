@@ -102,6 +102,34 @@ def test_leo_reaches_a_confirmed_sandbox_order(client: TestClient) -> None:
     assert tokens == ["[redacted]"]  # the token itself never reaches the log
 
 
+def test_each_planned_fund_can_be_compared_with_suitable_peers(client: TestClient) -> None:
+    s = Session(client, "leo")
+    answer_all(s, LEO)
+    s.act("set_goal", **LEO_GOAL)
+    lines = {line["product_id"]: line for line in s.cards("allocation")[0]["lines"]}
+    # Same kind, not in the plan, within C3 (SUIT-01), cheapest first.
+    assert lines["USE01"]["peers"] == ["USE02", "ACT01"]
+    assert all(peer not in lines for line in lines.values() for peer in line["peers"])
+
+    s.act("compare_products", product_ids=["USE01", *lines["USE01"]["peers"]])
+    assert s.last["stage"] == "PROPOSE"
+    rows = {r["id"]: r for r in s.cards("comparison")[0]["rows"]}
+    assert rows["USE01"]["in_plan"]
+    assert not rows["ACT01"]["in_plan"]
+    assert rows["ACT01"]["fee_per_year_on_1000_usd"] > rows["USE01"]["fee_per_year_on_1000_usd"]
+
+
+def test_peers_never_go_above_the_clients_level(client: TestClient) -> None:
+    s = Session(client, "mei")
+    answer_all(s, MEI)
+    s.act("set_goal", **MEI_GOAL)
+    peers = [p for line in s.cards("allocation")[0]["lines"] for p in line["peers"]]
+    assert peers  # Mei has something to compare
+    assert not {"USE01", "USE02", "ACT01", "INT01", "INT02", "EME01", "GLD01", "TEC01"} & set(
+        peers
+    )
+
+
 def test_a_second_confirm_click_places_nothing(client: TestClient) -> None:
     s = leo_to_confirm(client)
     proposal_id = s.cards("confirm")[0]["proposal_id"]

@@ -8,9 +8,9 @@
 |---|---|---|
 | ![Amina's savings plan](docs/screenshots/phone-amina-not-yet.png) | ![Leo's plan](docs/screenshots/desktop-leo-plan.png) | ![Confirm dialog](docs/screenshots/desktop-leo-confirm.png) |
 
-| A rule says no, in plain words | A panic sale waits 24 hours |
-|---|---|
-| ![Mei's refusal](docs/screenshots/desktop-mei-refusal.png) | ![Leo's cooling-off pause](docs/screenshots/desktop-leo-cooling-off.png) |
+| Funds compared, in plain words | A rule says no, in plain words | A panic sale waits 24 hours |
+|---|---|---|
+| ![Leo compares funds](docs/screenshots/desktop-leo-compare.png) | ![Mei's refusal](docs/screenshots/desktop-mei-refusal.png) | ![Leo's cooling-off pause](docs/screenshots/desktop-leo-cooling-off.png) |
 
 ## The idea: the LLM talks, a rules engine decides
 
@@ -28,7 +28,7 @@ The closed loop, each step a logged tool call:
 1. Money check (`READY-01` emergency fund, `READY-02` expensive debt). If you fail it, you get a savings plan instead of a portfolio.
 2. Risk level C1–C5: willingness and ability to bear losses are scored separately, and the lower one wins. `HOR-01` caps it for short goals.
 3. A goal.
-4. A plan using only funds rated at or below your level (`SUIT-01`), spread out (`CONC-01`).
+4. A plan using only funds rated at or below your level (`SUIT-01`), spread out (`CONC-01`), with each fund one tap from a side-by-side comparison with similar funds.
 5. A range of outcomes from replaying 2000–2025 markets, never one number.
 6. Orders you confirm (`CONF-01` one-time token, `LIM-01` limits).
 7. Fast-forward through real history, with drift alerts (`DRIFT-01`) and a 24-hour pause before a panic sale (`COOL-01`).

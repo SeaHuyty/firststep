@@ -133,6 +133,7 @@ class ComparisonRow(_Card):
     return_5y_pct_a_year: float | None
     worst_12m_pct: float | None
     liquidity_days: int
+    in_plan: bool = False
 
 
 class ComparisonCard(_Card):
@@ -153,6 +154,9 @@ class AllocationLine(_Card):
     weight_pct: float
     amount_usd: str
     why: list[WhyLine]
+    # Other funds of the same kind within the client's level, cheapest
+    # first: what this fund can be compared with.
+    peers: list[str] = []
 
 
 class AllocationCard(_Card):

@@ -47,7 +47,7 @@ function planOrChat(page: Page, which: "My plan" | "Chat") {
   };
 }
 
-test("Leo confirms a plan, lives through March 2020 and a panic sale waits", async ({ page }) => {
+test("Leo compares funds, confirms a plan, lives through March 2020 and a panic sale waits", async ({ page }) => {
   await startAs(page, "Leo");
   await answerAsSuggested(page, /what are you investing for/i);
   await page.getByRole("button", { name: /Build my plan with \$6,000 now/ }).click();
@@ -55,6 +55,11 @@ test("Leo confirms a plan, lives through March 2020 and a panic sale waits", asy
   await expect(page.getByRole("heading", { name: /if you stick with the plan/ })).toBeVisible();
   await expect(page.getByText("C3 Balanced").filter({ visible: true }).first()).toBeVisible();
   await shot(page, "leo-plan");
+  // Product comparison, one tap from the plan: the fund in the plan next to its peers.
+  await page.getByRole("button", { name: "Compare funds" }).filter({ visible: true }).first().click();
+  await expect(page.getByText("US Total Market Index Fund next to similar funds").filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText(/about 30 times as much/).filter({ visible: true }).first()).toBeVisible();
+  await shot(page, "leo-compare");
   await planOrChat(page, "Chat")();
   await page.getByRole("button", { name: "Review the orders" }).click();
   await page.getByRole("button", { name: "Review 6 orders" }).click();

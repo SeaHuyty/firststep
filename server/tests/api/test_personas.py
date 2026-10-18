@@ -282,3 +282,12 @@ def test_health_and_catalog(client: TestClient) -> None:
     first = catalog["first_question"]
     assert first["question_id"] == "age"
     assert first["chips"][0] == {"label": "18–24", "value": 21}
+
+
+def test_a_typed_money_answer_is_read_the_way_people_write_it(client: TestClient) -> None:
+    s = Session(client)
+    s.act("answer_question", question_id="age", value=30)
+    s.act("answer_question", question_id="monthly_income", value="$3,200")
+    assert s.last["steps"] == ["answer_question"]
+    assert not s.cards("refusal")
+    assert [c["question_id"] for c in s.cards("question")] == ["monthly_expenses"]

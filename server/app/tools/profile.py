@@ -114,7 +114,12 @@ def _coerce(q: Question, value: Any) -> Any:  # noqa: ANN401 (depends on the que
         return value
     if q.kind == "debts":
         return tuple(Debt.model_validate(d) for d in value)
-    number = float(value)
+    # A typed answer may arrive as text, the way people write: "$3,200".
+    number = (
+        float(value.replace("$", "").replace(",", "").strip())
+        if isinstance(value, str)
+        else float(value)
+    )
     if number < (q.min or 0) or (q.max is not None and number > q.max):
         raise ValueError("that number is out of range")
     return int(number) if q.kind == "number" else number

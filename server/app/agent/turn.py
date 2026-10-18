@@ -273,7 +273,10 @@ async def take_turn(
             )
             reply, outcomes = TIMEOUT_REPLY, []
         except Exception as e:  # provider failure: keep the session, say so plainly
-            logger.warning("LLM turn failed: %s: %s", type(e).__name__, str(e)[:300])
+            # A fallback chain fails as a group: log each reason.
+            parts = e.exceptions if isinstance(e, BaseExceptionGroup) else [e]
+            reasons = "; ".join(f"{type(x).__name__}: {str(x)[:160]}" for x in parts)
+            logger.warning("LLM turn failed: %s", reasons)
             reply, outcomes = ERROR_REPLY, []
         reply, hits = await _filtered(
             services, model, settings, reply or copy.reply_for(outcomes, Stage.ONBOARD)

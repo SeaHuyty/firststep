@@ -12,6 +12,7 @@ this checks what it gets done.
 """
 
 import argparse
+import json
 import sys
 from collections import Counter
 from pathlib import Path
@@ -66,8 +67,13 @@ def matches(expected: Any, actual: Any) -> bool:
         return isinstance(actual, list) and all(
             any(matches(e, a) for a in actual) for e in expected
         )
-    if isinstance(expected, int | float) and isinstance(actual, int | float):
-        return abs(float(expected) - float(actual)) < 0.01
+    if isinstance(expected, int | float) and not isinstance(expected, bool):
+        # "30" and "$3,200" are the same answers as 30 and 3200.
+        try:
+            number = float(str(actual).replace("$", "").replace(",", "").strip())
+        except ValueError:
+            return False
+        return abs(float(expected) - number) < 0.01
     return bool(expected == actual)
 
 
@@ -77,7 +83,11 @@ def judge(
     """Return (passed, observations) for one task."""
     calls = [e["payload"] for e in events if e["type"] == "tool_call" and e["actor"] == "llm"]
     refused = _refusals(events)
-    notes = [f"called {', '.join(c['tool'] for c in calls)}"] if calls else ["no tool called"]
+    shown = [
+        f"{c['tool']}({ {k: v for k, v in (c.get('args') or {}).items() if v is not None} })"
+        for c in calls
+    ]
+    notes = [f"called {', '.join(shown)}"] if calls else ["no tool called"]
     if refused:
         notes.append(f"refused: {', '.join(sorted(refused))}")
     ok = True
@@ -120,7 +130,8 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=SERVER_DIR / "evidence")
     parser.add_argument("--ids", default="", help="comma-separated task IDs to run (default all)")
     args = parser.parse_args()
-    tasks = yaml.safe_load((SERVER_DIR / "scripts" / "tasks.yaml").read_text())["tasks"]
+    all_tasks = yaml.safe_load((SERVER_DIR / "scripts" / "tasks.yaml").read_text())["tasks"]
+    tasks = all_tasks
     if args.ids:
         wanted = {i.strip() for i in args.ids.split(",")}
         tasks = [t for t in tasks if t["id"] in wanted]
@@ -133,7 +144,22 @@ def main() -> int:
             before = len(s.audit()["events"])
             s.say(task["prompt"])
             audit = s.audit()
-            ok, notes = judge(task, audit["events"][before:], s.last["reply"])
+            reply = s.last["reply"]
+            if reply.startswith(("Sorry, Sprout couldn't reach", "Sorry, Sprout didn't answer")):
+                # The provider gave no answer (quota, overload): not the agent's miss.
+                results.append(
+                    {
+                        "id": task["id"],
+                        "area": task["area"],
+                        "prompt": task["prompt"],
+                        "passed": None,
+                        "notes": ["no answer from the model (quota or overload)"],
+                        "reply": reply,
+                    }
+                )
+                print(f"{task['id']} NO ANSWER: the model did not respond")
+                continue
+            ok, notes = judge(task, audit["events"][before:], reply)
             lang = policy.language(s.last["reply"])
             if lang:
                 ok = False
@@ -150,21 +176,53 @@ def main() -> int:
                 }
             )
             print(f"{task['id']} {'pass' if ok else 'FAIL'}: {'; '.join(notes)}")
-    passed = sum(r["passed"] for r in results)
+    _report(args.out, provider, results, all_tasks, partial=bool(args.ids))
+    return 0
+
+
+def _report(
+    out: Path,
+    provider: str,
+    results: list[dict[str, Any]],
+    all_tasks: list[dict[str, Any]],
+    *,
+    partial: bool,
+) -> None:
+    """Write tasks.json and tasks.md, merging an earlier partial run."""
+    # Runs in parts (--ids, to fit a free quota) build one report: earlier results are kept.
+    saved = out / "tasks.json"
+    if partial and saved.exists():
+        old = json.loads(saved.read_text())
+        if old.get("llm") == provider:
+            fresh = {r["id"] for r in results}
+            results = [r for r in old["results"] if r["id"] not in fresh] + results
+    order = {t["id"]: i for i, t in enumerate(all_tasks)}
+    results.sort(key=lambda r: order.get(r["id"], 999))
+    answered = [r for r in results if r["passed"] is not None]
+    passed = sum(bool(r["passed"]) for r in answered)
+    unanswered = [r["id"] for r in results if r["passed"] is None]
     by_area: dict[str, Counter[str]] = {}
-    for r in results:
+    for r in answered:
         by_area.setdefault(r["area"], Counter())["passed" if r["passed"] else "failed"] += 1
     write_json(
-        args.out / "tasks.json",
-        {"llm": provider, "passed": passed, "total": len(results), "results": results},
+        saved,
+        {
+            "llm": provider,
+            "passed": passed,
+            "total": len(answered),
+            "unanswered": unanswered,
+            "results": results,
+        },
     )
     lines = [
         "# Task-completion results",
         "",
-        f"LLM: `{provider}`. Completed **{passed} of {len(results)}** tasks. Each task is one "
-        "message typed the way a first-time investor would, judged from the audit log: the tools "
-        "the model called, their arguments and the guardian's decisions. Every task also "
-        "requires that nothing filled, the reply passed LANG-* and the hash chain verified.",
+        f"LLM: `{provider}`. Completed **{passed} of {len(answered)}** tasks the model answered"
+        + (f" ({len(unanswered)} more got no answer from the provider)" if unanswered else "")
+        + ". Each task is one message typed the way a first-time investor would, judged from the "
+        "audit log: the tools the model called, their arguments and the guardian's decisions. "
+        "Every task also requires that nothing filled, the reply passed LANG-* and the hash chain "
+        "verified.",
         "",
         "| Area | Completed |",
         "|---|---|",
@@ -172,15 +230,17 @@ def main() -> int:
     for area, c in by_area.items():
         lines.append(f"| {AREAS.get(area, area)} | {c['passed']} of {c['passed'] + c['failed']} |")
     lines += ["", "| ID | Area | Typed message | Result | Observed |", "|---|---|---|---|---|"]
+    status = {True: "done", False: "**missed**", None: "no answer"}
     for r in results:
         prompt = r["prompt"].replace("|", "\\|")
+        notes = "; ".join(r["notes"]).replace("|", "\\|")
         lines.append(
-            f"| {r['id']} | {AREAS.get(r['area'], r['area'])} | {prompt} | "
-            f"{'done' if r['passed'] else '**missed**'} | {'; '.join(r['notes'])} |"
+            f"| {r['id']} | {AREAS.get(r['area'], r['area'])} | {prompt} | {status[r['passed']]} | {notes} |"
         )
-    (args.out / "tasks.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"tasks ({provider}): {passed}/{len(results)} completed")
-    return 0
+    (out / "tasks.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"tasks ({provider}): {passed}/{len(answered)} completed")
+    if unanswered:
+        print(f"no answer, run again later: --ids {','.join(unanswered)}")
 
 
 if __name__ == "__main__":

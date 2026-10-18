@@ -139,10 +139,18 @@ def _context(services: Services, session_id: str, row: sessions.SessionRow) -> l
         lines.append(f"CURRENT PLAN: {mix}")
     question = flow.pending_question(services, session_id)
     if question is not None:
-        chips = "; ".join(f"{c.label} = {c.value!r}" for c in question.chips)
+        # Money buttons are rough ranges: the model saves the client's
+        # own figure, never a range's midpoint.
+        chips = (
+            ""
+            if question.kind == "money"
+            else "; ".join(f"{c.label} = {c.value!r}" for c in question.chips)
+        )
         lines.append(
             f"QUESTION NOW: question_id={question.question_id} ({question.kind}): "
-            f"{question.prompt}" + (f" Answers: {chips}." if chips else "")
+            f"{question.prompt}"
+            + (f" Answers: {chips}." if chips else "")
+            + (" Save the exact amount the client gives." if question.kind == "money" else "")
         )
     return lines
 

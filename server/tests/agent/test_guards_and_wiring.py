@@ -15,6 +15,7 @@ from app.core.reference import load_reference
 from app.core.settings import Settings
 from app.core.types import Stage
 from app.llm.adapter import build_model
+from app.store import sessions
 from app.tools.base import NoArgs
 from app.tools.registry import TOOLS
 from tests.conftest import Session
@@ -182,3 +183,16 @@ def test_llm_tools_get_retries_and_no_arg_tools_ignore_stray_keys() -> None:
     assert NoArgs.model_validate({"client_class": "C3"}) == NoArgs()
     tool = turn._llm_tool(TOOLS["propose_allocation"])
     assert tool.max_retries == turn.TOOL_RETRIES
+
+
+def test_a_money_question_sends_no_range_values_to_the_model(client: TestClient) -> None:
+    s = Session(client, "leo")
+    s.act("answer_question", question_id="age", value=27)
+    services = client.app.state.services  # type: ignore[attr-defined]
+    with services.store.tx() as con:
+        row = sessions.get(con, s.id)
+    assert row is not None
+    question = next(line for line in turn._context(services, s.id, row) if "QUESTION NOW" in line)
+    assert "monthly_income" in question
+    assert "3750" not in question
+    assert "exact amount" in question

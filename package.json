@@ -13,6 +13,6 @@
     "test:e2e": "cd client && npx playwright test",
     "evidence": "cd server && .venv/bin/python scripts/run_personas.py && .venv/bin/python scripts/run_redteam.py && .venv/bin/python scripts/run_tasks.py && .venv/bin/python scripts/verify_chain.py evidence/logs/*.jsonl && .venv/bin/python scripts/metrics.py",
     "evidence:llm": "cd server && .venv/bin/python scripts/run_redteam.py --llm --out evidence/gemma && .venv/bin/python scripts/run_tasks.py --llm --out evidence/gemma && .venv/bin/python scripts/run_personas.py --llm --out evidence/gemma && .venv/bin/python scripts/verify_chain.py evidence/gemma/logs/*.jsonl && .venv/bin/python scripts/metrics.py --out evidence/gemma && .venv/bin/python scripts/test_report.py && .venv/bin/python scripts/results_figure.py --evidence evidence/gemma --model \"Gemma 4 26B, an open-weight model on Google AI Studio's free tier\" && cd ../client && node scripts/svg-to-png.mjs ../docs/images/results.svg ../docs/images/results.png",
-    "docs:pdf": "bash scripts/docs-pdf.sh technical-documentation security-self-assessment test-report"
+    "docs:pdf": "bash scripts/docs-pdf.sh technical-documentation security-self-assessment test-report demo-script"
   }
 }

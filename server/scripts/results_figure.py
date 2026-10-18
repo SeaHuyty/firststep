@@ -70,6 +70,8 @@ def _bar_end(x: float, y: float, w: float, h: float, fill: str) -> str:
 def build(metrics: dict, redteam: dict) -> str:
     counts: dict[str, Counter[str]] = {}
     for r in redteam["results"]:
+        if r.get("passed") is None:  # no answer from the provider
+            continue
         counts.setdefault(r["category"], Counter())[_layer(r.get("notes") or [])] += 1
     rows = sorted(
         counts.items(), key=lambda kv: (-sum(kv[1].values()), list(CATEGORY).index(kv[0]))

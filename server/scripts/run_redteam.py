@@ -8,6 +8,7 @@ is judged from the audit events written during that turn.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,17 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from harness import AMINA, LEO, LEO_GOAL, MEI, MEI_GOAL, Session, make_client, write_json
+from harness import (
+    AMINA,
+    LEO,
+    LEO_GOAL,
+    MEI,
+    MEI_GOAL,
+    NO_ANSWER,
+    Session,
+    make_client,
+    write_json,
+)
 
 SERVER_DIR = Path(__file__).resolve().parents[1]
 
@@ -110,8 +121,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--llm", action="store_true", help="use the real provider from .env")
     parser.add_argument("--out", type=Path, default=SERVER_DIR / "evidence")
+    parser.add_argument("--ids", default="", help="comma-separated case IDs to run (default all)")
     args = parser.parse_args()
-    cases = yaml.safe_load((SERVER_DIR / "scripts" / "redteam.yaml").read_text())["cases"]
+    all_cases = yaml.safe_load((SERVER_DIR / "scripts" / "redteam.yaml").read_text())["cases"]
+    cases = all_cases
+    if args.ids:
+        wanted = {i.strip() for i in args.ids.split(",")}
+        cases = [c for c in cases if c["id"] in wanted]
     results = []
     with make_client(args.out / "run" / "redteam", real_llm=args.llm) as client:
         policy = client.app.state.services.policy  # type: ignore[attr-defined]
@@ -127,8 +143,14 @@ def main() -> int:
                 attack = case["prompt"]
             audit = s.audit()
             events = audit["events"][before:]
-            ok, notes = judge(case, events, s.last["reply"], policy.language(s.last["reply"]))
-            ok &= audit["check"]["ok"]
+            reply = s.last["reply"]
+            ok: bool | None
+            if reply.startswith(NO_ANSWER):
+                # Nothing happened, so nothing was defended: not counted either way.
+                ok, notes = None, ["no answer from the model (quota or overload)"]
+            else:
+                ok, notes = judge(case, events, reply, policy.language(reply))
+                ok &= audit["check"]["ok"]
             results.append(
                 {
                     "id": case["id"],
@@ -140,33 +162,68 @@ def main() -> int:
                     ],
                     "passed": ok,
                     "notes": notes,
-                    "reply": s.last["reply"],
+                    "reply": reply,
                 }
             )
-    passed = sum(r["passed"] for r in results)
+            status = {True: "pass", False: "FAIL", None: "NO ANSWER"}[ok]
+            print(f"{case['id']} {status}: {'; '.join(notes) or 'as expected'}", flush=True)
+    return _report(args.out, provider, results, all_cases, partial=bool(args.ids))
+
+
+def _report(
+    out: Path,
+    provider: str,
+    results: list[dict[str, Any]],
+    all_cases: list[dict[str, Any]],
+    *,
+    partial: bool,
+) -> int:
+    """Write redteam.json and redteam.md, merging an earlier partial run."""
+    saved = out / "redteam.json"
+    if partial and saved.exists():
+        old = json.loads(saved.read_text())
+        if old.get("llm") == provider:
+            fresh = {r["id"] for r in results}
+            results = [r for r in old["results"] if r["id"] not in fresh] + results
+    order = {c["id"]: i for i, c in enumerate(all_cases)}
+    results.sort(key=lambda r: order.get(r["id"], 999))
+    answered = [r for r in results if r["passed"] is not None]
+    passed = sum(bool(r["passed"]) for r in answered)
+    unanswered = [r["id"] for r in results if r["passed"] is None]
     write_json(
-        args.out / "redteam.json",
-        {"llm": provider, "passed": passed, "total": len(results), "results": results},
+        saved,
+        {
+            "llm": provider,
+            "passed": passed,
+            "total": len(answered),
+            "unanswered": unanswered,
+            "results": results,
+        },
     )
     lines = [
         "# Red-team results",
         "",
-        f"LLM: `{provider}`. Passed **{passed} of {len(results)}**. Each case is judged from the "
-        "audit log of its turn; every case also requires that nothing filled, the reply passed "
-        "LANG-*, no confirmation token was logged, and the hash chain verified.",
+        f"LLM: `{provider}`. Passed **{passed} of {len(answered)}**"
+        + (f" ({len(unanswered)} more got no answer from the provider)" if unanswered else "")
+        + ". Each case is judged from the audit log of its turn; every case also requires that "
+        "nothing filled, the reply passed LANG-*, no confirmation token was logged, and the hash "
+        "chain verified.",
         "",
         "| ID | Category | Attack | Expected | Result | Observed |",
         "|---|---|---|---|---|---|",
     ]
+    status = {True: "pass", False: "**FAIL**", None: "no answer"}
     for r in results:
         attack = r["attack"].replace("|", "\\|")
         lines.append(
             f"| {r['id']} | {r['category']} | {attack} | {', '.join(r['expect'])} | "
-            f"{'pass' if r['passed'] else '**FAIL**'} | {'; '.join(r['notes'])} |"
+            f"{status[r['passed']]} | {'; '.join(r['notes'])} |"
         )
-    (args.out / "redteam.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"red team ({provider}): {passed}/{len(results)} passed")
-    return 0 if passed == len(results) else 1
+    (out / "redteam.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"red team ({provider}): {passed}/{len(answered)} passed")
+    if unanswered:
+        print(f"no answer, run again later: --ids {','.join(unanswered)}")
+    return 0 if passed == len(answered) else 1
 
 
 if __name__ == "__main__":

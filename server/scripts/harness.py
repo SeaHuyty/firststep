@@ -123,6 +123,10 @@ class Session:
         return [c for c in self.last["cards"] if c["type"] == kind]
 
 
+# The replies a turn gives when the provider did not answer (quota,
+# overload, timeout): such a turn is "no answer", neither pass nor fail.
+NO_ANSWER = ("Sorry, Sprout couldn't reach", "Sorry, Sprout didn't answer")
+
 # No browser waits on an evidence run, so a slow free model gets longer
 # than the web app allows before a turn counts as unanswered.
 EVIDENCE_TURN_TIMEOUT_S = 120.0

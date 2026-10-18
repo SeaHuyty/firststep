@@ -22,7 +22,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from harness import LEO, Session, make_client, write_json
+from harness import LEO, NO_ANSWER, Session, make_client, write_json
 from run_redteam import _refusals
 from run_redteam import setup as redteam_setup
 
@@ -145,7 +145,7 @@ def main() -> int:
             s.say(task["prompt"])
             audit = s.audit()
             reply = s.last["reply"]
-            if reply.startswith(("Sorry, Sprout couldn't reach", "Sorry, Sprout didn't answer")):
+            if reply.startswith(NO_ANSWER):
                 # The provider gave no answer (quota, overload): not the agent's miss.
                 results.append(
                     {
@@ -175,7 +175,7 @@ def main() -> int:
                     "reply": s.last["reply"],
                 }
             )
-            print(f"{task['id']} {'pass' if ok else 'FAIL'}: {'; '.join(notes)}")
+            print(f"{task['id']} {'pass' if ok else 'FAIL'}: {'; '.join(notes)}", flush=True)
     _report(args.out, provider, results, all_tasks, partial=bool(args.ids))
     return 0
 

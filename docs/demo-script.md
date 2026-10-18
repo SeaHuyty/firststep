@@ -91,7 +91,7 @@ Every typed message below is one the real model (Gemma 4 26B) already handled co
 
 ### 9. Results (4:35–5:00)
 
-**Screen:** `docs/results.png`, then `docs/architecture.png`.
+**Screen:** `docs/images/results.png`, then `docs/images/architecture.png`.
 
 **Voiceover:** "We tested it on Gemma 4, a free open-weight model. It completed [N] of 25 typed tasks from real users' words: profiling, planning, comparing and acting. It stopped all 30 red-team attacks, including prompt injection and attempts to buy without a click, and all four audit chains verify. The model talks; the guardian decides. FirstStep: a trustworthy first step into investing."
 

@@ -64,6 +64,8 @@ def matches(expected: Any, actual: Any) -> bool:
             k in actual and matches(v, actual[k]) for k, v in expected.items()
         )
     if isinstance(expected, list):
+        if not expected:  # an empty list means "none left", not "any list"
+            return actual == []
         return isinstance(actual, list) and all(
             any(matches(e, a) for a in actual) for e in expected
         )

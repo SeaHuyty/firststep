@@ -26,7 +26,7 @@ class ClientClass(IntEnum):
     """Investor risk class, C1 (most cautious) to C5.
 
     The C1–C5 / R1–R5 grading follows the practice under the CSRC
-    investor suitability Measures (see docs/methodology.md).
+    investor suitability Measures (see docs/research/methodology.md).
     """
 
     C1 = 1

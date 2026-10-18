@@ -1,8 +1,9 @@
 """The plan Sprout offers instead of a portfolio when it says "not yet".
 
-Order of steps, from the guidance cited in docs/methodology.md: keep a
-small cash buffer, pay the highest-rate debt first (the "avalanche",
-which costs the least interest), then build the emergency fund.
+Order of steps, from the guidance cited in
+docs/research/methodology.md: keep a small cash buffer, pay the
+highest-rate debt first (the "avalanche", which costs the least
+interest), then build the emergency fund.
 """
 
 import math

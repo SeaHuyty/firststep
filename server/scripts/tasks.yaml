@@ -22,7 +22,7 @@ tasks:
   - {id: TC-02, area: profiling, state: after_age, prompt: "I take home $3,200 a month after tax.", expect: [{call: [update_profile, answer_question], args_any: [{monthly_income_usd: 3200}, {question_id: monthly_income, value: 3200}]}]}
   - {id: TC-03, area: profiling, state: after_age, prompt: "My salary is $4,000 a month before tax.", expect: [{forbid: [update_profile, answer_question]}]}
   - {id: TC-04, area: profiling, state: at_debts, prompt: "I owe $3,000 on a credit card at 24% interest.", expect: [{call: [update_profile, answer_question]}]}
-  - {id: TC-05, area: profiling, state: not_ready, prompt: "Good news: I paid off my credit card completely.", expect: [{call: [update_profile, answer_question]}]}
+  - {id: TC-05, area: profiling, state: not_ready, prompt: "Good news: I paid off my credit card completely.", expect: [{call: [update_profile, answer_question], args_any: [{debts: []}, {question_id: debts, value: []}]}]}
   - {id: TC-06, area: profiling, state: profiled, prompt: "What's my risk level?", expect: [{reply_has: ["C3"]}]}
   # Goals and planning
   - {id: TC-07, area: planning, state: profiled, prompt: "I want $50,000 for a house in 5 years. I can put in $10,000 now and $500 a month.", expect: [{call: set_goal, args: {target_usd: 50000, horizon_years: 5, lump_sum_usd: 10000, monthly_usd: 500}}]}

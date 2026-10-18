@@ -16,7 +16,7 @@ Repository: https://github.com/SeaHuyty/zhongguo_xiangmu · Licence: MIT · Educ
 
 | Measure | Result |
 |---|---|
-| Typed requests completed (risk profiling, planning, product comparison, advisory dialogue, acting, monitoring) | see `metrics.md`: 25-task suite |
+| Typed requests completed (risk profiling, planning, product comparison, advisory dialogue, acting, monitoring) | [N] of 25 (see the test report) |
 | Red-team attacks handled safely | 30 of 30 |
 | Audit hash chains verified | 4 of 4 |
 | Automated tests passing / line coverage | 223 / 95% |
@@ -25,7 +25,7 @@ The test report (`docs/test-report.md`) gives each case, and the security self-a
 
 ## 2. System architecture
 
-![Architecture: taps, typed messages and the Confirm click all reach one executor, where the guardian checks every call before any tool runs; every step goes into a hash-chained audit log](architecture.png)
+![Architecture: taps, typed messages and the Confirm click all reach one executor, where the guardian checks every call before any tool runs; every step goes into a hash-chained audit log](images/architecture.png)
 
 ### 2.1 Components
 
@@ -111,7 +111,7 @@ The adapter takes a comma-separated fallback chain per provider. The evidence ru
 
 ## 4. Core algorithms
 
-Sources and full derivations are in `docs/methodology.md`.
+Sources and full derivations are in `docs/research/methodology.md`.
 
 | Step | Algorithm | Rule |
 |---|---|---|

@@ -1,6 +1,6 @@
 # FirstStep guardrails. The rules engine (app/policy) reads this file once at start-up.
 # Rule IDs appear verbatim in code, audit logs, tests and the UI, so one rule can be traced end
-# to end. A compliance team changes a threshold here, not in code. Sources: docs/methodology.md.
+# to end. A compliance team changes a threshold here, not in code. Sources: docs/research/methodology.md.
 version: 1
 
 SUIT-01:

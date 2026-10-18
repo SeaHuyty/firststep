@@ -271,7 +271,7 @@ function CompareLink({ line }: { line: CardOf<"allocation">["lines"][number] }) 
 
 /** 100 dots: how many of 100 replays of past markets ended year one below the money put in.
  * Icon arrays and "X out of 100" help people with low numeracy understand risk (Galesic,
- * Garcia-Retamero and Gigerenzer 2009); see docs/ux-psychology.md. */
+ * Garcia-Retamero and Gigerenzer 2009); see docs/research/ux-psychology.md. */
 function IconArray({ below }: { below: number }) {
   return (
     <div className="grid w-40 shrink-0 grid-cols-10 gap-1" role="img" aria-label={`${below} out of 100 dots marked`}>

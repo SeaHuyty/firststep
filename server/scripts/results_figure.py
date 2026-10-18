@@ -1,4 +1,4 @@
-"""Draw the Results figure (docs/results.svg) from the evidence files.
+"""Draw the Results figure (docs/images/results.svg) from the evidence files.
 
     python scripts/results_figure.py     # after metrics.py
     python scripts/results_figure.py --evidence evidence/gemma --model "Gemma 4 26B"
@@ -18,7 +18,7 @@ from pathlib import Path
 
 SERVER_DIR = Path(__file__).resolve().parents[1]
 EVIDENCE = SERVER_DIR / "evidence"
-OUT = SERVER_DIR.parent / "docs" / "results.svg"
+OUT = SERVER_DIR.parent / "docs" / "images" / "results.svg"
 
 BG, INK, INK_2, MUTED, LINE = "#F6F8F7", "#0C1F22", "#3F5457", "#5A6C6E", "#DDE5E3"
 # How an attack was stopped, in stacking order (blue always sits between).

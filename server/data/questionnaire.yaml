@@ -1,7 +1,7 @@
 # Every question Sprout asks, in order, with the chips shown under it. Chips call the
 # answer_question tool directly; free text goes through the LLM, which calls update_profile.
 #
-# Risk profile design (docs/methodology.md): willingness to take risk ("tolerance") and the
+# Risk profile design (docs/research/methodology.md): willingness to take risk ("tolerance") and the
 # ability to bear losses ("capacity") are scored separately and the lower one wins, as the FSA
 # (FG11/05) and ESMA (MiFID II suitability guidelines) require. Tolerance uses situational
 # items in the style of the Grable & Lytton scale and is averaged; capacity takes its weakest

@@ -4,7 +4,7 @@ Run once and commit the output; the app never touches the network.
 
     python scripts/build_returns.py
 
-Sources (terms in data/SOURCES.md, method in docs/methodology.md):
+Sources (terms in data/SOURCES.md, method in docs/research/methodology.md):
 - Kenneth R. French Data Library: US market, developed ex-US,
   emerging markets, the US "HiTec" industry portfolio, and the
   one-month T-bill rate (cash).

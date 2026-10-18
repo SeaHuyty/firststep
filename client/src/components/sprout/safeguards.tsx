@@ -3,7 +3,7 @@
 // "Your safeguards": the protections around this person, ticking on as each one applies.
 // Seeing the protective structures is what makes people willing to trust an unfamiliar
 // system ("structural assurance", McKnight, Choudhury and Kacmar 2002); for robo-advice,
-// visible competence and integrity drive trust (docs/ux-psychology.md).
+// visible competence and integrity drive trust (docs/research/ux-psychology.md).
 import { Check, ChevronDown, Circle, ShieldCheck } from "lucide-react";
 import { RuleChip } from "@/components/ui/primitives";
 import type { Card, Stage } from "@/lib/types";
@@ -39,7 +39,7 @@ function items(cards: Card[], stage: Stage): Item[] {
 /**
  * One line that is always visible, "Safeguards: 2 of 7 in place" with a pip per safeguard, and
  * the full list one click away (progressive disclosure). The structure stays in sight without
- * a block of text competing with the question (docs/ux-psychology.md, "One focal point").
+ * a block of text competing with the question (docs/research/ux-psychology.md, "One focal point").
  */
 export function Safeguards({ cards, stage }: { cards: Card[]; stage: Stage }) {
   const list = items(cards, stage);

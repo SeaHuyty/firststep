@@ -37,7 +37,7 @@
   /* Radius, shadows, motion. */
   --radius-sm: 6px;  --radius-md: 12px;  --radius-lg: 20px;
   /* One light source above the page; the higher the layer, the softer and wider the shadow.
-     Raised cards are clickable; flat content is not (docs/ux-psychology.md, "Welcome page"). */
+     Raised cards are clickable; flat content is not (docs/research/ux-psychology.md, "Welcome page"). */
   --shadow-card: 0 1px 2px rgb(12 31 34 / 0.06), 0 2px 8px rgb(12 31 34 / 0.06);
   --shadow-card-hover: 0 2px 4px rgb(12 31 34 / 0.08), 0 8px 24px rgb(12 31 34 / 0.10);
   --shadow-popover: 0 4px 16px rgb(12 31 34 / 0.12);
@@ -152,7 +152,7 @@
 dialog::backdrop { background: var(--fs-scrim); }
 
 /* Motion. Calm, short and never bouncy (docs/standards/brand.md section 7); research and
-   durations in docs/ux-psychology.md. The reduced-motion rule above makes all of it instant. */
+   durations in docs/research/ux-psychology.md. The reduced-motion rule above makes all of it instant. */
 @keyframes fs-rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }

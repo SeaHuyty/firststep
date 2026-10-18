@@ -6,7 +6,7 @@ This follows the chained-record idea of Schneier and Kelsey's secure
 audit logs. A plain hash chain cannot stop someone who rewrites the
 whole file, so the latest hash is also anchored outside the file (in
 the sandbox database and on every order receipt). See
-docs/methodology.md and the security self-assessment.
+docs/research/methodology.md and the security self-assessment.
 """
 
 import hashlib

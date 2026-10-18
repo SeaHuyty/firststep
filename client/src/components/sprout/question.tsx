@@ -1,7 +1,7 @@
 "use client";
 
 // One question at a time, always with tappable answers, so nobody has to know what to type
-// (docs/standards/onboarding-ux.md principles 1-2; Hick's law in docs/ux-psychology.md).
+// (docs/standards/onboarding-ux.md principles 1-2; Hick's law in docs/research/ux-psychology.md).
 import { Check } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ function DemoTag() {
 /**
  * The current question is the one thing to do on the screen: tappable answers directly under
  * it, one way to answer at a time (typing a number or adding debts opens from a chip), and the
- * progress and "Why do you ask?" below, quieter (docs/ux-psychology.md, "One focal point").
+ * progress and "Why do you ask?" below, quieter (docs/research/ux-psychology.md, "One focal point").
  */
 export function QuestionView({
   card,

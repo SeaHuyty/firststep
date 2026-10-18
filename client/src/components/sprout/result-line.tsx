@@ -117,7 +117,7 @@ export function ResultLine({ card, onShow }: { card: Card; onShow: () => void })
       const mine = card.rows.find((r) => r.in_plan);
       return (
         <Line onShow={onShow}>
-          {mine ? `Compared ${mine.name} with ${card.rows.length - 1} similar funds.` : `Compared ${card.rows.length} funds side by side.`}
+          {mine ? `Compared ${mine.name} with ${card.rows.length - 1} similar ${card.rows.length === 2 ? "fund" : "funds"}.` : `Compared ${card.rows.length} funds side by side.`}
         </Line>
       );
     }

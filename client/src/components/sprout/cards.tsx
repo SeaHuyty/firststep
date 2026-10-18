@@ -349,7 +349,7 @@ export function ComparisonView({ card }: { card: CardOf<"comparison"> }) {
               {times && times >= 2 ? `, about ${times} times as much,` : ""} for the same kind of investment. Costs are
               certain; extra returns are not.
             </>
-          ) : (
+          ) : cheaper ? null : (
             "It's the cheapest of these."
           )}
           {cheaper && (

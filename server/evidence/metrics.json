@@ -17,9 +17,14 @@
   ],
   "orders_filled": 6,
   "fills_after_allowed_check": 1,
-  "median_reply_ms": 4.0,
+  "median_button_reply_ms": 4.0,
+  "median_typed_reply_ms": 24.5,
+  "typed_replies": 4,
+  "median_suite_reply_ms": 15.0,
+  "p90_suite_reply_ms": 25.6,
+  "suite_replies": 46,
   "llm_turns": 4,
   "tokens_per_llm_turn": 342,
-  "tests_passed": 216,
-  "coverage_pct": 95.2
+  "tests_passed": 222,
+  "coverage_pct": 95.4
 }

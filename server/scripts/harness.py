@@ -132,6 +132,12 @@ NO_ANSWER = ("Sorry, Sprout couldn't reach", "Sorry, Sprout didn't answer")
 EVIDENCE_TURN_TIMEOUT_S = 120.0
 
 
+def reply_ms(events: list[dict[str, Any]]) -> int | None:
+    """Return how long the last reply among events took, in ms."""
+    replies = [e for e in events if e["type"] == "reply"]
+    return replies[-1]["payload"]["latency_ms"] if replies else None
+
+
 def make_client(evidence_dir: Path, *, real_llm: bool) -> TestClient:
     """Return a client for an app writing its logs under evidence_dir."""
     base = Settings() if real_llm else Settings(_env_file=None, llm_provider="fake")

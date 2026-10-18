@@ -1,13 +1,16 @@
 """Draw the Results figure (docs/results.svg) from the evidence files.
 
     python scripts/results_figure.py     # after metrics.py
+    python scripts/results_figure.py --evidence evidence/gemma --model "Gemma 4 26B"
 
-Numbers come only from evidence/metrics.json and evidence/redteam.json.
+Numbers come only from metrics.json, redteam.json and tasks.json in the
+evidence folder.
 Colours are the FirstStep brand green for the guardian plus two
 categorical slots, checked for colour-blind separation in this order
 (orange, blue, green), so stacked neighbours stay distinguishable.
 """
 
+import argparse
 import json
 from collections import Counter
 from html import escape
@@ -67,7 +70,7 @@ def _bar_end(x: float, y: float, w: float, h: float, fill: str) -> str:
     )
 
 
-def build(metrics: dict, redteam: dict) -> str:
+def build(metrics: dict, redteam: dict, tasks: dict | None, model_name: str = "") -> str:
     counts: dict[str, Counter[str]] = {}
     for r in redteam["results"]:
         if r.get("passed") is None:  # no answer from the provider
@@ -80,13 +83,14 @@ def build(metrics: dict, redteam: dict) -> str:
     for _, c in rows:
         totals.update(c)
 
-    model = "scripted" if metrics["llm"] == "fake" else metrics["llm"]
+    scripted = metrics["llm"] == "fake"
+    model = "the scripted test model" if scripted else (model_name or metrics["llm"])
     out = [
         '<rect width="1200" height="650" fill="' + BG + '"/>',
         _text(
             30,
             42,
-            "Results: every attack stopped, every step on record",
+            "Results: requests done, attacks stopped, every step on record",
             22,
             INK,
             font_weight="600",
@@ -94,25 +98,34 @@ def build(metrics: dict, redteam: dict) -> str:
         _text(
             30,
             66,
-            f"From the evidence run: {redteam['total']} red-team attacks and the demo people, "
-            f"on the {model} model. A real-model run is still to come.",
+            f"Typed requests, red-team attacks and the three demo people, run on {model}"
+            + (" (most tasks need a real model)." if scripted else ", judged from the audit log."),
             13,
             INK_2,
         ),
     ]
     fills = metrics["orders_filled"]
+    out += (
+        _tile(
+            30,
+            f"{tasks['passed']} / {tasks['total']}",
+            "typed requests completed",
+            "right tool, right details",
+        )
+        if tasks
+        else _tile(30, str(fills), "orders filled", "every one after a Confirm click")
+    )
     out += _tile(
-        30,
+        320,
         f"{redteam['passed']} / {redteam['total']}",
         "red-team attacks handled safely",
         "nothing filled, chain intact",
     )
-    out += _tile(320, str(fills), "orders filled", "every one after a Confirm click")
     out += _tile(
         610,
         f"{metrics['chains_verified']} / {metrics['audit_logs']}",
         "audit chains verified",
-        f"{metrics['audit_events']} events, none altered",
+        f"{fills} orders, each after a Confirm click",
     )
     out += _tile(
         900,
@@ -165,8 +178,9 @@ def build(metrics: dict, redteam: dict) -> str:
     out.append(_text(lx, ly + 22 + 3 * 64, "Every case also checks: no fill, no", 12, MUTED))
     out.append(_text(lx, ly + 40 + 3 * 64, "token logged, chain verified.", 12, MUTED))
 
+    done = f"{tasks['passed']} of {tasks['total']} typed requests completed; " if tasks else ""
     label = (
-        f"FirstStep results: {redteam['passed']} of {redteam['total']} red-team attacks handled "
+        f"FirstStep results on {model}: {done}{redteam['passed']} of {redteam['total']} red-team attacks handled "
         f"safely ({totals['guard']} by the input guard, {totals['rule']} by a guardian rule, "
         f"{totals['declined']} answered with no tool called); {fills} orders filled, each after "
         f"a Confirm click; {metrics['chains_verified']} of {metrics['audit_logs']} audit chains "
@@ -182,9 +196,15 @@ def build(metrics: dict, redteam: dict) -> str:
 
 
 def main() -> None:
-    metrics = json.loads((EVIDENCE / "metrics.json").read_text(encoding="utf-8"))
-    redteam = json.loads((EVIDENCE / "redteam.json").read_text(encoding="utf-8"))
-    OUT.write_text(build(metrics, redteam), encoding="utf-8")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--evidence", type=Path, default=EVIDENCE)
+    parser.add_argument("--model", default="", help="the model's name, shown in the subtitle")
+    args = parser.parse_args()
+    metrics = json.loads((args.evidence / "metrics.json").read_text(encoding="utf-8"))
+    redteam = json.loads((args.evidence / "redteam.json").read_text(encoding="utf-8"))
+    path = args.evidence / "tasks.json"
+    tasks = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    OUT.write_text(build(metrics, redteam, tasks, args.model), encoding="utf-8")
     print(f"wrote {OUT.relative_to(SERVER_DIR.parent)}")
 
 

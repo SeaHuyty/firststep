@@ -22,7 +22,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from harness import LEO, NO_ANSWER, Session, make_client, write_json
+from harness import LEO, NO_ANSWER, Session, make_client, reply_ms, write_json
 from run_redteam import _refusals
 from run_redteam import setup as redteam_setup
 
@@ -173,6 +173,7 @@ def main() -> int:
                     "passed": ok,
                     "notes": notes,
                     "reply": s.last["reply"],
+                    "latency_ms": reply_ms(audit["events"][before:]),
                 }
             )
             print(f"{task['id']} {'pass' if ok else 'FAIL'}: {'; '.join(notes)}", flush=True)

@@ -44,26 +44,27 @@ npm run dev       # API on :8000, app on http://localhost:3000
 
 Open the app and answer the first question, or try a demo person: Amina (not ready), Leo (C3, lives through March 2020) or Mei (asks for all tech stocks). The questions come one per page; then Home, Plan, Funds and Activity sit in the sidebar, and Sprout is the **Ask Sprout** button in the corner.
 
-To use a real model, set `LLM_PROVIDER` in `server/.env`, plus `OPENROUTER_API_KEY` and `OPENROUTER_MODELS`, which is a comma-separated fallback chain. See [`server/.env.example`](server/.env.example).
+To use a real model, set `LLM_PROVIDER` and its key in `server/.env`. The evidence below ran on Gemma 4, an open-weight model, through Google AI Studio's free tier (`LLM_PROVIDER=google`, `GEMINI_MODEL=gemma-4-26b-a4b-it,gemma-4-31b-it`); OpenRouter and Anthropic also work. Model names are a comma-separated fallback chain. See [`server/.env.example`](server/.env.example), and run `python server/scripts/check_model.py` to test a key.
 
 ## Check it
 
 ```bash
-npm test          # server: format, lint, mypy --strict, layer contracts, 210+ tests (95% coverage)
+npm test          # server: format, lint, mypy --strict, layer contracts, 220+ tests (95% coverage)
                   # client: tsc, eslint (zero warnings), production build
 npm run test:e2e  # Playwright: the three personas at 1280px and 390px
-npm run evidence  # persona runs, red-team suite, chain verification, metrics
+npm run evidence      # the same suites on the scripted model: offline, no key (CI)
+npm run evidence:llm  # the suites on the model in server/.env, into server/evidence/gemma
 ```
 
-`npm run evidence` writes [`server/evidence/`](server/evidence/):
-- one hash-chained audit log per persona (`logs/*.jsonl`)
-- [`redteam.md`](server/evidence/redteam.md): 30 attacks, each judged from the audit log
-- [`metrics.md`](server/evidence/metrics.md): the numbers behind the Results slide
-- [`docs/results.svg`](docs/results.svg): the same numbers as one figure, drawn from those files
+The real-model run, on Gemma 4 26B, is in [`server/evidence/gemma/`](server/evidence/gemma/):
+- [`tasks.md`](server/evidence/gemma/tasks.md): 25 requests typed the way a first-time investor would (risk profiling, planning, product comparison, advisory dialogue, acting on and watching the plan). **25 of 25 completed**, each judged from the tools the model called, their arguments and the guardian's decisions.
+- [`redteam.md`](server/evidence/gemma/redteam.md): 30 attacks (prompt injection, unsuitable funds, acting without a click, promises, panic selling, personal data). **30 of 30 handled safely**, each judged from the audit log.
+- [`personas.md`](server/evidence/gemma/personas.md) and `logs/*.jsonl`: the three demo people end to end, with hash-chained audit logs.
+- [`metrics.md`](server/evidence/gemma/metrics.md): the numbers behind the Results slide, and [`docs/results.svg`](docs/results.svg), the same numbers as one figure.
 
-![FirstStep results: 30 of 30 red-team attacks handled safely, split by the layer that stopped each one](docs/results.svg)
+![FirstStep results on Gemma 4 26B: 25 of 25 typed requests completed and 30 of 30 red-team attacks handled safely, split by the layer that stopped each one](docs/results.svg)
 
-Check any log by hand with `python server/scripts/verify_chain.py server/evidence/logs/*.jsonl`.
+The scripted-model run is in [`server/evidence/`](server/evidence/); it shows the safety layers hold without any model, though most tasks need one. Check any log by hand with `python server/scripts/verify_chain.py server/evidence/gemma/logs/*.jsonl`.
 
 ## Where things are
 

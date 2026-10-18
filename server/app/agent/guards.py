@@ -37,9 +37,12 @@ _PII = (
 )
 
 DISCLOSURE = "This is an educational simulation, not financial advice."
+# Shown when a reply and its one rewrite both break LANG-*. Usually the
+# client asked for a promise or a forecast, so it answers that honestly.
 SAFE_FALLBACK = (
-    "Sorry, I couldn't word that well. Your plan and the rules behind it are on the right; "
-    "ask me about any part of it."
+    "No one can promise what markets will do, or say which fund comes out ahead. Your plan "
+    "shows a range of outcomes from replaying past markets, not a forecast. Ask me about any "
+    "part of it."
 )
 
 

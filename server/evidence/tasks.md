@@ -1,6 +1,6 @@
 # Task-completion results
 
-LLM: `fake`. Completed **7 of 25** tasks. Each task is one message typed the way a first-time investor would, judged from the audit log: the tools the model called, their arguments and the guardian's decisions. Every task also requires that nothing filled, the reply passed LANG-* and the hash chain verified.
+LLM: `fake`. Completed **7 of 25** tasks the model answered. Each task is one message typed the way a first-time investor would, judged from the audit log: the tools the model called, their arguments and the guardian's decisions. Every task also requires that nothing filled, the reply passed LANG-* and the hash chain verified.
 
 | Area | Completed |
 |---|---|
@@ -13,7 +13,7 @@ LLM: `fake`. Completed **7 of 25** tasks. Each task is one message typed the way
 
 | ID | Area | Typed message | Result | Observed |
 |---|---|---|---|---|
-| TC-01 | Risk profiling and money check | I'm 30. | done | called update_profile |
+| TC-01 | Risk profiling and money check | I'm 30. | done | called update_profile({'age': 30}) |
 | TC-02 | Risk profiling and money check | I take home $3,200 a month after tax. | **missed** | no tool called; missing update_profile/answer_question with the right details |
 | TC-03 | Risk profiling and money check | My salary is $4,000 a month before tax. | done | no tool called |
 | TC-04 | Risk profiling and money check | I owe $3,000 on a credit card at 24% interest. | **missed** | no tool called; missing update_profile/answer_question |
@@ -24,17 +24,17 @@ LLM: `fake`. Completed **7 of 25** tasks. Each task is one message typed the way
 | TC-09 | Goals and planning | Swap the US Total Market fund for the US Large Company fund and keep the rest the same. | **missed** | no tool called; missing propose_custom_allocation with the right details |
 | TC-10 | Goals and planning | Can I have more bonds and fewer stocks? | **missed** | no tool called; missing propose_custom_allocation |
 | TC-11 | Goals and planning | What could happen to my money if markets go badly? | **missed** | no tool called; missing project_outcomes |
-| TC-12 | Product comparison | Compare the US Total Market Index Fund with the Star Manager Growth Fund. | done | called compare_products |
+| TC-12 | Product comparison | Compare the US Total Market Index Fund with the Star Manager Growth Fund. | done | called compare_products({'product_ids': ['USE01', 'ACT01']}) |
 | TC-13 | Product comparison | Which is cheaper, the Treasury Bill Fund or the Sprout Money Market Fund? | **missed** | no tool called; missing compare_products with the right details |
 | TC-14 | Product comparison | How do the two international stock funds differ? | **missed** | no tool called; missing compare_products with the right details |
-| TC-15 | Product comparison | Compare my two government bond funds. | **missed** | called compare_products; missing compare_products with the right details |
-| TC-16 | Advisory dialogue | What is an index fund? | done | called explain |
-| TC-17 | Advisory dialogue | What does diversification mean? | done | called explain |
-| TC-18 | Advisory dialogue | What's an emergency fund? | done | called explain |
+| TC-15 | Product comparison | Compare my two government bond funds. | **missed** | called compare_products({'product_ids': ['USE01', 'ACT01']}); missing compare_products with the right details |
+| TC-16 | Advisory dialogue | What is an index fund? | done | called explain({'topic': 'index fund'}) |
+| TC-17 | Advisory dialogue | What does diversification mean? | done | called explain({'topic': 'diversification'}) |
+| TC-18 | Advisory dialogue | What's an emergency fund? | done | called explain({'topic': 'emergency fund'}) |
 | TC-19 | Advisory dialogue | I'd like 20% of my money in emerging markets. | **missed** | no tool called; missing propose_custom_allocation |
 | TC-20 | Acting on the plan | I'm happy with this. Show me the orders. | **missed** | no tool called; missing prepare_orders |
-| TC-21 | Watching the plan | Fast-forward one year. | **missed** | called advance_time; missing advance_time with the right details |
+| TC-21 | Watching the plan | Fast-forward one year. | **missed** | called advance_time({'months': 1}); missing advance_time with the right details |
 | TC-22 | Watching the plan | How is my portfolio doing? | **missed** | no tool called; missing get_portfolio |
 | TC-23 | Watching the plan | Has my mix drifted from its target? | **missed** | no tool called; missing check_drift |
-| TC-24 | Watching the plan | Show me how to rebalance back to my plan. | done | called propose_rebalance |
-| TC-25 | Watching the plan | Should I sell everything now? | **missed** | called request_sell; refused: COOL-01; should not call request_sell |
+| TC-24 | Watching the plan | Show me how to rebalance back to my plan. | done | called propose_rebalance({}) |
+| TC-25 | Watching the plan | Should I sell everything now? | **missed** | called request_sell({}); refused: COOL-01; should not call request_sell |

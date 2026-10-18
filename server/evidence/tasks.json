@@ -2,6 +2,7 @@
   "llm": "fake",
   "passed": 7,
   "total": 25,
+  "unanswered": [],
   "results": [
     {
       "id": "TC-01",
@@ -9,9 +10,10 @@
       "prompt": "I'm 30.",
       "passed": true,
       "notes": [
-        "called update_profile"
+        "called update_profile({'age': 30})"
       ],
-      "reply": "Thanks, I've noted that."
+      "reply": "Thanks, I've noted that.",
+      "latency_ms": 21
     },
     {
       "id": "TC-02",
@@ -22,7 +24,8 @@
         "no tool called",
         "missing update_profile/answer_question with the right details"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 11
     },
     {
       "id": "TC-03",
@@ -32,7 +35,8 @@
       "notes": [
         "no tool called"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 11
     },
     {
       "id": "TC-04",
@@ -43,7 +47,8 @@
         "no tool called",
         "missing update_profile/answer_question"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 11
     },
     {
       "id": "TC-05",
@@ -54,7 +59,8 @@
         "no tool called",
         "missing update_profile/answer_question"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 12
     },
     {
       "id": "TC-06",
@@ -65,7 +71,8 @@
         "no tool called",
         "reply lacks C3"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 15
     },
     {
       "id": "TC-07",
@@ -76,7 +83,8 @@
         "no tool called",
         "missing set_goal with the right details"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 10
     },
     {
       "id": "TC-08",
@@ -87,7 +95,8 @@
         "no tool called",
         "missing list_suitable_products"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 10
     },
     {
       "id": "TC-09",
@@ -98,7 +107,8 @@
         "no tool called",
         "missing propose_custom_allocation with the right details"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 15
     },
     {
       "id": "TC-10",
@@ -109,7 +119,8 @@
         "no tool called",
         "missing propose_custom_allocation"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 12
     },
     {
       "id": "TC-11",
@@ -120,7 +131,8 @@
         "no tool called",
         "missing project_outcomes"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 13
     },
     {
       "id": "TC-12",
@@ -128,9 +140,10 @@
       "prompt": "Compare the US Total Market Index Fund with the Star Manager Growth Fund.",
       "passed": true,
       "notes": [
-        "called compare_products"
+        "called compare_products({'product_ids': ['USE01', 'ACT01']})"
       ],
-      "reply": "Here they are side by side. Look at the fees: they add up over time."
+      "reply": "Here they are side by side. Look at the fees: they add up over time.",
+      "latency_ms": 23
     },
     {
       "id": "TC-13",
@@ -141,7 +154,8 @@
         "no tool called",
         "missing compare_products with the right details"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 13
     },
     {
       "id": "TC-14",
@@ -152,7 +166,8 @@
         "no tool called",
         "missing compare_products with the right details"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 17
     },
     {
       "id": "TC-15",
@@ -160,10 +175,11 @@
       "prompt": "Compare my two government bond funds.",
       "passed": false,
       "notes": [
-        "called compare_products",
+        "called compare_products({'product_ids': ['USE01', 'ACT01']})",
         "missing compare_products with the right details"
       ],
-      "reply": "Here they are side by side. Look at the fees: they add up over time."
+      "reply": "Here they are side by side. Look at the fees: they add up over time.",
+      "latency_ms": 25
     },
     {
       "id": "TC-16",
@@ -171,9 +187,10 @@
       "prompt": "What is an index fund?",
       "passed": true,
       "notes": [
-        "called explain"
+        "called explain({'topic': 'index fund'})"
       ],
-      "reply": "A fund that copies a market list, such as the 500 largest US companies, instead of a manager picking stocks. That keeps its fees low."
+      "reply": "A fund that copies a market list, such as the 500 largest US companies, instead of a manager picking stocks. That keeps its fees low.",
+      "latency_ms": 20
     },
     {
       "id": "TC-17",
@@ -181,9 +198,10 @@
       "prompt": "What does diversification mean?",
       "passed": true,
       "notes": [
-        "called explain"
+        "called explain({'topic': 'diversification'})"
       ],
-      "reply": "Spreading your money across many investments so one bad result hurts less. Example: owning thousands of companies instead of one."
+      "reply": "Spreading your money across many investments so one bad result hurts less. Example: owning thousands of companies instead of one.",
+      "latency_ms": 20
     },
     {
       "id": "TC-18",
@@ -191,9 +209,10 @@
       "prompt": "What's an emergency fund?",
       "passed": true,
       "notes": [
-        "called explain"
+        "called explain({'topic': 'emergency fund'})"
       ],
-      "reply": "Savings you can reach quickly for surprises such as losing a job or a big repair. A common target is 3 to 6 months of living costs."
+      "reply": "Savings you can reach quickly for surprises such as losing a job or a big repair. A common target is 3 to 6 months of living costs.",
+      "latency_ms": 20
     },
     {
       "id": "TC-19",
@@ -204,7 +223,8 @@
         "no tool called",
         "missing propose_custom_allocation"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 18
     },
     {
       "id": "TC-20",
@@ -215,7 +235,8 @@
         "no tool called",
         "missing prepare_orders"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 13
     },
     {
       "id": "TC-21",
@@ -223,10 +244,11 @@
       "prompt": "Fast-forward one year.",
       "passed": false,
       "notes": [
-        "called advance_time",
+        "called advance_time({'months': 1})",
         "missing advance_time with the right details"
       ],
-      "reply": "Here's where your plan stands now. Ups and downs are normal; your plan was built for years, not months."
+      "reply": "Here's where your plan stands now. Ups and downs are normal; your plan was built for years, not months.",
+      "latency_ms": 20
     },
     {
       "id": "TC-22",
@@ -237,7 +259,8 @@
         "no tool called",
         "missing get_portfolio"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 11
     },
     {
       "id": "TC-23",
@@ -248,7 +271,8 @@
         "no tool called",
         "missing check_drift"
       ],
-      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means."
+      "reply": "I'm here to help with your plan. Tap an answer below, or ask me what anything means.",
+      "latency_ms": 16
     },
     {
       "id": "TC-24",
@@ -256,9 +280,10 @@
       "prompt": "Show me how to rebalance back to my plan.",
       "passed": true,
       "notes": [
-        "called propose_rebalance"
+        "called propose_rebalance({})"
       ],
-      "reply": "Here's a rebalance back to your target mix. Press Confirm if you want it. This is an educational simulation, not financial advice."
+      "reply": "Here's a rebalance back to your target mix. Press Confirm if you want it. This is an educational simulation, not financial advice.",
+      "latency_ms": 27
     },
     {
       "id": "TC-25",
@@ -266,11 +291,12 @@
       "prompt": "Should I sell everything now?",
       "passed": false,
       "notes": [
-        "called request_sell",
+        "called request_sell({})",
         "refused: COOL-01",
         "should not call request_sell"
       ],
-      "reply": "Developed Markets ex-US Index Fund is 23% below its high. Selling now locks in the drop. Big sales after a fall wait 24 hours, then I'll ask again."
+      "reply": "Developed Markets ex-US Index Fund is 23% below its high. Selling now locks in the drop. Big sales after a fall wait 24 hours, then I'll ask again.",
+      "latency_ms": 25
     }
   ]
 }

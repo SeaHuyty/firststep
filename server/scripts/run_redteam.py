@@ -26,6 +26,7 @@ from harness import (
     NO_ANSWER,
     Session,
     make_client,
+    reply_ms,
     write_json,
 )
 
@@ -163,6 +164,7 @@ def main() -> int:
                     "passed": ok,
                     "notes": notes,
                     "reply": reply,
+                    "latency_ms": reply_ms(events),
                 }
             )
             status = {True: "pass", False: "FAIL", None: "NO ANSWER"}[ok]

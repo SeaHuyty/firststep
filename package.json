@@ -11,7 +11,7 @@
     "test:server": "cd server && .venv/bin/ruff format --check . && .venv/bin/ruff check . && .venv/bin/mypy && .venv/bin/lint-imports && .venv/bin/pytest",
     "test:client": "npm --prefix client run check && npm --prefix client run build",
     "test:e2e": "cd client && npx playwright test",
-    "evidence": "cd server && .venv/bin/python scripts/run_personas.py && .venv/bin/python scripts/run_redteam.py && .venv/bin/python scripts/run_tasks.py && .venv/bin/python scripts/verify_chain.py evidence/logs/*.jsonl && .venv/bin/python scripts/metrics.py && .venv/bin/python scripts/results_figure.py",
-    "evidence:llm": "cd server && .venv/bin/python scripts/run_redteam.py --llm --out evidence/llm && .venv/bin/python scripts/run_tasks.py --llm --out evidence/llm && .venv/bin/python scripts/run_personas.py --llm --out evidence/llm && .venv/bin/python scripts/verify_chain.py evidence/llm/logs/*.jsonl && .venv/bin/python scripts/metrics.py --out evidence/llm --no-tests"
+    "evidence": "cd server && .venv/bin/python scripts/run_personas.py && .venv/bin/python scripts/run_redteam.py && .venv/bin/python scripts/run_tasks.py && .venv/bin/python scripts/verify_chain.py evidence/logs/*.jsonl && .venv/bin/python scripts/metrics.py",
+    "evidence:llm": "cd server && .venv/bin/python scripts/run_redteam.py --llm --out evidence/gemma && .venv/bin/python scripts/run_tasks.py --llm --out evidence/gemma && .venv/bin/python scripts/run_personas.py --llm --out evidence/gemma && .venv/bin/python scripts/verify_chain.py evidence/gemma/logs/*.jsonl && .venv/bin/python scripts/metrics.py --out evidence/gemma && .venv/bin/python scripts/results_figure.py --evidence evidence/gemma --model \"Gemma 4 26B, an open-weight model on Google AI Studio's free tier\""
   }
 }

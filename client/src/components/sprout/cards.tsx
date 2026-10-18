@@ -64,6 +64,25 @@ export function ReadinessView({ card }: { card: CardOf<"readiness"> }) {
 }
 
 export function SavingsPlanView({ card }: { card: CardOf<"savings_plan"> }) {
+  // Nothing left over each month: no steps can be dated yet, so the plan is the first move.
+  if (card.steps.length === 0) {
+    return (
+      <Card overline="Your plan for now" title="First, find a little room each month">
+        <p className="text-body text-ink-2">
+          Right now your costs use up everything that comes in, so there is nothing to set aside yet. That&apos;s
+          the first thing to change, before any saving or investing.
+        </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-body text-ink-2">
+          <li>Look for one cost to lower: a subscription, a phone plan, eating out.</li>
+          <li>Or a way to bring in a little more each month.</li>
+        </ul>
+        <p className="mt-4 rounded-sm bg-primary-soft p-3 text-body text-ink">
+          Once even <strong>$50 a month</strong> is free, tell me your new numbers and I&apos;ll turn it into a
+          step-by-step plan with a date.
+        </p>
+      </Card>
+    );
+  }
   return (
     <Card overline="Your plan for now" title="Get ready to invest, step by step">
       <ol className="space-y-3">

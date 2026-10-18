@@ -59,9 +59,12 @@ export function ResultLine({ card, onShow }: { card: Card; onShow: () => void })
         </Line>
       );
     case "savings_plan":
+      if (card.steps.length === 0) {
+        return <Line icon={PAUSE} tone="pause" onShow={onShow}>Your plan: first, find a little room each month.</Line>;
+      }
       return (
         <Line icon={OK} onShow={onShow}>
-          Your plan: {card.steps.length} steps
+          Your plan: {card.steps.length} {card.steps.length === 1 ? "step" : "steps"}
           {card.ready_month && card.months_to_ready !== null
             ? `, ready to invest by ${month(card.ready_month)} (${duration(card.months_to_ready)})`
             : ""}

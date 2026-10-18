@@ -179,9 +179,32 @@ def test_amina_gets_not_yet_and_a_savings_plan(client: TestClient) -> None:
         "build_emergency_fund",
     ]
     assert plan["months_to_ready"] == 20
+    assert "expensive debt" in s.last["reply"]
     assert s.cards("allocation") == []
     s.act("prepare_orders")
     assert s.cards("refusal")[0]["rule_id"] == "STAGE-01"
+
+
+def test_with_nothing_left_over_the_first_step_is_finding_room(client: TestClient) -> None:
+    s = Session(client)
+    answer_all(
+        s,
+        {
+            "age": 24,
+            "monthly_income": 1500,
+            "monthly_expenses": 1500,
+            "liquid_savings": 900,
+            "debts": [],
+        },
+    )
+    assert s.last["stage"] == "SAVINGS_PLAN"
+    plan = s.cards("savings_plan")[0]
+    assert plan["steps"] == []
+    assert plan["months_to_ready"] is None
+    assert s.cards("pause")[0]["title"] == "Let's find some room first"
+    # No debt, so Sprout doesn't talk about paying one off.
+    assert "debt" not in s.last["reply"]
+    assert "finding a little room" in s.last["reply"]
 
 
 def test_mei_is_refused_all_tech_and_offered_c2(client: TestClient) -> None:

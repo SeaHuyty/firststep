@@ -75,9 +75,31 @@ def _advance_note(out: dict[str, Any]) -> str:
     )
 
 
+def _not_yet_note(out: dict[str, Any]) -> str:
+    """Say why not yet in this person's terms; debt only if any."""
+    if out.get("months_to_ready") is None:
+        return (
+            "Not yet, and here's why. Nothing is left over each month right now, so the first "
+            "step is finding a little room in your budget. Then I'll turn it into a plan with a "
+            "date."
+        )
+    debt = any(step.get("action") == "pay_debt" for step in out.get("steps", []))
+    first = (
+        "Paying off expensive debt and building a safety cushion"
+        if debt
+        else "Building a safety cushion"
+    )
+    return (
+        f"Not yet, and here's why. {first} will do more for you right now than any fund. "
+        "Here's a plan; I'll check in when you're ready."
+    )
+
+
 def _line(outcome: Outcome) -> str:
     if outcome.tool == "advance_time" and outcome.output:
         return _advance_note(outcome.output)
+    if outcome.tool == "build_savings_plan" and outcome.output:
+        return _not_yet_note(outcome.output)
     line = _BY_TOOL_OK[outcome.tool]
     if outcome.tool == "set_goal" and outcome.output:
         line = line.replace("AMOUNT", f"{outcome.output['deposited_usd']:,.0f}")

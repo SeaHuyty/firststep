@@ -16,13 +16,9 @@
 
 The agent has two roles. The **advisor** (an LLM) chooses which tool to call and writes the words. The **guardian** (deterministic, tested Python) checks every tool call against the rules in [`server/data/rules.yaml`](server/data/rules.yaml) and can refuse it. The advisor never sees a number it did not get from a tool, never sees the list of ordering tools, and never sees a confirmation token. Only the user's Confirm click creates one.
 
-```
- chip / button ─┐                          ┌─► refusal card (rule ID, plain words)
-                ├─► executor ─► guardian ──┤
- typed text ─► input guard ─► LLM ─┘       └─► tool ─► engine (pure finance)
-                                                   │
-             every step ─► hash-chained audit log ◄┘ ─► output filter ─► reply + cards
-```
+![FirstStep architecture: taps, typed messages and the Confirm click all reach one executor, where the guardian checks every call before any tool runs; every step goes into a hash-chained audit log](docs/architecture.svg)
+
+A PNG of the same diagram for slides is at [`docs/architecture.png`](docs/architecture.png).
 
 The closed loop, each step a logged tool call:
 1. Money check (`READY-01` emergency fund, `READY-02` expensive debt). If you fail it, you get a savings plan instead of a portfolio.

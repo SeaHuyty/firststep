@@ -50,6 +50,16 @@ class Settings(BaseSettings):
             return [m.strip() for m in value.split(",") if m.strip()]
         return value
 
+    @field_validator("openrouter_models", "gemini_model")
+    @classmethod
+    def _no_key_in_names(cls, value: object) -> object:
+        """Refuse a doubled key, as in GEMINI_MODEL=GEMINI_MODEL=a."""
+        names = value if isinstance(value, list) else str(value).split(",")
+        if any("=" in str(n) for n in names):
+            msg = "a model name contains '='; write the .env line once, as NAME=model-a,model-b"
+            raise ValueError(msg)
+        return value
+
 
 @lru_cache
 def get_settings() -> Settings:

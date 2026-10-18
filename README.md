@@ -19,7 +19,7 @@ Entry for the 2026 Shenzhen International FinTech Competition (FinTechathon), In
 | # | Item | Where |
 |---|---|---|
 | 01 | Technical documentation: architecture, core algorithms, security design | [`docs/technical-documentation.md`](docs/technical-documentation.md) · [PDF](docs/pdf/technical-documentation.pdf) |
-| 02 | Presentation deck (10 minutes) | [`docs/pdf/presentation.pdf`](docs/pdf/presentation.pdf) |
+| 02 | Presentation deck (10 minutes) | [`docs/pdf/presentation.pdf`](docs/pdf/presentation.pdf) · speaker notes: [`docs/presentation-notes.md`](docs/presentation-notes.md) |
 | 03 | Demo video (5 minutes) | link in the submission form · script: [`docs/demo-script.md`](docs/demo-script.md) |
 | 04 | Source code, README, deployment instructions, test cases | this repository: [Quick start](#quick-start), [Deploy](#deploy), [Test cases](#test-cases) |
 | 05 | Security self-assessment: permission tiers and known risks | [`docs/security-self-assessment.md`](docs/security-self-assessment.md) · [PDF](docs/pdf/security-self-assessment.pdf) |

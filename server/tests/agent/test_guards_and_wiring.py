@@ -144,7 +144,8 @@ def test_a_slow_model_is_cut_off_with_the_timeout_reply(
         await asyncio.sleep(5)
 
     monkeypatch.setattr(turn, "_ask_llm", slow)
-    monkeypatch.setattr(turn, "LLM_TURN_TIMEOUT_S", 0.05)
+    settings = client.app.state.services.settings  # type: ignore[attr-defined]
+    monkeypatch.setattr(settings, "llm_turn_timeout_s", 0.05)
     s = Session(client, "leo")
     s.say("What is a bond?")
     assert s.last["reply"].startswith("Sorry, Sprout didn't answer in time")

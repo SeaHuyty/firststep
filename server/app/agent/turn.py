@@ -40,9 +40,6 @@ MAX_TOOL_CALLS = 4
 # A malformed call goes back to the model with the error; free models
 # often need a second or third try.
 TOOL_RETRIES = 3
-# A whole LLM turn, fallbacks included, must finish well inside the web
-# proxy's limit (next.config.ts) so the person always gets an answer.
-LLM_TURN_TIMEOUT_S = 45
 REWRITE_TIMEOUT_S = 15
 TIMEOUT_REPLY = "Sorry, Sprout didn't answer in time. Your answers are saved. Try again."
 ERROR_REPLY = (
@@ -262,15 +259,16 @@ async def take_turn(
             log.append(
                 "guard", "system", {"injection": checked.injection, "masked": list(checked.masked)}
             )
+        # The whole turn, fallbacks included, ends inside the web
+        # proxy's limit (next.config.ts): there is always an answer.
+        timeout_s = services.settings.llm_turn_timeout_s
         try:
             reply, outcomes, tokens = await asyncio.wait_for(
                 _ask_llm(services, model, settings, session_id, checked.text, checked.injection),
-                LLM_TURN_TIMEOUT_S,
+                timeout_s,
             )
         except TimeoutError:
-            logger.warning(
-                "LLM turn took over %ss; answered with the timeout reply", LLM_TURN_TIMEOUT_S
-            )
+            logger.warning("LLM turn took over %ss; answered with the timeout reply", timeout_s)
             reply, outcomes = TIMEOUT_REPLY, []
         except Exception as e:  # provider failure: keep the session, say so plainly
             # A fallback chain fails as a group: log each reason.

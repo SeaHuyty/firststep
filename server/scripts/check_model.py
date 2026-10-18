@@ -4,11 +4,14 @@
 
 Sends three tiny requests through the same code path as the app: plain
 text, text with system instructions, and a tool call. The first one that
-fails names the feature the provider or model does not accept.
+fails names the feature the provider or model does not accept; the
+seconds each took show whether a Sprout turn (several such requests)
+fits LLM_TURN_TIMEOUT_S.
 """
 
 import asyncio
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -48,9 +51,11 @@ async def main() -> int:
     ]
     failed = 0
     for name, agent, prompt in checks:
+        started = time.perf_counter()
         try:
             result = await asyncio.wait_for(agent.run(prompt), 60)
-            print(f"ok    {name}: {result.output.strip()[:60]!r}")
+            took = time.perf_counter() - started
+            print(f"ok    {name} ({took:.1f}s): {result.output.strip()[:60]!r}")
         except Exception as e:  # report every failure plainly
             failed += 1
             print(f"FAIL  {name}: {type(e).__name__}: {str(e)[:300]}")

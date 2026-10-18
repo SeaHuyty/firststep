@@ -4,13 +4,17 @@
 
 > Educational simulation. Not financial advice. No real money moves.
 
-| Sprout says "not yet" | A plan with reasons | You confirm every trade |
+| One question at a time | Your plan at a glance | Sprout says "not yet" |
 |---|---|---|
-| ![Amina's savings plan](docs/screenshots/phone-amina-not-yet.png) | ![Leo's plan](docs/screenshots/desktop-leo-plan.png) | ![Confirm dialog](docs/screenshots/desktop-leo-confirm.png) |
+| ![A question page](docs/screenshots/desktop-leo-question.png) | ![Leo's home](docs/screenshots/desktop-leo-home.png) | ![Amina's savings plan](docs/screenshots/phone-amina-not-yet.png) |
 
-| Funds compared, in plain words | A rule says no, in plain words | A panic sale waits 24 hours |
+| What the money is made of | The fund library, compared in plain words | You confirm every trade |
 |---|---|---|
-| ![Leo compares funds](docs/screenshots/desktop-leo-compare.png) | ![Mei's refusal](docs/screenshots/desktop-mei-refusal.png) | ![Leo's cooling-off pause](docs/screenshots/desktop-leo-cooling-off.png) |
+| ![Leo's plan](docs/screenshots/desktop-leo-plan.png) | ![Leo compares funds](docs/screenshots/desktop-leo-compare.png) | ![Confirm dialog](docs/screenshots/desktop-leo-confirm.png) |
+
+| A rule says no, in plain words | A panic sale waits 24 hours |
+|---|---|
+| ![Mei's refusal](docs/screenshots/desktop-mei-refusal.png) | ![Leo's cooling-off pause](docs/screenshots/desktop-leo-cooling-off.png) |
 
 ## The idea: the LLM talks, a rules engine decides
 
@@ -38,7 +42,7 @@ npm run setup     # server venv + dependencies, server/.env, client dependencies
 npm run dev       # API on :8000, app on http://localhost:3000
 ```
 
-Open the app, then press **Start my money check**, or try a demo person: Amina (not ready), Leo (C3, lives through March 2020) or Mei (asks for all tech stocks).
+Open the app and answer the first question, or try a demo person: Amina (not ready), Leo (C3, lives through March 2020) or Mei (asks for all tech stocks). The questions come one per page; then Home, Plan, Funds and Activity sit in the sidebar, and Sprout is the **Ask Sprout** button in the corner.
 
 To use a real model, set `LLM_PROVIDER` in `server/.env`, plus `OPENROUTER_API_KEY` and `OPENROUTER_MODELS`, which is a comma-separated fallback chain. See [`server/.env.example`](server/.env.example).
 

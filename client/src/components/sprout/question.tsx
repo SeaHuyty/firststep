@@ -16,7 +16,7 @@ export const CHIP =
 /** The question Sprout is asking now: Sprout's bubble, a step heavier than the conversation. */
 export const QUESTION = `${BUBBLE} font-semibold`;
 
-type Answer = (questionId: string, value: unknown, label: string) => void;
+export type Answer = (questionId: string, value: unknown, label: string) => void;
 
 function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -107,7 +107,7 @@ export function QuestionView({
   );
 }
 
-function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
+export function NumberAnswer({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
   const id = useId();
   const preset = typeof hint === "number" ? String(hint) : "";
   const [value, setValue] = useState(preset);
@@ -156,7 +156,7 @@ const KINDS = [
   ["car_loan", "Car loan"],
 ] as const;
 
-function DebtsForm({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
+export function DebtsForm({ card, onAnswer, busy, hint }: { card: CardOf<"question">; onAnswer: Answer; busy: boolean; hint?: unknown }) {
   const preset = Array.isArray(hint) ? (hint as Debt[]) : [];
   const [debts, setDebts] = useState<Debt[]>(preset);
   const [kind, setKind] = useState<string>("credit_card");

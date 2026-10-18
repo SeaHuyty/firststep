@@ -84,10 +84,12 @@ function SproutTurn({
   onReview,
   onTick,
   onShow,
+  ask,
 }: {
   m: ChatMessage;
   isLast: boolean;
   busy: boolean;
+  ask: boolean;
   onAnswer: (questionId: string, value: unknown, label: string) => void;
   hints: Record<string, unknown>;
   onReview: (card: CardOf<"confirm">) => void;
@@ -95,7 +97,7 @@ function SproutTurn({
   onShow: (type: string) => void;
 }) {
   const questions = m.cards.filter((c): c is CardOf<"question"> => c.type === "question");
-  const asking = isLast && !busy ? questions.at(-1) : undefined;
+  const asking = ask && isLast && !busy ? questions.at(-1) : undefined;
   // With no reply of its own, Sprout "says" the next question, then the chips appear.
   const spoken = m.text || asking?.prompt || "";
   const [revealed, setRevealed] = useState(!m.animate || !spoken);
@@ -122,7 +124,14 @@ function SproutTurn({
   // On narrow screens the plan builds inside the chat too, so the key moments (the "not yet"
   // plan, the range of outcomes) are never on a hidden tab.
   const planCards = m.cards.filter((c) => PLAN_TYPES.has(c.type));
-  if (planCards.length > 0) {
+  if (planCards.length > 0 && !ask) {
+    // In the assistant panel the page shows the full cards; the chat says what changed.
+    blocks.push(
+      <div key="results" className="space-y-2">
+        {planCards.map((c, j) => <ResultLine key={j} card={c} onShow={() => onShow(c.type)} />)}
+      </div>,
+    );
+  } else if (planCards.length > 0) {
     blocks.push(
       <div key="plan" className="space-y-3 lg:hidden">
         {planCards.map((c, j) => <View key={j} card={c} />)}
@@ -192,6 +201,7 @@ export function MessageList({
   onReview,
   onShow,
   children,
+  ask = true,
 }: {
   messages: ChatMessage[];
   busy: boolean;
@@ -201,6 +211,8 @@ export function MessageList({
   onShow: (type: string) => void;
   /** The next step (a form, a button), after the messages and inside what the chat follows. */
   children?: React.ReactNode;
+  /** False when the question is answered on the page, not in the chat. */
+  ask?: boolean;
 }) {
   const end = useRef<HTMLDivElement>(null);
   // Follow new content only while the reader is near the bottom; if they scrolled up to reread,
@@ -251,6 +263,7 @@ export function MessageList({
             onReview={onReview}
             onTick={follow}
             onShow={onShow}
+            ask={ask}
           />
         ),
       )}

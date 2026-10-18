@@ -274,6 +274,10 @@ def test_health_and_catalog(client: TestClient) -> None:
     assert client.get("/api/health").json() == {"ok": True, "llm": "fake"}
     catalog = client.get("/api/catalog").json()
     assert len(catalog["products"]) == 13
+    families = {p["id"]: p["family"] for p in catalog["products"]}
+    assert families["STB01"] == "bonds"
+    assert families["TEC01"] == "stocks"
+    assert catalog["max_rating_for_class"]["C2"] == "R2"
     assert "SUIT-01" in catalog["rules"]
     first = catalog["first_question"]
     assert first["question_id"] == "age"

@@ -127,17 +127,3 @@ export function ResultLine({ card, onShow }: { card: Card; onShow: () => void })
       return null;
   }
 }
-
-/** The plan card a turn most needs to show: one change at a time (NN/g). */
-export const SPOTLIGHT_ORDER = [
-  "receipt",
-  "portfolio",
-  "savings_plan",
-  "readiness",
-  "allocation",
-  "projection",
-  "risk_badge",
-  "goal",
-  "comparison",
-  "products",
-] as const;

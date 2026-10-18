@@ -1,5 +1,9 @@
 "use client";
 
+// One session, two shapes. Until the plan exists it is a guided form: one question per screen
+// (components/flow/wizard.tsx). After that it is a dashboard with a sidebar: Home, Plan, Funds
+// and Activity (components/app/dashboard.tsx). Sprout is always one tap away as a floating
+// chat. Every tap and every typed message still goes through the same API, tools and guardian.
 import { RotateCcw } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,24 +13,51 @@ import { AppShell } from "@/components/ui/shell";
 import { type Action, api } from "@/lib/api";
 import { STEP_OF } from "@/lib/copy";
 import { withTypingDelay } from "@/lib/motion";
-import type { CardOf, PersonaHint, SessionView, Stage, TurnOut } from "@/lib/types";
+import type { Card, CardOf, PersonaHint, SessionView, Stage, TurnOut } from "@/lib/types";
+import {
+  ActivityView,
+  FundsView,
+  HomeView,
+  LatestNote,
+  Nav,
+  PlanView,
+  type Product,
+  type View,
+  latestByType,
+} from "@/components/app/dashboard";
+import { GoalStep, QuestionStep, ReadyStep, RiskStep } from "@/components/flow/wizard";
+import { Assistant } from "./assistant";
 import { type ChatMessage, Composer, MessageList } from "./chat";
 import { ConfirmDialog } from "./confirm-dialog";
-import { type Goal, GoalForm } from "./goal-form";
+import type { Goal } from "./goal-form";
 import { PlanActionsContext } from "./plan-actions";
-import { AuditPanel, PlanPanel, WatchControls } from "./plan-panel";
-import { SPOTLIGHT_ORDER } from "./result-line";
-import { Safeguards } from "./safeguards";
 import { GlossaryProvider } from "./term";
 
-type Tab = "chat" | "plan" | "audit";
+const ONBOARDING = new Set<Stage>(["ONBOARD", "READINESS", "PROFILE", "GOAL"]);
+const NOTICE_TYPES = new Set(["refusal", "pause", "alert"]);
 
 const PLACEHOLDER: Partial<Record<Stage, string>> = {
-  // Short enough for one line on a phone.
   PROPOSE: "Ask, e.g. \"What is a bond?\"",
   MONITOR: "Ask about your plan",
   SAVINGS_PLAN: "Ask about your savings plan",
 };
+
+type Catalog = { products: Product[]; max_rating_for_class: Record<string, string> };
+
+function useCatalog() {
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/catalog")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c: Catalog | null) => live && c && setCatalog(c))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return catalog;
+}
 
 export function SessionScreen() {
   const { id } = useParams<{ id: string }>();
@@ -38,20 +69,13 @@ export function SessionScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [turnError, setTurnError] = useState<{ message: string; retry: () => void } | null>(null);
   const [reviewing, setReviewing] = useState<CardOf<"confirm"> | null>(null);
-  const [tab, setTab] = useState<Tab>("chat");
-  // Phones show one view at a time on one scrolling page: the chat opens at its newest line,
-  // the plan and the audit log at their top, not at whatever offset the last view had.
-  const showTab = (t: Tab) => {
-    setTab(t);
-    requestAnimationFrame(() => {
-      if (t === "chat") document.querySelector("[data-chat-end]")?.scrollIntoView({ block: "end" });
-      else window.scrollTo({ top: 0 });
-    });
-  };
+  const [page, setPage] = useState<View>("home");
+  const [fundFilter, setFundFilter] = useState("all");
+  const [chatOpen, setChatOpen] = useState(false);
   const [auditKey, setAuditKey] = useState(0);
-  const [auditOpen, setAuditOpen] = useState(false);
-  const [spotlight, setSpotlight] = useState<{ type: string; n: number } | null>(null);
-  const showInPlan = (type: string) => setSpotlight((prev) => ({ type, n: (prev?.n ?? 0) + 1 }));
+  // Result screens ("You're ready", "Your risk level") already seen, by message id.
+  const [seen, setSeen] = useState<Set<number>>(new Set());
+  const catalog = useCatalog();
   const nextId = useRef(1);
   const newId = () => nextId.current++;
 
@@ -60,9 +84,15 @@ export function SessionScreen() {
       api.session(id).then(
         (v) => {
           setView(v);
-          setMessages(
-            v.messages.map((m, i) => ({ id: -1 - i, role: m.role === "user" ? "user" : "sprout", text: m.text, cards: m.cards })),
-          );
+          const loaded: ChatMessage[] = v.messages.map((m, i) => ({
+            id: -1 - i,
+            role: m.role === "user" ? "user" : "sprout",
+            text: m.text,
+            cards: m.cards,
+          }));
+          setMessages(loaded);
+          // A reloaded session goes straight to where it was, not back through result screens.
+          setSeen(new Set(loaded.map((m) => m.id)));
           setStage(v.stage as Stage);
           setSimMonth(v.sim_month);
         },
@@ -85,9 +115,9 @@ export function SessionScreen() {
     setStage(out.stage as Stage);
     setSimMonth(out.sim_month);
     setAuditKey((k) => k + 1);
-    // Bring the turn's most important plan change into view (one change at a time).
-    const changed = SPOTLIGHT_ORDER.find((t) => out.cards.some((c) => c.type === t));
-    if (changed) showInPlan(changed);
+    // Orders ready: open the check-before-you-confirm dialog straight away.
+    const confirm = out.cards.filter((c): c is CardOf<"confirm"> => c.type === "confirm").at(-1);
+    if (confirm) setReviewing(confirm);
   };
 
   const run = async (call: () => Promise<TurnOut>, userText?: string) => {
@@ -96,8 +126,6 @@ export function SessionScreen() {
     if (userText) setMessages((m) => [...m, { id: newId(), role: "user", text: userText, cards: [], animate: true }]);
     setBusy(true);
     try {
-      // A short, length-scaled pause with the typing indicator (capped at 1 s; none when the
-      // request itself took longer). See docs/ux-psychology.md.
       apply(await withTypingDelay(call));
     } catch (e) {
       setTurnError({ message: (e as Error).message, retry: () => void run(call) });
@@ -107,20 +135,23 @@ export function SessionScreen() {
   };
 
   const act = (action: Action, label?: string) => run(() => api.act(id, { ...action, label }), label);
-  const planActions = {
-    compare: (ids: string[], label: string) => act({ tool: "compare_products", args: { product_ids: ids } }, label),
-    busy,
-  };
   const say = (text: string) => run(() => api.say(id, text), text);
+  const compare = (ids: string[], label: string) => act({ tool: "compare_products", args: { product_ids: ids } }, label);
+  const planActions = { compare, busy };
 
   const persona: PersonaHint | null | undefined = view?.persona;
   const hints = useMemo(() => (persona?.answers ?? {}) as Record<string, unknown>, [persona]);
   const allCards = messages.flatMap((m) => m.cards);
-  const lastCards = messages.at(-1)?.cards ?? [];
+  const latest = latestByType(allCards);
+  const lastSprout = messages.filter((m) => m.role === "sprout").at(-1);
+  const lastCards = lastSprout?.cards ?? [];
   const driftAlert = lastCards.some((c) => c.type === "alert" && c.rule_id === "DRIFT-01");
-  const hasPlan = allCards.some((c) => c.type === "projection");
-  // Sprout is waiting for an answer to a question (or the goal form): that is the next step.
-  const asking = !busy && (lastCards.some((c) => c.type === "question") || stage === "GOAL");
+
+  // "See in plan" from the chat: close the chat and open the page that shows it.
+  const show = (type: string) => {
+    setChatOpen(false);
+    setPage(type === "comparison" ? "funds" : type === "readiness" || type === "portfolio" || type === "receipt" ? "home" : "plan");
+  };
 
   if (loadError) {
     return (
@@ -133,134 +164,159 @@ export function SessionScreen() {
   }
   if (!view) return <SessionSkeleton />;
 
-  // What to do next sits at the end of the chat, and the chat follows it into view.
-  const chatBody = (
-    <div className="pb-2">
+  const errorNote = turnError && (
+    <div className="mb-6">
+      <Notice tone="error" title="That didn't go through" action={<Button onClick={turnError.retry}>Try again</Button>}>
+        {turnError.message}
+      </Notice>
+    </div>
+  );
+
+  // --- onboarding: one screen at a time
+  let screen: React.ReactNode = null;
+  if (ONBOARDING.has(stage)) {
+    const fresh = lastSprout && !seen.has(lastSprout.id);
+    const ready = fresh ? lastCards.find((c): c is CardOf<"readiness"> => c.type === "readiness" && c.ready) : undefined;
+    const risk = fresh ? lastCards.find((c): c is CardOf<"risk_badge"> => c.type === "risk_badge") : undefined;
+    const question = lastCards.filter((c): c is CardOf<"question"> => c.type === "question").at(-1);
+    const done = () => lastSprout && setSeen(new Set([...seen, lastSprout.id]));
+    if (ready) screen = <ReadyStep card={ready} onNext={done} />;
+    else if (risk) screen = <RiskStep card={risk} onNext={done} />;
+    else if (stage === "GOAL")
+      screen = (
+        <GoalStep
+          initial={(persona?.goal as Goal | null | undefined) ?? null}
+          busy={busy}
+          onSubmit={(g) => act({ tool: "set_goal", args: g }, `${g.name}: $${g.target_usd.toLocaleString("en-US")} in ${g.horizon_years} years`)}
+        />
+      );
+    else if (question)
+      screen = (
+        <QuestionStep
+          key={question.question_id}
+          card={question}
+          busy={busy}
+          hint={hints[question.question_id]}
+          onAnswer={(qid, value, label) => act({ tool: "answer_question", args: { question_id: qid, value } }, label)}
+        />
+      );
+    else screen = <Skeleton className="mx-auto h-64 w-full max-w-xl" />;
+  }
+
+  const notices = lastCards.filter((c: Card) => NOTICE_TYPES.has(c.type));
+  const chat = (
+    <Assistant
+      open={chatOpen}
+      onOpen={() => setChatOpen(true)}
+      onClose={() => setChatOpen(false)}
+      unread={false}
+      composer={
+        <Composer onSend={say} busy={busy} placeholder={PLACEHOLDER[stage] ?? "Ask Sprout something"} />
+      }
+    >
       <MessageList
         messages={messages}
         busy={busy}
         hints={hints}
+        ask={false}
         onAnswer={(qid, value, label) => act({ tool: "answer_question", args: { question_id: qid, value } }, label)}
         onReview={setReviewing}
-        onShow={showInPlan}
-      >
-      {turnError && (
-        <Notice tone="error" title="That didn't go through" action={<Button onClick={turnError.retry}>Try again</Button>}>
-          {turnError.message}
-        </Notice>
-      )}
-      {stage === "GOAL" && !busy && (
-        <div className="animate-rise">
-          <GoalForm
-            initial={(persona?.goal as Goal | null | undefined) ?? null}
-            busy={busy}
-            onSubmit={(g) => act({ tool: "set_goal", args: g }, `${g.name}: $${g.target_usd.toLocaleString("en-US")} in ${g.horizon_years} years`)}
-          />
-        </div>
-      )}
-      {stage === "PROPOSE" && hasPlan && !busy && (
-        <div className="animate-rise">
-          <Button variant="primary" onClick={() => act({ tool: "prepare_orders" }, "Review the orders")}>
-            Review the orders
-          </Button>
-        </div>
-      )}
-      {(stage === "EXECUTED" || stage === "MONITOR") && (
-        <div className="animate-rise">
-          <WatchControls
-            simMonth={simMonth}
-            busy={busy}
-            driftAlert={driftAlert}
-            onAdvance={(args) => act({ tool: "advance_time", args }, args.until ? "Jump to March 2020" : args.months === 12 ? "Fast-forward a year" : "Fast-forward a month")}
-            onRebalance={() => act({ tool: "propose_rebalance" }, "Show me a rebalance")}
-          />
-        </div>
-      )}
-      </MessageList>
-    </div>
+        onShow={show}
+      />
+    </Assistant>
   );
 
-  const plan = (
-    <div className="space-y-4">
-      <Safeguards cards={allCards} stage={stage} />
-      <PlanPanel cards={allCards} stage={stage} spotlight={spotlight} />
-    </div>
-  );
-
-  // Desktop is a workspace: chat and plan side by side, each scrolling on its own, with the
-  // message box pinned under the chat, so neither pushes the other off-screen (the split-pane
-  // pattern of Claude Artifacts and ChatGPT Canvas). Phones keep tabs and one scrolling page.
   return (
     <GlossaryProvider>
-    <PlanActionsContext.Provider value={planActions}>
-    <AppShell step={STEP_OF[stage]} fill>
-      {persona && (
-        <p className="mb-4 max-w-none text-body-sm text-ink-2 lg:mb-3">
-          Demo as <strong>{persona.name}</strong>, {persona.tagline.split(",")[0]}. Tap the marked answers.
-        </p>
-      )}
-      <div role="tablist" aria-label="View" className="mb-4 flex gap-1 rounded-md bg-sunken p-1 lg:hidden">
-        {(["chat", "plan", "audit"] as const).map((t) => (
-          <button
-            key={t}
-            role="tab"
-            type="button"
-            aria-selected={tab === t}
-            onClick={() => showTab(t)}
-            className={`min-h-11 flex-1 rounded-sm text-label ${tab === t ? "bg-surface text-ink shadow-popover" : "text-ink-2"}`}
-          >
-            {t === "chat" ? "Chat" : t === "plan" ? "My plan" : "Audit log"}
-          </button>
-        ))}
-      </div>
-      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-12 lg:gap-8">
-        <section
-          aria-label="Chat with Sprout"
-          className={`lg:col-span-5 lg:flex lg:min-h-0 lg:flex-col ${tab === "chat" ? "" : "hidden lg:flex"}`}
-        >
-          <div data-scroll-root className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
-            {chatBody}
-          </div>
-          <div className="sticky bottom-3 z-10 mt-2 lg:static lg:mt-3">
-            <Composer
-              onSend={say}
+      <PlanActionsContext.Provider value={planActions}>
+        <AppShell step={STEP_OF[stage]}>
+          {persona && (
+            <p className="mb-4 max-w-none text-body-sm text-ink-2">
+              Demo as <strong>{persona.name}</strong>, {persona.tagline.split(",")[0]}.{" "}
+              {ONBOARDING.has(stage) ? "Continue with the marked answers." : "Try every page, or ask Sprout."}
+            </p>
+          )}
+          {screen ? (
+            <>
+              {errorNote}
+              {screen}
+            </>
+          ) : (
+            // Room under the content for the floating "Ask Sprout" (and the tab bar on phones).
+            <div className="pb-36 lg:flex lg:gap-8 lg:pb-24">
+              <Nav view={page} onView={setPage} />
+              <main className="min-w-0 flex-1">
+                {errorNote}
+                {page !== "activity" && <LatestNote reply={lastSprout?.text ?? ""} notices={notices} onOpenChat={() => setChatOpen(true)} />}
+                {page === "home" && (
+                  <HomeView
+                    stage={stage}
+                    latest={latest}
+                    allCards={allCards}
+                    simMonth={simMonth}
+                    busy={busy}
+                    driftAlert={driftAlert}
+                    onView={setPage}
+                    onPrepare={() => act({ tool: "prepare_orders" }, "Review the orders")}
+                    onReview={setReviewing}
+                    onAdvance={(args) => act({ tool: "advance_time", args }, args.until ? "Jump to March 2020" : args.months === 12 ? "Fast-forward a year" : "Fast-forward a month")}
+                    onRebalance={() => act({ tool: "propose_rebalance" }, "Show me a rebalance")}
+                  />
+                )}
+                {page === "plan" && (
+                  <PlanView
+                    stage={stage}
+                    latest={latest}
+                    busy={busy}
+                    onFunds={(family) => {
+                      setFundFilter(family);
+                      setPage("funds");
+                    }}
+                    onPrepare={() => act({ tool: "prepare_orders" }, "Review the orders")}
+                    onReview={setReviewing}
+                  />
+                )}
+                {page === "funds" && (
+                  <FundsView
+                    stage={stage}
+                    products={catalog?.products ?? []}
+                    latest={latest}
+                    maxRating={latest.risk_badge ? (catalog?.max_rating_for_class[latest.risk_badge.client_class] ?? null) : null}
+                    busy={busy}
+                    filter={fundFilter}
+                    onFilter={setFundFilter}
+                    onCompare={compare}
+                    onSwap={(out, inn, label) => {
+                      const lines = (latest.allocation?.lines ?? []).map((l) => ({
+                        product_id: l.product_id === out ? inn : l.product_id,
+                        weight_pct: l.weight_pct,
+                      }));
+                      void act({ tool: "propose_custom_allocation", args: { lines } }, label).then(() => setPage("plan"));
+                    }}
+                  />
+                )}
+                {page === "activity" && <ActivityView sessionId={id} refreshKey={auditKey} />}
+              </main>
+            </div>
+          )}
+          {chat}
+          {reviewing && (
+            <ConfirmDialog
+              card={reviewing}
+              open={reviewing !== null}
               busy={busy}
-              quiet={asking}
-              placeholder={asking ? "Or ask Sprout something" : (PLACEHOLDER[stage] ?? "Ask Sprout something")}
+              onClose={() => setReviewing(null)}
+              onConfirm={() => {
+                const pid = reviewing.proposal_id;
+                void run(() => api.confirm(id, pid), "Confirm").then(() => {
+                  setReviewing(null);
+                  setPage("home");
+                });
+              }}
             />
-          </div>
-        </section>
-        <section
-          aria-label="My plan"
-          data-plan-scroll
-          className={`lg:col-span-7 lg:min-h-0 lg:overflow-y-auto lg:pr-2 ${tab === "plan" ? "" : "hidden lg:block"}`}
-        >
-          {plan}
-          <details className="mt-4 hidden lg:block" onToggle={(e) => setAuditOpen(e.currentTarget.open)}>
-            <summary className="min-h-11 cursor-pointer py-2 text-label text-primary">See the audit log</summary>
-            {auditOpen && <AuditPanel sessionId={id} refreshKey={auditKey} />}
-          </details>
-        </section>
-        {tab === "audit" && (
-          <section aria-label="Audit log" className="lg:hidden">
-            <AuditPanel sessionId={id} refreshKey={auditKey} />
-          </section>
-        )}
-      </div>
-      {reviewing && (
-        <ConfirmDialog
-          card={reviewing}
-          open={reviewing !== null}
-          busy={busy}
-          onClose={() => setReviewing(null)}
-          onConfirm={() => {
-            const pid = reviewing.proposal_id;
-            void run(() => api.confirm(id, pid), "Confirm").then(() => setReviewing(null));
-          }}
-        />
-      )}
-    </AppShell>
-    </PlanActionsContext.Provider>
+          )}
+        </AppShell>
+      </PlanActionsContext.Provider>
     </GlossaryProvider>
   );
 }
@@ -268,16 +324,12 @@ export function SessionScreen() {
 export function SessionSkeleton() {
   return (
     <AppShell step={null}>
-      <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-        <div className="space-y-4 lg:col-span-5">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-12 w-2/3" />
-          <Skeleton className="h-12 w-1/2" />
-        </div>
-        <div className="mt-6 space-y-4 lg:col-span-7 lg:mt-0">
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+      <div className="mx-auto max-w-xl space-y-4">
+        <Skeleton className="h-2 w-full" />
+        <Skeleton className="h-12 w-3/4" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
       </div>
     </AppShell>
   );

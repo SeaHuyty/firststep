@@ -108,6 +108,11 @@ def _line(outcome: Outcome) -> str:
 
 def reply_for(outcomes: list[Outcome], stage: Stage) -> str:
     """Return Sprout's line for a turn that used no LLM."""
+    if any(o.tool == "propose_custom_allocation" and o.ok for o in outcomes):
+        return (
+            "Done: your plan now uses that fund. The rules checked the new mix, and here's its "
+            "range of what could happen."
+        )
     for outcome in reversed(outcomes):
         if outcome.error is not None:
             return outcome.error.message

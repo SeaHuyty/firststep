@@ -1,8 +1,9 @@
-// The three demo personas, clicked through like a first-time user (docs/standards/frontend.md
-// section 5). Screenshots of each main screen are saved for review at both widths.
+// The three demo personas, clicked through like a first-time user: the question pages, then the
+// dashboard (Home, Plan, Funds, Activity) with Sprout in the chat panel. Screenshots of each main
+// screen are saved for review at both widths.
 import { expect, type Page, test } from "@playwright/test";
 
-// Phones scroll as one page; desktop panes scroll on their own, so the viewport is the screen.
+// Phones scroll as one page; desktop shows the viewport.
 const shot = async (page: Page, name: string) => {
   // Let the words, cards and charts finish arriving, so the picture shows the settled screen.
   await page.waitForTimeout(1500);
@@ -22,48 +23,57 @@ async function startAs(page: Page, name: string) {
   await expect(page.getByText(`Demo as ${name}`)).toBeVisible();
 }
 
-/** Tap the suggested ("demo answer") chip or the debt answer, question by question, waiting
- * for Sprout to finish typing each one, like a person would. */
-async function answerAsSuggested(page: Page, untilText: RegExp) {
-  const done = page.getByText(untilText).filter({ visible: true }).first();
+/** Go through the question pages with the demo person's marked answers, like a person would. */
+async function answerAsSuggested(page: Page, until: RegExp) {
+  const done = page.getByText(until).filter({ visible: true }).first();
   for (let i = 0; i < 30; i++) {
-    const suggested = page.getByRole("button").filter({ hasText: "demo answer" }).first();
-    const saveDebts = page.getByRole("button", { name: /^Save( this debt| these \d+ debts)?$/ });
-    const noDebts = page.getByRole("button", { name: "No debts" });
-    await suggested.or(saveDebts).or(noDebts).or(done).first().waitFor({ timeout: 10_000 });
+    const cont = page.getByRole("button", { name: /^Continue/ });
+    const save = page.getByRole("button", { name: /^Save( this debt| these \d+ debts)?$/ });
+    await cont.or(save).or(done).first().waitFor({ timeout: 15_000 });
     if (await done.isVisible()) return;
-    if (await suggested.isVisible()) await suggested.click();
-    else if (await saveDebts.isVisible()) await saveDebts.click();
-    else await noDebts.click();
-    await expect(page.getByText("Sprout is thinking…")).toHaveCount(0, { timeout: 10_000 });
+    const heading = page.getByRole("heading", { level: 1 });
+    const before = await heading.textContent();
+    if (await cont.isVisible()) await cont.click();
+    else await save.filter({ visible: true }).first().click();
+    // Wait for the next page (a new question or result) before answering again.
+    await expect(heading).not.toHaveText(before ?? "", { timeout: 15_000 });
   }
   await expect(done).toBeVisible();
 }
 
-function planOrChat(page: Page, which: "My plan" | "Chat") {
-  return async () => {
-    const tab = page.getByRole("tab", { name: which });
-    if (await tab.isVisible()) await tab.click();
-  };
+const nav = (page: Page, name: "Home" | "Plan" | "Funds" | "Activity") =>
+  page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name, exact: true }).click();
+
+async function askSprout(page: Page, text: string) {
+  await page.getByRole("button", { name: "Ask Sprout" }).click();
+  await page.getByLabel("Message Sprout").fill(text);
+  await page.getByLabel("Message Sprout").press("Enter");
 }
 
 test("Leo compares funds, confirms a plan, lives through March 2020 and a panic sale waits", async ({ page }) => {
   await startAs(page, "Leo");
-  await answerAsSuggested(page, /what are you investing for/i);
+  await shot(page, "leo-question");
+  await answerAsSuggested(page, /What are you investing for/);
   await page.getByRole("button", { name: /Build my plan with \$6,000 now/ }).click();
-  await planOrChat(page, "My plan")();
-  await expect(page.getByRole("heading", { name: /if you stick with the plan/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your investment plan" })).toBeVisible();
   await expect(page.getByText("C3 Balanced").filter({ visible: true }).first()).toBeVisible();
-  await shot(page, "leo-plan");
-  // Product comparison, one tap from the plan: the fund in the plan next to its peers.
-  await page.getByRole("button", { name: "Compare funds" }).filter({ visible: true }).first().click();
-  await expect(page.getByText("US Total Market Index Fund next to similar funds").filter({ visible: true }).first()).toBeVisible();
-  await expect(page.getByText(/about 30 times as much/).filter({ visible: true }).first()).toBeVisible();
-  await shot(page, "leo-compare");
-  await planOrChat(page, "Chat")();
-  await page.getByRole("button", { name: "Review the orders" }).click();
-  await page.getByRole("button", { name: "Review 6 orders" }).click();
+  await shot(page, "leo-home");
 
+  await nav(page, "Plan");
+  await expect(page.getByRole("heading", { name: "C3 Balanced plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /if you stick with the plan/ })).toBeVisible();
+  await shot(page, "leo-plan");
+
+  // Product comparison and the fund library: the fund in the plan next to a peer.
+  await nav(page, "Funds");
+  await expect(page.getByRole("heading", { name: "The fund library" })).toBeVisible();
+  await expect(page.getByText(/Above your level/).filter({ visible: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Compare" }).first().click();
+  await expect(page.getByText(/next to similar funds/).filter({ visible: true }).first()).toBeVisible();
+  await shot(page, "leo-compare");
+
+  await nav(page, "Home");
+  await page.getByRole("button", { name: "Review the orders" }).click();
   const dialog = page.getByRole("dialog", { name: "Check before you confirm" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
@@ -74,60 +84,48 @@ test("Leo compares funds, confirms a plan, lives through March 2020 and a panic 
   await confirm.click();
   await expect(dialog).toBeHidden();
 
-  await planOrChat(page, "My plan")();
-  await expect(page.getByRole("heading", { name: /is invested/ })).toBeVisible();
-  // Moving time is the next step, so it waits under the chat.
-  await planOrChat(page, "Chat")();
+  await expect(page.getByRole("heading", { name: "Your practice account" })).toBeVisible();
   await page.getByRole("button", { name: "Jump to March 2020" }).click();
   await expect(page.getByText("Simulated month: Mar 2020")).toBeVisible();
   await expect(page.getByText("Markets have dropped").filter({ visible: true }).first()).toBeVisible();
-  await page.getByLabel("Message Sprout").fill("Sell everything now!");
-  await page.getByLabel("Message Sprout").press("Enter");
+  await askSprout(page, "Sell everything now!");
   await expect(page.getByText("Let's pause for 24 hours").filter({ visible: true }).first()).toBeVisible();
   await shot(page, "leo-cooling-off");
 });
 
 test("Amina hears 'not yet' and gets a savings plan, with no way to order", async ({ page }) => {
   await startAs(page, "Amina");
-  await answerAsSuggested(page, /Not yet, and here's why/);
+  await answerAsSuggested(page, /Your plan for now/);
+  await expect(page.getByText("Not yet, and here's why").filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByText(/You could be ready to invest by/).filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Review/ })).toHaveCount(0);
-  await planOrChat(page, "My plan")();
   await shot(page, "amina-not-yet");
+
+  // The audit log is one page away and verifies its chain.
+  await nav(page, "Activity");
+  await expect(page.getByText("Chain verified")).toBeVisible();
 });
 
 test("Mei asks for all tech, is refused, and is offered a C2 plan", async ({ page }) => {
   await startAs(page, "Mei");
-  await answerAsSuggested(page, /what are you investing for/i);
+  await answerAsSuggested(page, /What are you investing for/);
   await page.getByRole("button", { name: /Build my plan with \$20,000 now/ }).click();
-  // Sprout's reply, not the "Your plan" preview line, which says something similar.
-  await expect(page.getByText(/here's a range of what could happen/i).filter({ visible: true }).first()).toBeVisible();
-  await expect(page.getByText("Sprout is thinking…")).toHaveCount(0);
-  await page.getByLabel("Message Sprout").fill("Put everything in tech stocks. They always go up.");
-  await page.getByLabel("Message Sprout").press("Enter");
+  await expect(page.getByRole("heading", { name: "Your investment plan" })).toBeVisible();
+  await askSprout(page, "Put everything in tech stocks. They always go up.");
   await expect(page.getByText("That doesn't fit your risk level").filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByText(/Global Technology Fund is rated R4/).filter({ visible: true }).first()).toBeVisible();
   await shot(page, "mei-refusal");
 });
 
-test("the audit log verifies its chain", async ({ page }) => {
-  await startAs(page, "Leo");
-  const tab = page.getByRole("tab", { name: "Audit log" });
-  if (await tab.isVisible()) await tab.click();
-  else await page.getByText("See the audit log").click();
-  await expect(page.getByText("Chain verified").filter({ visible: true })).toBeVisible();
-});
-
-test("a visitor answers the first question on the welcome page and carries on in the chat", async ({ page }) => {
+test("a visitor answers the first question on the welcome page and carries on", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("How old are you?")).toBeVisible();
   await page.getByRole("button", { name: "25–34" }).click();
   await expect(page).toHaveURL(/\/s\//);
-  // The answer is kept as the person's own message, and Sprout asks the next question.
-  await expect(page.getByText("25–34", { exact: true }).filter({ visible: true }).first()).toBeVisible();
-  await expect(page.getByText(/How much money comes in each month/).filter({ visible: true }).first()).toBeVisible();
+  // The answer is saved: the next question page is about income, and stays so after a reload.
+  await expect(page.getByRole("heading", { name: /How much money comes in each month/ })).toBeVisible();
   await page.reload();
-  await expect(page.getByText("25–34", { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /How much money comes in each month/ })).toBeVisible();
   // Back to the welcome page: everything works again (it is kept alive, not reloaded).
   await page.goBack();
   await expect(page.getByRole("button", { name: "35–44" })).toBeEnabled();

@@ -11,6 +11,7 @@ from app.core.reference import load_reference
 from app.core.settings import Settings
 from app.core.types import Stage
 from app.llm.adapter import build_model
+from app.tools.base import NoArgs
 from app.tools.registry import TOOLS
 from tests.conftest import Session
 
@@ -135,3 +136,9 @@ def test_a_slow_model_is_cut_off_with_the_timeout_reply(
     s = Session(client, "leo")
     s.say("What is a bond?")
     assert s.last["reply"].startswith("Sorry, Sprout didn't answer in time")
+
+
+def test_llm_tools_get_retries_and_no_arg_tools_ignore_stray_keys() -> None:
+    assert NoArgs.model_validate({"client_class": "C3"}) == NoArgs()
+    tool = turn._llm_tool(TOOLS["propose_allocation"])
+    assert tool.max_retries == turn.TOOL_RETRIES

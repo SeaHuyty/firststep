@@ -2,6 +2,7 @@
 
     python scripts/run_tasks.py          # scripted fake LLM (most tasks need a real model)
     python scripts/run_tasks.py --llm    # the provider in server/.env
+    python scripts/run_tasks.py --llm --ids TC-01,TC-12   # a few, to save a free quota
 
 Each task starts a fresh session in a known state, sends one message the
 way a person would type it, and is judged from the audit events of that
@@ -117,8 +118,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--llm", action="store_true", help="use the real provider from .env")
     parser.add_argument("--out", type=Path, default=SERVER_DIR / "evidence")
+    parser.add_argument("--ids", default="", help="comma-separated task IDs to run (default all)")
     args = parser.parse_args()
     tasks = yaml.safe_load((SERVER_DIR / "scripts" / "tasks.yaml").read_text())["tasks"]
+    if args.ids:
+        wanted = {i.strip() for i in args.ids.split(",")}
+        tasks = [t for t in tasks if t["id"] in wanted]
     results = []
     with make_client(args.out / "run" / "tasks", real_llm=args.llm) as client:
         policy = client.app.state.services.policy  # type: ignore[attr-defined]

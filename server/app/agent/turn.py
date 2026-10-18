@@ -37,6 +37,9 @@ logger = logging.getLogger(__name__)
 
 HISTORY_MESSAGES = 10
 MAX_TOOL_CALLS = 4
+# A malformed call goes back to the model with the error; free models
+# often need a second or third try.
+TOOL_RETRIES = 3
 # A whole LLM turn, fallbacks included, must finish well inside the web
 # proxy's limit (next.config.ts) so the person always gets an answer.
 LLM_TURN_TIMEOUT_S = 45
@@ -91,7 +94,13 @@ def _llm_tool(spec: ToolSpec) -> Tool[TurnDeps]:
         "args": spec.input_model,
         "return": dict[str, Any],
     }
-    return Tool(call, name=spec.name, description=spec.description, takes_ctx=True)
+    return Tool(
+        call,
+        name=spec.name,
+        description=spec.description,
+        takes_ctx=True,
+        max_retries=TOOL_RETRIES,
+    )
 
 
 def llm_tools(services: Services, stage: Stage) -> list[Tool[TurnDeps]]:
@@ -169,7 +178,7 @@ async def _ask_llm(
         message_history=history,
         deps=deps,
         usage_limits=UsageLimits(
-            request_limit=MAX_TOOL_CALLS + 2, tool_calls_limit=MAX_TOOL_CALLS
+            request_limit=MAX_TOOL_CALLS + TOOL_RETRIES + 2, tool_calls_limit=MAX_TOOL_CALLS
         ),
     )
     usage = result.usage

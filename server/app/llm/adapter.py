@@ -49,7 +49,7 @@ def _google(settings: Settings) -> Model | None:
     key = settings.google_generative_ai_api_key.get_secret_value()
     provider = GoogleProvider(api_key=key)
     # Comma-separated, like OpenRouter's: the next model answers when
-    # one errors (free endpoints give the odd bare 500). Names may repeat.
+    # one errors (free endpoints give the odd bare 500). May repeat.
     names = [n.strip() for n in settings.gemini_model.split(",") if n.strip()]
     models = [GoogleModel(name, provider=provider) for name in names]
     return models[0] if len(models) == 1 else FallbackModel(models[0], *models[1:])

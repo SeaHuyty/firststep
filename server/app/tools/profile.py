@@ -296,8 +296,9 @@ class SavingsPlanOut(Output):
 
 
 def _month_plus(ctx: ToolContext, months: int) -> str:
-    y, m = int(ctx.session.sim_month[:4]), int(ctx.session.sim_month[5:])
-    total = y * 12 + (m - 1) + months
+    # Count from today, not the simulated month: personas replay
+    # history from 2019 or 2024, so "ready by" would be in the past.
+    total = ctx.now.year * 12 + (ctx.now.month - 1) + months
     return f"{total // 12:04d}-{total % 12 + 1:02d}"
 
 

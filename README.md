@@ -2,10 +2,6 @@
 
 **A trustworthy first advisor for first-time investors.** FirstStep's guide, Sprout, checks whether you should invest at all, finds your risk level, compares funds in plain words, builds a simple plan from low-cost index funds, and lets you try it in a practice account that replays real market history. Every trade waits for your click.
 
-Entry for the 2026 Shenzhen International FinTech Competition (FinTechathon), International Track, **Topic B: Wealth Advisory Agent**.
-
-> Educational simulation. Not financial advice. No real money moves.
-
 | One question at a time | Your plan at a glance | Sprout says "not yet" |
 |---|---|---|
 | ![A question page](docs/images/screenshots/desktop-leo-question.png) | ![Leo's home](docs/images/screenshots/desktop-leo-home.png) | ![Amina's savings plan](docs/images/screenshots/phone-amina-not-yet.png) |
@@ -14,24 +10,13 @@ Entry for the 2026 Shenzhen International FinTech Competition (FinTechathon), In
 |---|---|---|
 | ![Leo compares funds](docs/images/screenshots/desktop-leo-compare.png) | ![Confirm dialog](docs/images/screenshots/desktop-leo-confirm.png) | ![Mei's refusal](docs/images/screenshots/desktop-mei-refusal.png) |
 
-## Submission
-
-| # | Item | Where |
-|---|---|---|
-| 01 | Technical documentation: architecture, core algorithms, security design | [`docs/technical-documentation.md`](docs/technical-documentation.md) · [PDF](docs/pdf/technical-documentation.pdf) |
-| 02 | Presentation deck (10 minutes) | [`docs/pdf/presentation.pdf`](docs/pdf/presentation.pdf) · speaker notes: [`docs/presentation-notes.md`](docs/presentation-notes.md) |
-| 03 | Demo video (5 minutes) | link in the submission form · script: [`docs/demo-script.md`](docs/demo-script.md) |
-| 04 | Source code, README, deployment instructions, test cases | this repository: [Quick start](#quick-start), [Deploy](#deploy-online), [Test cases](#test-cases) |
-| 05 | Security self-assessment: permission tiers and known risks | [`docs/security-self-assessment.md`](docs/security-self-assessment.md) · [PDF](docs/pdf/security-self-assessment.pdf) |
-| 06 | Execution evidence: sandbox operation logs and test results | [`server/evidence/gemma/`](server/evidence/gemma/) · [`docs/test-report.md`](docs/test-report.md) |
-
 ## Quick start
 
 You need **Python 3.11+**, **Node 20+** and git.
 
 ```bash
-git clone https://github.com/SeaHuyty/zhongguo_xiangmu.git
-cd zhongguo_xiangmu
+git clone https://github.com/SeaHuyty/firststep.git
+cd firststep
 npm run setup     # Python venv and packages, server/.env, client packages (a few minutes, once)
 npm run dev       # API on :8000 and the app on http://localhost:3000
 ```
@@ -57,13 +42,6 @@ The questions come one per page, then the dashboard: **Home**, **Plan**, **Funds
 4. Restart `npm run dev`.
 
 Never commit `server/.env`: it is git-ignored. OpenRouter and Anthropic also work; see [`server/.env.example`](server/.env.example).
-
-## Recording the demo
-
-Follow [`docs/demo-script.md`](docs/demo-script.md): nine scenes with what to click, what to type and the voiceover line, about 5 minutes. Before recording:
-
-- Add `LLM_TURN_TIMEOUT_S=70` to `server/.env`. A free model takes about 13 seconds per typed reply; cut the waiting in editing.
-- Restart `npm run dev` so the sessions are fresh, and use a clean browser window at 1280×800 or larger.
 
 ## How it works: the LLM talks, the guardian decides
 
